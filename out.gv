@@ -1,0 +1,18 @@
+digraph G {
+0 [label=E];
+0 [label=dch];
+0 [label=dcba1];
+0 [label=fga1];
+0 [label=a2kj];
+0 [label=a2gf];
+0 [label=a2bch];
+0 [label=a2bcd];
+0->0  [weight=0.333];
+0->0  [weight=0.333];
+0->0  [weight=0.333];
+0->0  [weight=0.5];
+0->0  [weight=0.5];
+0->0  [weight=0.333];
+0->0  [weight=0.333];
+0->0  [weight=0.333];
+}
