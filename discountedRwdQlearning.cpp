@@ -281,6 +281,7 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
       double td_err = currTurnReward +  exp(-beta*turntime)*qMax - currNode_credit;
 
       //std::cout << "td_err = " << td_err << "\n";
+      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", currTurnReward=" << currTurnReward << ", td_err=" << td_err << ", nodeCredits=" << graph->getNodeCredits(currNode) << ", etrace=" << graph->getEligibilityTrace(currNode) << ", qMax=" << qMax << ", turntime=" << turntime  << std::endl;
 
 
       S0.tdUpdateAllVertexCredits(alpha, td_err);
@@ -288,6 +289,9 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
       {
         S1.tdUpdateAllVertexCredits(alpha, td_err);
       }
+
+      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", updated_nodeCredits=" << graph->getNodeCredits(currNode) << std::endl;
+
 
       // S0.printNodeCredits();
       // if(strategy.getOptimal())

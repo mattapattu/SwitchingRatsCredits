@@ -20,6 +20,7 @@ public:
         learningRule = learningRule_;
         phi = phi_;
         eta = eta_;
+        averageReward = 0;
 
         std::string model = testModel_.getName();
         setName(model);
@@ -99,15 +100,42 @@ public:
         return alpha;
     }
 
+    void setAlpha(double alpha_)
+    {
+        alpha = alpha_;
+    }
+
+
     double getGamma()
     {
         return gamma;
+    }
+
+    void setGamma(double gamma_)
+    {
+        gamma = gamma_;
     }
 
     double getLambda()
     {
         return lambda;
     }
+
+    void setLambda(double lambda_)
+    {
+        lambda = lambda_;
+    }
+
+    double getAverageReward()
+    {
+        return averageReward;
+    }
+
+    void setAverageReward(double averageReward_)
+    {
+        averageReward = averageReward_;
+    }
+
 
     double getPhi()
     {
@@ -156,15 +184,16 @@ public:
         return marginalLikelihood;
     }
 
-    BoostGraph &getStateS0()
+    BoostGraph& getStateS0()
     {
         return stateS0;
     }
 
-    BoostGraph &getStateS1()
+    BoostGraph& getStateS1()
     {
         return stateS1;
     }
+    
 
     void setCrpPosterior(double crp, int t)
     {
@@ -202,12 +231,24 @@ public:
     void resetCredits()
     {
         stateS0.resetNodeCredits();
+        stateS0.updateEdgeProbabilitiesSoftmax();
         if (optimal)
         {
             stateS1.resetNodeCredits();
+            stateS1.updateEdgeProbabilitiesSoftmax();
         }
         return;
     }
+
+    // void updateEdgeProbabilities()
+    // {
+    //     stateS0.updateEdgeProbabilitiesSoftmax();
+    //     if (optimal)
+    //     {
+    //         stateS1.updateEdgeProbabilitiesSoftmax();
+    //     }
+    //     return;
+    // }
 
     void resetRewards()
     {
@@ -251,6 +292,7 @@ private:
     double phi;
     double crpAlpha;
     double eta;
+    double averageReward;
     std::string name;
     arma::mat pathProbMat;
 };

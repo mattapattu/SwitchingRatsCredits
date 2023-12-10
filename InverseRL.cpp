@@ -176,6 +176,7 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
       {
         rewardVec[nodeId] +=  strategy.getPhi() * crpPosterior.back() *(-rewardVec[nodeId]);;
       }
+      //std::cout << "strategy=" << strategy_name << ", currNode=" << ", rewardVec=" << rewardVec[nodeId] << std::endl;
 
       if (S == 0 && strategy.getOptimal())
       {

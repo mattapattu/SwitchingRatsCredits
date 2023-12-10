@@ -487,6 +487,7 @@ public:
         std::vector<std::string> turns;
         // Rcpp::Rcout << "path=" << path <<std::endl;
         
+        // If not optimal and curr_state == 1
         if(!optimal && state ==1)
         {
             if (path == 0)
@@ -630,6 +631,8 @@ public:
             graph[*v].credit = 0.0; // Resetting the credits (modify based on your actual property)
         }
     }
+
+    
 
 
 private:

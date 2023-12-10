@@ -120,7 +120,7 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
   float avg_score = 0;
   bool resetVector = true;
   int nrow = actions_sess.n_rows;
-  double averageReward = 0;
+  double averageReward = strategy.getAverageReward();
   int S = states_sess(0); 
   int A = 0;
   std::vector<std::string> episodeTurns;
@@ -201,7 +201,6 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
 
       double turntime = turn_times_session(session_turn_count);
 
-      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
       
       BoostGraph::Edge edge;
       if(j==0)
@@ -215,6 +214,7 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
 
       double prob_a = graph->getEdgeProbability(edge);
       logpathProb = logpathProb + prob_a;
+
       
       double qMax = -100000;
       // CASE1: IF CURR TURN IS AN INERMEDIATE TURN IN THE MAZE, DETERMINE QMAX USING EDGES
@@ -270,13 +270,23 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
       double currNode_credit = graph->getNodeCredits(currNode);
       double td_err = currTurnReward - (averageReward * turntime) + qMax - currNode_credit;
 
+      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", currTurnReward=" << currTurnReward << ", td_err=" << td_err << ", nodeCredits=" << graph->getNodeCredits(currNode) << ", etrace=" << graph->getEligibilityTrace(currNode) << ", qMax=" << qMax << ", turntime=" << turntime << ", averageReward="<< averageReward << std::endl;
+
+
       averageReward = averageReward + (beta * td_err);
+
+      //double nodeCredits = graph->getNodeCredits(currNode); // for debug, comment if not debugging
+
       
       S0.tdUpdateAllVertexCredits(alpha, td_err);
       if(strategy.getOptimal())
       {
         S1.tdUpdateAllVertexCredits(alpha, td_err);
       }
+
+     //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", updated_nodeCredits=" << graph->getNodeCredits(currNode) << ", updated_averageReward="<< averageReward << std::endl;
+
+
 
     //  S0.printNodeCredits();
     //   if(strategy.getOptimal())
@@ -341,8 +351,11 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
     strategy.updatePathProbMat();
     
   }
+
+  strategy.setAverageReward(averageReward);
     
   double result = std::accumulate(mseMatrix.begin(), mseMatrix.end(), 0.0);
+  
 
   return (result);
 }

@@ -7,6 +7,7 @@ class RatData{
     public:
         RatData(const Rcpp::S4 & ratdata){
               
+              rat = Rcpp::as<std::string>(ratdata.slot("rat"));
               Paths = Rcpp::as<arma::mat>(ratdata.slot("allpaths"));
               Hybrid1 = Rcpp::as<arma::mat>(ratdata.slot("hybridModel1"));
               Hybrid2 = Rcpp::as<arma::mat>(ratdata.slot("hybridModel2"));
@@ -40,8 +41,13 @@ class RatData{
             return Turns;
         }
 
+        std::string getRat() const {
+            return rat;
+        }
+
 
     private:
+        std::string rat;
         arma::mat Paths;
         arma::mat Hybrid1;
         arma::mat Hybrid2;

@@ -264,6 +264,7 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     int nbOfTurns = turns.size();
 
 
+
     double pathProb = 0;
     for (int j = 0; j < nbOfTurns; j++)
     {
@@ -294,18 +295,21 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       pathProb = pathProb + prob_a;
 
       //double nodeCredits = graph->getNodeCredits(currNode); // for debug, comment if not debugging
-      //std::cout << "S=" <<S << ", A=" << A << ", currTurn=" << currTurn << ", nodeCredits=" << nodeCredits << ", prob_a="<< exp(prob_a) << ", pathProb=" << exp(pathProb) <<std::endl;
+      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", nodeCredits=" << nodeCredits << ", prob_a="<< exp(prob_a) << ", pathProb=" << exp(pathProb) <<std::endl;
       
       session_turn_count++;
       prevNode = currNode;
     }
+
+    //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;
+
     if(A != 6)
     {
       mseMatrix.push_back(pathProb);
     }
     else
     {
-      mseMatrix.push_back(1);
+      mseMatrix.push_back(0);
     }
     
       
@@ -343,8 +347,19 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     S1.updateEdgeProbabilitiesSoftmax();
   }
 
+//  if(!strategy.getOptimal())
+//  {
+//     std::cout << "ses=" << session << ", likelihood = ";
+//     for (auto const& i : mseMatrix)
+//       std::cout << exp(i) << ", ";
+//     std::cout << "\n" ;
+
+//  }
 
   double result = std::accumulate(mseMatrix.begin(), mseMatrix.end(), 0.0);
+
+  //std::cout << "strategy=" << strategy.getName() << ", alpha=" <<strategy.getAlpha() << ", gamma=" << strategy.getGamma() << ", lambda=" << strategy.getLambda() << ", ses=" << session << ", loglikelihood=" << result << std::endl;
+
 
   return (result);
 }
