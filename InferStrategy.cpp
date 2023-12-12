@@ -89,7 +89,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
 
 void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger=false)
 {
-    std::vector<double> likelihoods;
+    std::vector<double> loglikelihoods;
     double max_posterior = 0.0;
     std::vector<std::string> most_lik_strategies;
 
@@ -107,6 +107,7 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
         
         //E-step: 2. Compute likelihoods
         double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
+        loglikelihoods.push_back(log_likelihood);
         if(logger)
         {
             std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", prior=" << priors_ses[i] << ", log_likelihood=" << log_likelihood << std::endl;  
@@ -126,8 +127,7 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
         }else if(crp_posterior == 0){
             //std::cout << "Zero posterior prob. Check" << std::endl;
         }
-        double marginalLik = log_likelihood * priors_ses[i];
-        strategyPtr->setMarginalLikelihood(marginalLik);
+        
     }
 
     double sum = std::accumulate(posteriors.begin(), posteriors.end(), 0.0);
@@ -186,6 +186,9 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
             std::exit(EXIT_FAILURE);
         }
 
+        //double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
+        double marginalLik = loglikelihoods[i] * posteriors[i];
+        strategyPtr->setMarginalLikelihood(marginalLik);
 
         strategyPtr->setCrpPosterior(posteriors[i],ses);
         
@@ -295,35 +298,8 @@ void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy
     return;
 }
 
-// void compute_marginal_likelihoods(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies)
-// {
-    
-//     //E-step: 1.Calculate likelihoods using estimated rewards
-//     //E-step: 2. Update cluster posterior probabilities
-//     double sumPosterior = 0.0;
-//     for (const auto& strategyPtr : strategies) {
-//         double crp_posterior = std::numeric_limits<double>::lowest();
-//         std::string name = strategyPtr->getName();
-       
 
-//         double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
-        
-//         //std::vector<double> crpPriors = strategyPtr->getCrpPrior();
-//         double crp_prior = strategyPtr->getCrpPosterior(ses);
-
-//         //std::cout << "compute_marginal_likelihoods: " << ", ses=" << ses << ", strategy=" << name << ", prior=" << crp_prior << ", log_likelihood=" << log_likelihood << std::endl; 
-
-//         crp_posterior = log_likelihood * crp_prior; // weighted likelihoods for cross-validation
-//         //crp_posterior.push_back(crp_posterior); 
-//         strategyPtr->updateWeightedLikelihood(crp_posterior);
-//     }  
-
-//     return;
-// }
-
-
-
-void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies)
+void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, bool logger=false)
 {
     for (const auto& strategyPtr : strategies) {
 
@@ -331,6 +307,24 @@ void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr
         //M-step
         //std::pair<std::vector<double>, std::vector<double>> rewardUpdates = getRewardUpdates(ratdata, ses);
         strategyPtr->initRewards(ratdata); 
+        std::string strategy = strategyPtr->getName();
+        std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
+        std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
+
+        if(logger)
+        {
+            std::cout << strategy << " rewardsS0: " ;
+            for (const double& reward : rewardsS0) {
+                std::cout << reward << " ";
+            }
+            std::cout << std::endl;
+
+            std::cout << strategy << " rewardsS1: " ;
+            for (const double& reward : rewardsS1) {
+                std::cout << reward << " ";
+            }
+            std::cout << std::endl;
+        }
     }
     
     return;
@@ -452,23 +446,32 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
 void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, const std::map<std::pair<std::string, bool>, std::vector<double>>& params ) {
 
     
-    const std::string filename = "clusterParams.txt";
-    std::map<std::string, std::vector<double>> paramClusterMap;
 
 
     // Open the file for reading and appending
-    std::ifstream ifs (filename);
-  // If the file does not exist, create it using std::ofstream
-    if (!ifs) {
-        std::ofstream ofs (filename);
-        // Close the output stream
-        ofs.close ();
-        // Reopen the file in read mode
-        ifs.open (filename);
-        boost::archive::text_iarchive ia (ifs);
-        ia >> paramClusterMap;
-        ifs.close();
+    std::string filename_cluster = "clusterParams.txt";
+    std::ifstream cluster_infile(filename_cluster);
+    std::map<std::string, std::vector<double>> paramClusterMap;
+    boost::archive::text_iarchive ia_cluster(cluster_infile);
+    ia_cluster >> paramClusterMap;
+    cluster_infile.close();
+
+    std::cout << "paramClusterMap: ";
+    for (const auto& entry : paramClusterMap) {
+        const std::string& key = entry.first;
+        const std::vector<double>& values = entry.second;
+
+        // Print key
+        std::cout << "Key: " << key << ", Values: ";
+
+        // Print values in the vector
+        for (double value : values) {
+            std::cout << value << " ";
+        }
+
+        std::cout << std::endl;
     }
+
 
    
     std::cout << "Initializing problem class" <<std::endl;
@@ -527,15 +530,27 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     std::string rat = ratdata.getRat();
     paramClusterMap[rat] = dec_vec_champion;
 
-    // Open the file in append mode
-    std::ofstream ofs(filename, std::ios::app);
-       // Create a text_oarchive and serialize the modified map
-    boost::archive::text_oarchive archive(ofs);
-    archive << paramClusterMap;
+    std::cout << "Updated paramClusterMap: ";
+    for (const auto& entry : paramClusterMap) {
+        const std::string& key = entry.first;
+        const std::vector<double>& values = entry.second;
 
-    // Close the file
-    ofs.close();
+        // Print key
+        std::cout << "Key: " << key << ", Values: ";
 
+        // Print values in the vector
+        for (double value : values) {
+            std::cout << value << " ";
+        }
+
+        std::cout << std::endl;
+    }
+
+    std::ofstream file(filename_cluster);
+    boost::archive::text_oarchive oa(file);
+    oa << paramClusterMap;
+    file.close();
+    
 
     return;
 }
@@ -710,7 +725,7 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
         
         if(ses==0)
         {
-            initRewardVals(ratdata, ses, strategies);
+            initRewardVals(ratdata, ses, strategies, debug);
         }
 
         estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true);
@@ -738,12 +753,14 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
-    aca2_suboptimal_probs.save("aca2_suboptimal_probs.csv", arma::csv_ascii);
-    aca2_optimal_probs.save("aca2_optimal_probs.csv", arma::csv_ascii);
-    drl_suboptimal_probs.save("drl_suboptimal_probs.csv", arma::csv_ascii);
-    drl_optimal_probs.save("drl_optimal_probs.csv", arma::csv_ascii);
-    arl_suboptimal_probs.save("arl_suboptimal_probs.csv", arma::csv_ascii);
-    arl_optimal_probs.save("arl_optimal_probs.csv", arma::csv_ascii);
+    
+
+    aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
+    drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
+    drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
 }
 
 
@@ -829,7 +846,7 @@ int main()
     // std::string s4ObjectName = "ratdata";
     RInside R;
         
-    std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/rat114.Rdata')";
+    std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/rat114.Rdata')";
     R.parseEvalQ(cmd);                  
     Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
 
@@ -859,9 +876,10 @@ int main()
     infile.close();
 
 
+    //Estimate cluster parameters and write to clusterParams.txt
+    //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
-    findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
-
+    //read clusterParams.txt to get the parameters for rat
     std::string filename_cluster = "clusterParams.txt";
     std::ifstream cluster_infile(filename_cluster);
     std::map<std::string, std::vector<double>> clusterParams;

@@ -261,6 +261,9 @@ void initializeRewards(const RatData& ratdata, int session, Strategy& strategy, 
   arma::vec actions_sess = allpath_actions.elem(sessionIdx);
   arma::vec states_sess = allpath_states.elem(sessionIdx);
   arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
+
+  //double phi = 0.001;
+  double phi = strategy.getPhi();
   
   
   int initState = 0;
@@ -372,11 +375,11 @@ void initializeRewards(const RatData& ratdata, int session, Strategy& strategy, 
       int nodeId = graph->getNodeId(currNode);
       if (j == (nbOfTurns - 1))
       {
-        rewardVec[nodeId] += strategy.getPhi() * (R-rewardVec[nodeId]);
+        rewardVec[nodeId] += phi * (R-rewardVec[nodeId]);
       }
       else
       {
-        rewardVec[nodeId] +=  strategy.getPhi() * (-rewardVec[nodeId]);;
+        rewardVec[nodeId] +=  phi * (-rewardVec[nodeId]);;
       }
 
       //std::cout <<"currTurn="<< currTurn << ", R=" <<R << ", rewardVec[nodeId]=" <<rewardVec[nodeId] <<std::endl;
