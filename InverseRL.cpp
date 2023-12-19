@@ -1,4 +1,5 @@
 #include "InverseRL.h"
+#include <cmath>
 
 double computeTrajectoryLik(const RatData& ratdata, int session, Strategy& strategy)
 {
@@ -431,4 +432,89 @@ void initializeRewards(const RatData& ratdata, int session, Strategy& strategy, 
   return ;
 }
 
+
+
+std::vector<std::string> generatePathTrajectory(Strategy& strategy, BoostGraph* graph, BoostGraph::Vertex rootNode)
+{
+  std::vector<BoostGraph::Edge> edges;
+  std::vector<std::string> turns;
+  BoostGraph::Vertex node;
+  node = rootNode;
+  edges = graph->getOutGoingEdges(node);
+      
+  while (!edges.empty())
+  {
+    BoostGraph::Vertex childSelected = graph->sampleChild(node);
+    std::string turnSelected = graph->getNodeName(childSelected);
+    turns.push_back(turnSelected);
+      
+    node = childSelected;
+    edges = graph->getOutGoingEdges(node);
+  }
+  return(turns);
+}
+
+int getNextState(int curr_state, int action)
+{
+  //Rcpp::Rcout << "curr_state=" << curr_state << ", action=" << action << ", last_turn=" << last_turn << std::endl;
+  int new_state = -1;
+  if (action == 4 || action == 5)
+  {
+    new_state = curr_state;
+  }
+  else if (curr_state == 0)
+  {
+    new_state = 1;
+  }
+  else if (curr_state == 1)
+  {
+    new_state = 0;
+  }
+  
+  //Rcpp::Rcout << "new_state=" << new_state << std::endl;
+  
+  return (new_state);
+}
+
+double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int state, int turnNb, int totalPaths)
+{
+
+  std::vector<int> turnStages = {0,totalPaths/4,totalPaths};
+  int start = -1;
+  int end = 0;
+  if(turnNb < turnStages[1])
+  {
+    start = 1;
+    end = turnStages[1] - 1;
+  }
+  else if(turnNb >= turnStages[1])
+  {
+    start = turnStages[1];
+    end = totalPaths-1;
+  }
+
+  start = start-1;
+  end = end-1;
+  //Rcpp::Rcout << "start=" << start << ", end=" << end << std::endl;
+  
+  arma::mat turnTimesMat_stage = hybridTurnTimes.rows(start,end);
+  
+
+  // Get all turn ids from turnTimesMat belonging to current turnStage
+  arma::uvec arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state);
+  
+  double hybridTurnDuration = 0;
+  if(arma_idx.size() > 0)
+  {
+    arma::vec turnDurations_stage = turnTimesMat_stage.rows(arma_idx);
+    double mean_value = arma::mean(turnDurations_stage);
+    double std_deviation = arma::stddev(turnDurations_stage);
+    hybridTurnDuration = mean_value + std_deviation * arma::randn();
+  }else{
+    //If turn not present in rat data, set duration to a very high value to give it low credits
+    hybridTurnDuration = 50000;
+  }
+  
+  return(hybridTurnDuration);
+}
 

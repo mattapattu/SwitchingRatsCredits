@@ -1,6 +1,7 @@
 #include "InverseRL.h"
 #include "Pagmoprob.h"
 #include "PagmoMle.h"
+#include "Simulation.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
@@ -87,11 +88,11 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
 
 }
 
-void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger=false)
+arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger=false)
 {
     std::vector<double> loglikelihoods;
     double max_posterior = 0.0;
-    std::vector<std::string> most_lik_strategies;
+    std::vector<std::shared_ptr<Strategy>> most_lik_strategies;
 
 
     int strategies_size = strategies.size();
@@ -99,6 +100,8 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
 
     //E-step: 1. Compute priors for all strategies
     std::vector<double> priors_ses = computePrior(strategies, cluster, ses, last_choice);
+
+    arma::mat winningProbMat;
         
     for (size_t i = 0; i < strategies.size(); ++i) 
     {
@@ -162,15 +165,15 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
     if (maxElement - secondMaxElement > 0.05) {
         std::shared_ptr<Strategy> strategyPtr = strategies[maxIndex];
         std::string name = strategyPtr->getName();
-        most_lik_strategies.push_back(name);
+        most_lik_strategies.push_back(strategyPtr);
     } else {
         std::shared_ptr<Strategy> strategyPtrMax = strategies[maxIndex];
         std::string maxName = strategyPtrMax->getName();
-        most_lik_strategies.push_back(maxName);
+        most_lik_strategies.push_back(strategyPtrMax);
 
         std::shared_ptr<Strategy> strategyPtrSecondMax = strategies[secondMaxIndex];
         std::string secondMaxName = strategyPtrSecondMax->getName();
-        most_lik_strategies.push_back(secondMaxName);
+        most_lik_strategies.push_back(strategyPtrSecondMax);
         //std::cout << "The difference between the maximum and second maximum is less than 0.1." << std::endl;
     }
 
@@ -179,7 +182,6 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
     {
         std::shared_ptr<Strategy> strategyPtr = strategies[i];
         std::string name = strategyPtr->getName();
-
         if (std::isnan(posteriors[i])) {
                     
             std::cout << "Crp posteriors is nan. Check" << std::endl;
@@ -202,8 +204,8 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
     if(logger)
     {
         std::cout << "Most likely strategies: " ;
-        for (const std::string& name : most_lik_strategies) {
-            std::cout << name << " ";
+        for (auto strategy : most_lik_strategies) {
+            std::cout << strategy->getName() << " ";
         }
         std::cout << std::endl;
 
@@ -211,15 +213,24 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
 
     if(most_lik_strategies.size() == 1)
     {
-        last_choice = most_lik_strategies[0];
+        std::shared_ptr<Strategy> strategyPtrMax = most_lik_strategies[0];
+        last_choice = strategyPtrMax->getName();
+        winningProbMat = strategyPtrMax->getPathProbMat();
+        // Find the indices where the condition is true
+        arma::uvec indices = find(winningProbMat.col(13) == ses);
+
+        // Extract the desired columns (1:12) for the rows that satisfy the condition
+        winningProbMat = winningProbMat.rows(indices);
+        winningProbMat = winningProbMat.cols(arma::span(0, 11));
+
         // If most_lik_strategy is not in cluster, expand cluster
-        if (std::find(cluster.begin(), cluster.end(), most_lik_strategies[0]) == cluster.end()) {
+        if (std::find(cluster.begin(), cluster.end(), last_choice) == cluster.end()) {
             // most_lik_strategy is not present, include it
-            cluster.push_back(most_lik_strategies[0]);
+            cluster.push_back(last_choice);
             // std::cout <<"ses=" << ses << ", Adding " << most_lik_strategy <<" to cluster." << std::endl; 
             if(logger)
             {
-                std::cout <<"ses=" << ses << ", Adding " << most_lik_strategies[0] <<" to cluster." << std::endl;   
+                std::cout <<"ses=" << ses << ", Adding " << last_choice <<" to cluster." << std::endl;   
             }
         }  
 
@@ -257,7 +268,7 @@ void estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shar
     }
     
 
-    return;
+    return winningProbMat;
 }
 
 void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, std::vector<std::string>& cluster, bool logger=false)
@@ -689,7 +700,11 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     double phi = clusterParams.find(rat)->second[1];
     double eta = 0;
 
-    //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
+    if(debug)
+    {
+        std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
+        std::cout << "rat=" << rat << ", crpAlpha=" << crpAlpha << ", phi=" << phi << ", eta=" <<eta << std::endl;
+    }
     
     // Create instances of Strategy
     auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
@@ -719,6 +734,8 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
 
     std::vector<std::string> cluster;
     std::string last_choice;
+    
+    arma::mat probMat;
 
     for(int ses=0; ses < sessions; ses++)
     {
@@ -728,8 +745,10 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
             initRewardVals(ratdata, ses, strategies, debug);
         }
 
-        estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true);
+        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true);
         mstep(ratdata, ses, strategies, cluster, debug);
+
+        probMat = arma::join_cols(probMat, probMat_sess);
 
     }
 
@@ -753,14 +772,18 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
-    
+    //probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
 
-    aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
-    drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
-    drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+
+
+    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+
+
 }
 
 
@@ -838,59 +861,72 @@ void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 
 
 
-int main() 
+int main(int argc, char* argv[]) 
 {
     std::cout <<"Inside main" <<std::endl;
     // Replace with the path to your Rdata file and the S4 object name
     // std::string rdataFilePath = "/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/rat114.Rdata";
     // std::string s4ObjectName = "ratdata";
     RInside R;
+
+    //std::vector<std::string> rats = {"rat103", "rat106","rat112", "rat113", "rat114"};
+
+    std::string rat = argv[1];
+    std::vector<std::string> rats = {rat};
+
+    for(const std::string& ratName: rats)
+    {
+        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
+
+        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
+
+
+        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
+
+        RatData rdata(ratdata);
+        MazeGraph suboptimalHybrid3(Suboptimal_Hybrid3, false);
+        MazeGraph optimalHybrid3(Optimal_Hybrid3, true);
+    
+        // Write params to file
+        //findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
+
+        // Read the params from from rat param file, e.g rat_103.txt
+        std::string rat = rdata.getRat();
+        std::string filename = rat + ".txt";
+        std::ifstream infile(filename);
+        std::map<std::pair<std::string, bool>, std::vector<double>> params;
+        boost::archive::text_iarchive ia(infile);
+        ia >> params;
+        infile.close();
+
+
+        //Estimate cluster parameters and write to clusterParams.txt
+        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
+
+        //read clusterParams.txt to get the parameters for rat
+        std::string filename_cluster = "clusterParams.txt";
+        std::ifstream cluster_infile(filename_cluster);
+        std::map<std::string, std::vector<double>> clusterParams;
+        boost::archive::text_iarchive ia_cluster(cluster_infile);
+        ia_cluster >> clusterParams;
+        cluster_infile.close();
+
+        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, params, clusterParams, true);
+
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3);
+
+
+
+    // testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
+    }
         
-    std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/rat114.Rdata')";
-    R.parseEvalQ(cmd);                  
-    Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
-
-    cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
-    R.parseEvalQ(cmd);                  
-    Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
-
-
-    cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
-    R.parseEvalQ(cmd);                  
-    Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
-
-    RatData rdata(ratdata);
-    MazeGraph suboptimalHybrid3(Suboptimal_Hybrid3, false);
-    MazeGraph optimalHybrid3(Optimal_Hybrid3, true);
- 
-    // Write params to file
-    //findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
-
-    // Read the params from from rat param file, e.g rat_103.txt
-    std::string rat = rdata.getRat();
-    std::string filename = rat + ".txt";
-    std::ifstream infile(filename);
-    std::map<std::pair<std::string, bool>, std::vector<double>> params;
-    boost::archive::text_iarchive ia(infile);
-    ia >> params;
-    infile.close();
-
-
-    //Estimate cluster parameters and write to clusterParams.txt
-    //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
-
-    //read clusterParams.txt to get the parameters for rat
-    std::string filename_cluster = "clusterParams.txt";
-    std::ifstream cluster_infile(filename_cluster);
-    std::map<std::string, std::vector<double>> clusterParams;
-    boost::archive::text_iarchive ia_cluster(cluster_infile);
-    ia_cluster >> clusterParams;
-    cluster_infile.close();
-
-    runEM(rdata, suboptimalHybrid3, optimalHybrid3, params, clusterParams, true);
-
-
-   // testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
+    
    
 
 }

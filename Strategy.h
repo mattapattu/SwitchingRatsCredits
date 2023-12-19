@@ -261,12 +261,7 @@ public:
     }
 
     
-    double getPathProbMatRows()
-    {
-        return pathProbMat.n_rows;
-    }
-
-    void updatePathProbMat();
+    void updatePathProbMat(int ses);
 
     void plotPathProbs();
 

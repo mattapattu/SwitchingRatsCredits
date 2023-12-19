@@ -14,8 +14,10 @@ class RatData{
               Hybrid3 = Rcpp::as<arma::mat>(ratdata.slot("hybridModel3"));
               Hybrid4 = Rcpp::as<arma::mat>(ratdata.slot("hybridModel4"));
               Turns = Rcpp::as<arma::mat>(ratdata.slot("turnTimes"));
-              
+              sim = false; 
         }
+
+        RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_): Paths(Paths_), Hybrid3(Hybrid3_), rat(rat_), sim(sim_) {}
 
         arma::mat getPaths() const{
             return Paths;
@@ -45,6 +47,10 @@ class RatData{
             return rat;
         }
 
+        bool getSim() const {
+            return sim;
+        }
+
 
     private:
         std::string rat;
@@ -53,7 +59,8 @@ class RatData{
         arma::mat Hybrid2;
         arma::mat Hybrid3;
         arma::mat Hybrid4;
-        arma::mat Turns;    
+        arma::mat Turns;  
+        bool sim;  
 
 };
 

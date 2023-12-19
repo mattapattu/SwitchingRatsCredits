@@ -4,10 +4,11 @@ using namespace Rcpp;
 
 // using namespace Rcpp;
 
-double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& strategy, bool sim)
+double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& strategy)
 {
   arma::mat allpaths = ratdata.getPaths();
   std::string strategy_name = strategy.getName();
+  bool sim = ratdata.getSim();
   //std::cout << "strategy_name= "<< strategy_name << std::endl;
 
   //printFirst5Rows(allpaths,"allpaths");
@@ -348,7 +349,7 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
     S = S_prime;
     //trial=trial+1;
 
-    strategy.updatePathProbMat();
+    strategy.updatePathProbMat(session);
     
   }
 

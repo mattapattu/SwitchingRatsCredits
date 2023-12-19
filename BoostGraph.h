@@ -408,6 +408,63 @@ public:
         return siblings;
     }
 
+    std::vector<Edge> getOutGoingEdges(Vertex node)
+    {
+        std::vector<Edge> outgoingEdges;
+        Graph::out_edge_iterator edgeIt, edgeEnd;
+        for (tie(edgeIt, edgeEnd) = out_edges(node, graph); edgeIt != edgeEnd; ++edgeIt) {
+            outgoingEdges.push_back(*edgeIt);
+        }
+
+        return outgoingEdges;
+    }
+
+
+    // Function to compute softmax probabilities for a vector
+    std::vector<double> softmax(const std::vector<double>& values) {
+        std::vector<double> probabilities;
+        double sumExp = 0.0;
+
+        for (double value : values) {
+            sumExp += std::exp(value);
+        }
+
+        for (double value : values) {
+            probabilities.push_back(std::exp(value) / sumExp);
+        }
+
+        return probabilities;
+    }
+
+
+    // Function to sample a vertex based on softmax probabilities
+    Vertex sampleChild(Vertex parent) {
+
+        // Get the out-edges of the vertex
+        Graph::out_edge_iterator edgeIt, edgeEnd;
+        std::vector<double> edgeCredits;
+        std::vector<Vertex> children;
+
+        for (tie(edgeIt, edgeEnd) = out_edges(parent, graph); edgeIt != edgeEnd; ++edgeIt) {
+            Vertex child = target(*edgeIt, graph);
+            children.push_back(child);
+            edgeCredits.push_back(graph[child].credit);
+        }
+
+
+        // Compute the softmax probabilities of the credits
+        std::vector<double> probs = softmax(edgeCredits);
+
+        // Sample one target vertex based on the softmax probabilities
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::discrete_distribution<> dist(probs.begin(), probs.end());
+        Vertex sampled = children[dist(gen)];
+        return(sampled);
+    }
+
+
+
     void updateEdgeProbabilitiesSoftmax()
     {
         // Iterate through each node in the graph
@@ -546,35 +603,65 @@ public:
         return (turns);
     }
 
-    int getPathFromTurns(std::vector<std::string> turns)
+    int getPathFromTurns(std::vector<std::string> turns, Vertex rootNode, bool optimal)
     {
         //std::lock_guard<std::mutex> lck (mutex_);
         int path = -1;
-        if (turns == Path0)
+        if(!optimal && getNodeName(rootNode) == "I")
         {
-            path = 0;
-        }
-        else if (turns == Path1)
-        {
-            path = 1;
-        }
-        else if (turns == Path2)
-        {
-            path = 2;
-        }
-        else if (turns == Path3)
-        {
-            path = 3;
-        }
-        else if (turns == Path4)
-        {
-            path = 4;
-        }
-        else if (turns == Path5)
-        {
-            path = 5;
-        }
+            if (turns == Path0S1)
+            {
+                path = 0;
+            }
+            else if (turns == Path1S1)
+            {
+                path = 1;
+            }
+            else if (turns == Path2S1)
+            {
+                path = 2;
+            }
+            else if (turns == Path3S1)
+            {
+                path = 3;
+            }
+            else if (turns == Path4S1)
+            {
+                path = 4;
+            }
+            else if (turns == Path5S1)
+            {
+                path = 5;
+            }
 
+        }else{
+            if (turns == Path0)
+            {
+                path = 0;
+            }
+            else if (turns == Path1)
+            {
+                path = 1;
+            }
+            else if (turns == Path2)
+            {
+                path = 2;
+            }
+            else if (turns == Path3)
+            {
+                path = 3;
+            }
+            else if (turns == Path4)
+            {
+                path = 4;
+            }
+            else if (turns == Path5)
+            {
+                path = 5;
+            }
+
+        }
+        
         return (path);
     }
 

@@ -25,12 +25,13 @@ double Strategy::getTrajectoryLikelihood(const RatData& ratdata, int session)
     return lik;
 } 
 
-void Strategy::updatePathProbMat()
+void Strategy::updatePathProbMat(int ses)
 {
 
-    arma::rowvec probRow(13);
+    arma::rowvec probRow(14);
     probRow.fill(-1);
-    probRow(12) = getPathProbMatRows();
+    probRow(12) = pathProbMat.n_rows;
+    probRow(13) = ses;
 
     for (int path = 0; path < 6; path++)
     {

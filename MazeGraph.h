@@ -27,7 +27,17 @@ class MazeGraph{
             Rcpp::List rcppEdgeListS1 = turnModel.slot("edges.S1");
             Rcpp::List turnNodesS1 = turnModel.slot("turnNodes.S1");
 
-            
+            Rcpp::List rcppNodeGroups =  turnModel.slot("nodeGroups");
+
+            // for(int i=0;i<nodeGroups.size();i++)
+            // {
+            //     std::vector<int> intVector;
+            //     for (auto str : nodeGroups[i]) {
+            //         intVector.push_back(std::stoi(Rcpp::as<std::string>(str)));
+            //     }
+
+            //     nodeGroups.push_back(intVector);
+            // }
 
             
             nodeListS0 = Rcpp::as<std::vector<std::string>>(rcppNodeListS0);
@@ -216,6 +226,10 @@ class MazeGraph{
             return Path5S1;
         }
 
+        const std::vector<std::vector<int>>& getNodeGroups() const {
+            return nodeGroups;
+        }
+
 
     private:
         
@@ -248,6 +262,10 @@ class MazeGraph{
         std::vector<std::string> Path3S1;
         std::vector<std::string> Path4S1;
         std::vector<std::string> Path5S1;
+
+
+        std::vector<std::vector<int>> nodeGroups;
+
 
 
         

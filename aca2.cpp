@@ -61,7 +61,7 @@ void acaCreditUpdate(std::vector<std::string> episodeTurns, std::vector<int> epi
 
 
 
-double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& strategy, bool sim)
+double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& strategy)
 {
   arma::mat allpaths = ratdata.getPaths();
   //printFirst5Rows(allpaths,"allpaths");
@@ -120,6 +120,8 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
   arma::vec uniqSessIdx = arma::unique(sessionVec);
   
   arma::vec turnTime_method;
+
+  bool sim = ratdata.getSim();
   if (sim == 1)
   {
     turnTime_method = turnTimes.col(3);
@@ -337,7 +339,7 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       episodeTurnTimes.clear();
     }
     S = S_prime;
-    strategy.updatePathProbMat();
+    strategy.updatePathProbMat(session);
   }
   S0.decayCredits(gamma);
   S0.updateEdgeProbabilitiesSoftmax();
@@ -365,569 +367,288 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
 }
 
 
+//Not Turn models
+std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session, Strategy& strategy)
+{
+  arma::mat allpaths = ratdata.getPaths();
+  //printFirst5Rows(allpaths,"allpaths");
+  std::string strategy_name = strategy.getName();
+  arma::mat turnTimes;
+  
+  if(strategy_name == "Paths")
+  {
+    turnTimes = ratdata.getPaths();
+  }
+  else if(strategy_name == "Turns")
+  {
+    turnTimes = ratdata.getTurns();
+  }
+  else if(strategy_name == "Hybrid1")
+  {
+    turnTimes = ratdata.getHybrid1();
+  }
+  else if(strategy_name == "Hybrid2")
+  {
+    turnTimes = ratdata.getHybrid2();
+  }
+  else if(strategy_name == "aca2_Suboptimal_Hybrid3")
+  {
+    turnTimes = ratdata.getHybrid3();
+  }
+  else if(strategy_name == "aca2_Optimal_Hybrid3")
+  {
+    turnTimes = ratdata.getHybrid3();
+  }
+  else if(strategy_name == "Hybrid4")
+  {
+    turnTimes = ratdata.getHybrid4();
+  }
 
-// void updateAca2Rewards(const Rcpp::S4& ratdata, int session, Strategy& strategy, bool sim)
-// {
-//   arma::mat allpaths = Rcpp::as<arma::mat>(ratdata.slot("allpaths"));
-//   std::string strategy_name = strategy.getName();
-//   arma::mat turnTimes;
-  
-//   if(strategy_name == "Paths")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("allpaths"));
-//   }
-//   else if(strategy_name == "Turns")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("turnTimes"));
-//   }
-//   else if(strategy_name == "Hybrid1")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel1"));
-//   }
-//   else if(strategy_name == "Hybrid2")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel2"));
-//   }
-//   else if(strategy_name == "aca2_Suboptimal_Hybrid3")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel3"));
-//   }
-//   else if(strategy_name == "aca2_Optimal_Hybrid3")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel3"));
-//   }
-//   else if(strategy_name == "Hybrid4")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel4"));
-//   }
 
+  std::vector<std::string> nodeListS0 = {"E","dc1","fga1","dc1.c2h","c2ba1","a2bc1","a2bc1.c2h","fga1.a2kj","c2ba1.a2kj","a2gf","c2d"};
+  std::vector<std::string> nodeListS1 = {"I","hc1","jka1","hc1.c2d","c2ba1","a2bc1","c2h","a2kj","c2ba1.a2gf","jka1.a2gf","a2bc1.c2d"};
+
+    
+  //printFirst5Rows(turnTimes,"turnTimes");
+
+  //Rcpp::List nodeGroups = Rcpp::as<Rcpp::List>(testModel.slot("nodeGroups"));
   
-//   int episodeNb = 0; 
+  double alpha = strategy.getAlpha();
+  double gamma = strategy.getGamma();
+  std::vector<double> rewardsS0 = strategy.getRewardsS0();
+  std::vector<double> rewardsS1 = strategy.getRewardsS1();
   
+
+  int episodeNb = 0; 
  
-//   std::vector<double> mseMatrix;
-//   //int mseRowIdx = 0;
-  
-//   arma::vec allpath_actions = allpaths.col(0);
-//   arma::vec allpath_states = allpaths.col(1);
-//   arma::vec allpath_rewards = allpaths.col(2);
-//   arma::vec sessionVec = allpaths.col(4);
-//   arma::vec uniqSessIdx = arma::unique(sessionVec);
-  
-//   arma::vec turnTime_method;
-//   if (sim == 1)
-//   {
-//     turnTime_method = turnTimes.col(3);
-//   }
-//   else if (strategy_name == "Paths")
-//   {
-//     turnTime_method = turnTimes.col(3);
-//   }
-//   else
-//   {
-//     turnTime_method = turnTimes.col(5);
-//   }
-  
-//   int episode = 1;
-  
-//   BoostGraph& S0 = strategy.getStateS0();
-//   BoostGraph& S1 = strategy.getStateS1();
-
-//   int sessId = uniqSessIdx(session);
-//   //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
-//   arma::uvec sessionIdx = arma::find(sessionVec == sessId);
-//   arma::vec actions_sess = allpath_actions.elem(sessionIdx);
-//   arma::vec states_sess = allpath_states.elem(sessionIdx);
-//   arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
-  
-//   arma::uvec turnTimes_idx; 
-//   if (strategy_name == "Paths")
-//   {
-//     turnTimes_idx = arma::find(sessionVec == sessId); ;
-//   }
-//   else
-//   {
-//     turnTimes_idx = arma::find(turnTimes.col(4) == sessId); 
-//   }
-//   arma::vec turn_times_session = turnTime_method.elem(turnTimes_idx);
-//   arma::uword session_turn_count = 0;
-  
-//   int initState = 0;
-//   bool changeState = false;
-//   bool returnToInitState = false;
-//   // float avg_score = 0;
-//   bool resetVector = true;
-//   int nrow = actions_sess.n_rows;
-//   int S;
-//   if(sim == 1)
-//   {
-//     S = states_sess(0); 
-//   }
-//   else
-//   {
-//     S = states_sess(0) - 1; 
-//   }
-//   int A = 0;
-//   std::vector<std::string> episodeTurns;
-//   std::vector<int> episodeTurnStates;
-//   std::vector<double> episodeTurnTimes;
-//   std::vector<double> rewardUpdatesS0;
-//   std::vector<double> rewardUpdatesS1;
-  
-//   for (int i = 0; i < nrow; i++)
-//   {
-    
-//     if (resetVector)
-//     {
-//       initState = S;
-//       //Rcpp::Rcout <<"initState="<<initState<<std::endl;
-//       resetVector = false;
-//     }
-    
-//     //double pathReward=0.0;
-    
-//     if (sim == 1)
-//     {
-//       A = actions_sess(i);
-//     }
-//     else
-//     {
-//       A = actions_sess(i) - 1;
-//     }
-
-//     double R = rewards_sess(i);
-//     if(R > 0)
-//     {
-//       R = 5;
-//     }
-
-//     int S_prime = 0;
-//     if(i < (nrow-1))
-//     {
-//       if (sim == 1)
-//       {
-//         S_prime = states_sess(i + 1);
-//       }
-//       else
-//       {
-//         S_prime = states_sess(i + 1) - 1;
-//       }
-//     }
-    
-//     if (S_prime != initState)
-//     {
-//       changeState = true;
-//     }
-//     else if (S_prime == initState && changeState)
-//     {
-//       returnToInitState = true;
-//     }
-    
-//     BoostGraph::Vertex prevNode;
-//     BoostGraph::Vertex currNode;
-//     BoostGraph::Vertex rootNode;
-//     std::vector<double> rewardVec;
-//     BoostGraph* graph;
-//     std::vector<double> rewardsS0 = strategy.getRewardsS0();
-//     std::vector<double> rewardsS1 = strategy.getRewardsS1();
-
-//     if (S == 0 && strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("E");
-//       rewardVec = rewardsS0;
-//     }else if(S == 1 && strategy.getOptimal())
-//     {
-//       graph = &S1;
-//       rootNode = graph->findNode("I");
-//       rewardVec = rewardsS1;
-//     }else if(S == 0 && !strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("E");
-//       rewardVec = rewardsS0;
-//     }else if(S == 1 && !strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("I");
-//       rewardVec = rewardsS0;
-//     }
-//     std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
-//     int nbOfTurns = turns.size();
-
-
-//     for (int j = 0; j < nbOfTurns; j++)
-//     {
-//       std::string currTurn = turns[j]; 
-//       currNode = graph->findNode(currTurn);
-//       int nodeId = graph->getNodeId(currNode);
-//       std::vector<double> crpPosterior = strategy.getCrpPrior();
-//       if (j == (nbOfTurns - 1))
-//       {
-//         rewardVec[nodeId] += strategy.getPhi() * crpPosterior.back() *(R-rewardVec[nodeId]);
-//       }
-//       else
-//       {
-//         rewardVec[nodeId] +=  strategy.getPhi() * crpPosterior.back() *(-rewardVec[nodeId]);;
-//       }
-
-//       if (S == 0 && strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }else if(S == 1 && strategy.getOptimal())
-//       {
-//         strategy.setRewardsS1(rewardVec);
-//       }else if(S == 0 && !strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }else if(S == 1 && !strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }
-
-//       //currNode->credit = currNode->credit + 1; //Test
-//       //Rcpp::Rcout <<"currNode="<< currNode->node<<std::endl;
-//       episodeTurns.push_back(currTurn);
-//       episodeTurnStates.push_back(S);
-//       episodeTurnTimes.push_back(turn_times_session(session_turn_count));
-      
-//       BoostGraph::Edge edge;
-//       if(j==0)
-//       {
-//         edge = graph->findEdge(rootNode, currNode);
-//       }
-//       else
-//       {
-//         edge = graph->findEdge(prevNode, currNode);
-//       }
-
  
-//       //Rcpp::Rcout <<"prob_a="<< prob_a << ", pathProb=" <<pathProb <<std::endl;
-      
-//       session_turn_count++;
-//       prevNode = currNode;
-//     } 
-      
-//     //Check if episode ended
-//     if (returnToInitState || (i==nrow-1))
-//     {
-//       //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
-//       changeState = false;
-//       returnToInitState = false;   
-      
-//       episodeNb = episodeNb+1;
-           
-//       episode = episode + 1;
-//       resetVector = true;
-//       episodeTurns.clear();
-//       episodeTurnStates.clear();
-//       episodeTurnTimes.clear();
-//     }
-//     S = S_prime;
-//   }
-
-//   std::vector<double> rewardsS0 = strategy.getRewardsS0();
-//   std::vector<double> rewardsS1 = strategy.getRewardsS1();
- 
-//   std::cout << "rewardsS0: ";
-//   for (const auto& element : rewardsS0) {
-//     std::cout << element << " ";
-//   }
-//   std::cout << std::endl;
-
-//   std::cout << "rewardsS1: ";
-//   for (const auto& element : rewardsS1) {
-//     std::cout << element << " ";
-//   }
-//   std::cout << std::endl;
-
-
-//   return ;
-// }
-
-
-
-// void initializeAca2Rewards(const Rcpp::S4& ratdata, int session, Strategy& strategy, bool sim)
-// {
-//   arma::mat allpaths = Rcpp::as<arma::mat>(ratdata.slot("allpaths"));
-//   std::string strategy_name = strategy.getName();
-//   arma::mat turnTimes;
+  std::vector<double> mseMatrix;
+  //int mseRowIdx = 0;
   
-//     if(strategy_name == "Paths")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("allpaths"));
-//   }
-//   else if(strategy_name == "Turns")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("turnTimes"));
-//   }
-//   else if(strategy_name == "Hybrid1")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel1"));
-//   }
-//   else if(strategy_name == "Hybrid2")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel2"));
-//   }
-//   else if(strategy_name == "aca2_Suboptimal_Hybrid3")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel3"));
-//   }
-//   else if(strategy_name == "aca2_Optimal_Hybrid3")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel3"));
-//   }
-//   else if(strategy_name == "Hybrid4")
-//   {
-//     turnTimes = Rcpp::as<arma::mat>(ratdata.slot("hybridModel4"));
-//   }
+  arma::vec allpath_actions = allpaths.col(0);
+  arma::vec allpath_states = allpaths.col(1);
+  arma::vec allpath_rewards = allpaths.col(2);
+  arma::vec sessionVec = allpaths.col(4);
+  arma::vec uniqSessIdx = arma::unique(sessionVec);
+  
+  arma::vec turnTime_method;
+  
+  if (strategy_name == "Paths")
+  {
+    turnTime_method = turnTimes.col(3);
+  }
+  else
+  {
+    turnTime_method = turnTimes.col(5);
+  }
+  
+  int episode = 1;
+
+  arma::mat R = arma::zeros(2, 6);
+  R(0, 3) = 5;
+  R(1, 3) = 5;
+
+  BoostGraph& S0 = strategy.getStateS0();
+  BoostGraph& S1 = strategy.getStateS1();
+
+  // if(strategy.getOptimal())
+  // {
+  //   S1 = strategy.getStateS1();
+  // }
+
+  int sessId = uniqSessIdx(session);
+  //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
+  arma::uvec sessionIdx = arma::find(sessionVec == sessId);
+  arma::vec actions_sess = allpath_actions.elem(sessionIdx);
+  arma::vec states_sess = allpath_states.elem(sessionIdx);
+  arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
+  
+  arma::uvec turnTimes_idx; 
+  if (strategy_name == "Paths")
+  {
+    turnTimes_idx = arma::find(sessionVec == sessId); ;
+  }
+  else
+  {
+    turnTimes_idx = arma::find(turnTimes.col(4) == sessId); 
+  }
+  arma::vec turn_times_session = turnTime_method.elem(turnTimes_idx);
+  arma::uword session_turn_count = 0;
+
+  //std::cout <<"sessId=" << sessId << ", strategy_name= "<< strategy_name << ", sessionVec.size()=" << sessionVec.n_rows << ", turnTime_method.size()=" << turnTime_method.n_rows << ", turn_times_session.size=" << turn_times_session.n_rows << std::endl;
 
   
-//   //Rcpp::List nodeGroups = Rcpp::as<Rcpp::List>(testModel.slot("nodeGroups"));
-  
-//   int episodeNb = 0; 
-  
- 
-//   std::vector<double> mseMatrix;
-//   //int mseRowIdx = 0;
-  
-//   arma::vec allpath_actions = allpaths.col(0);
-//   arma::vec allpath_states = allpaths.col(1);
-//   arma::vec allpath_rewards = allpaths.col(2);
-//   arma::vec sessionVec = allpaths.col(4);
-//   arma::vec uniqSessIdx = arma::unique(sessionVec);
-  
-//   arma::vec turnTime_method;
-//   if (sim == 1)
-//   {
-//     turnTime_method = turnTimes.col(3);
-//   }
-//   else if (strategy_name == "Paths")
-//   {
-//     turnTime_method = turnTimes.col(3);
-//   }
-//   else
-//   {
-//     turnTime_method = turnTimes.col(5);
-//   }
-  
-//   int episode = 1;
-  
-//   BoostGraph& S0 = strategy.getStateS0();
-//   BoostGraph& S1 = strategy.getStateS1();
+  int initState = 0;
+  bool changeState = false;
+  bool returnToInitState = false;
+  double score_episode = 0;
+  // float avg_score = 0;
+  bool resetVector = true;
+  int nrow = actions_sess.n_rows;
+  int totalPaths = allpath_actions.n_rows;
 
-//   int sessId = sessionVec(session);
-//   //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
-//   arma::uvec sessionIdx = arma::find(sessionVec == sessId);
-//   arma::vec actions_sess = allpath_actions.elem(sessionIdx);
-//   arma::vec states_sess = allpath_states.elem(sessionIdx);
-//   arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
+  arma::mat generated_PathData_sess(nrow, 7);
+  arma::mat generated_TurnsData_sess((nrow * 3), 7);
+  generated_PathData_sess.fill(-1);
+  generated_TurnsData_sess.fill(-1);
+  unsigned int turnIdx = 0; // counter for turn model
+  int actionNb = 0;
+   
+   //std::cout << "Number of paths in session "<< sessId  << " = " << nrow << std::endl;
+
+  int S = states_sess(0) - 1; // start from yhe same state as the session
+  int A = 0;
+  std::vector<std::string> episodeTurns;
+  std::vector<int> episodeTurnStates;
+  std::vector<double> episodeTurnTimes;
   
-//   arma::uvec turnTimes_idx; 
-//   if (strategy_name == "Paths")
-//   {
-//     turnTimes_idx = arma::find(sessionVec == sessId); ;
-//   }
-//   else
-//   {
-//     turnTimes_idx = arma::find(turnTimes.col(4) == sessId); 
-//   }
-//   arma::vec turn_times_session = turnTime_method.elem(turnTimes_idx);
-//   arma::uword session_turn_count = 0;
-  
-//   int initState = 0;
-//   bool changeState = false;
-//   bool returnToInitState = false;
-//   // float avg_score = 0;
-//   bool resetVector = true;
-//   int nrow = actions_sess.n_rows;
-//   int S;
-//   if(sim == 1)
-//   {
-//     S = states_sess(0); 
-//   }
-//   else
-//   {
-//     S = states_sess(0) - 1; 
-//   }
-//   int A = 0;
-//   std::vector<std::string> episodeTurns;
-//   std::vector<int> episodeTurnStates;
-//   std::vector<double> episodeTurnTimes;
-//   std::vector<double> rewardUpdatesS0;
-//   std::vector<double> rewardUpdatesS1;
-  
-//   for (int i = 0; i < nrow; i++)
-//   {
+  for (int i = 0; i < nrow; i++)
+  {
+    actionNb++;
+    double pathDuration = 0;
+
+    if (resetVector)
+    {
+      initState = S;
+      //Rcpp::Rcout <<"initState="<<initState<<std::endl;
+      resetVector = false;
+    }
     
-//     if (resetVector)
-//     {
-//       initState = S;
-//       //Rcpp::Rcout <<"initState="<<initState<<std::endl;
-//       resetVector = false;
-//     }
+    //double pathReward=0.0;
     
-//     //double pathReward=0.0;
     
-//     if (sim == 1)
-//     {
-//       A = actions_sess(i);
-//     }
-//     else
-//     {
-//       A = actions_sess(i) - 1;
-//     }
+    BoostGraph::Vertex prevNode;
+    BoostGraph::Vertex currNode;
+    BoostGraph::Vertex rootNode;
+    BoostGraph* graph=nullptr;
+    std::vector<double> rewardVec;
 
-//     double R = rewards_sess(i);
-//     if(R > 0)
-//     {
-//       R = 5;
-//     }
-
-//     int S_prime = 0;
-//     if(i < (nrow-1))
-//     {
-//       if (sim == 1)
-//       {
-//         S_prime = states_sess(i + 1);
-//       }
-//       else
-//       {
-//         S_prime = states_sess(i + 1) - 1;
-//       }
-//     }
+    if (S == 0 && strategy.getOptimal())
+    {
+      graph = &S0;
+      rootNode = graph->findNode("E");
+    }else if(S == 1 && strategy.getOptimal())
+    {
+      graph = &S1;
+      rootNode = graph->findNode("I");
+    }else if(S == 0 && !strategy.getOptimal())
+    {
+      graph = &S0;
+      rootNode = graph->findNode("E");
+    }else if(S == 1 && !strategy.getOptimal())
+    {
+      graph = &S0;
+      rootNode = graph->findNode("I");
+    }
+    // std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
     
-//     if (S_prime != initState)
-//     {
-//       changeState = true;
-//     }
-//     else if (S_prime == initState && changeState)
-//     {
-//       returnToInitState = true;
-//     }
+    // generate a trajectory (Path)
+    std::vector<std::string> hybridTurns = generatePathTrajectory(strategy, graph, rootNode);
+    int A = graph->getPathFromTurns(hybridTurns, rootNode, strategy.getOptimal());
+    int nbOfTurns = hybridTurns.size();
+    int S_prime = getNextState(S,A);
+        
+    if (S_prime != initState)
+    {
+      changeState = true;
+    }
+    else if (S_prime == initState && changeState)
+    {
+      returnToInitState = true;
+    }
+
+      
+      // Based on the TurnModel durations, the durations of the testModel components 
+      // are determined.
+      
+    for(int k=0; k < hybridTurns.size(); k++ )
+    {
+      std::string node = hybridTurns[k];
+      //Decompose hybrid node to get the TurnModel nodes
+      std::vector<std::string> turnNodes  = graph->getTurnNodes(node);
+
+      BoostGraph::Vertex v = graph->findNode(node);
+      int hybridNodeId = graph->getNodeId(v);
+
+      double hybridNodeDuration = 0;
+      hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, turnIdx, totalPaths);
+      pathDuration = pathDuration + hybridNodeDuration;
+
+      generated_TurnsData_sess(turnIdx, 0) = hybridNodeId;
+      generated_TurnsData_sess(turnIdx, 1) = S;
+      generated_TurnsData_sess(turnIdx, 2) = 0;
+      generated_TurnsData_sess(turnIdx, 3) = hybridNodeDuration;
+      //Rcpp::Rcout << "Turn=" << turnName1 <<", turnDuration="<< turnTime<<std::endl;
+      generated_TurnsData_sess(turnIdx, 4) = sessId;
+      generated_TurnsData_sess(turnIdx, 5) = actionNb;
+      generated_TurnsData_sess(turnIdx, 6) = 0;
+      turnIdx++;
+      
+      episodeTurnTimes.push_back(hybridNodeDuration);
+
+    }    
     
-//     BoostGraph::Vertex prevNode;
-//     BoostGraph::Vertex currNode;
-//     BoostGraph::Vertex rootNode;
-//     std::vector<double> rewardVec;
-//     BoostGraph* graph;
-//     std::vector<double> rewardsS0 = strategy.getRewardsS0();
-//     std::vector<double> rewardsS1 = strategy.getRewardsS1();
+    //arma::mat durationMat = simulatePathTime(turnTimes, allpaths, actionNb, A, pathStages,nodeGroups);
+    
+    //Rcpp::Rcout <<"A=" << A << ", S=" << S << ", sessId=" <<sessId<< std::endl;
+    generated_PathData_sess(i, 0) = A;
+    generated_PathData_sess(i, 1) = S;
+    //Rcpp::Rcout <<"R(S, A)=" <<R(S, A)<< std::endl;
+    generated_PathData_sess(i, 2) = R(S, A);
+    generated_PathData_sess(i, 3) = pathDuration;
+    generated_PathData_sess(i, 4) = sessId;
+    generated_PathData_sess(i, 5) = actionNb;
+    
+    
+    if (R(S, A) > 0)
+    {
+      //Rcpp::Rcout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
+      generated_TurnsData_sess((turnIdx - 1), 2) = 5;
+      score_episode = score_episode + 5;
+    }
 
+    //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;
 
-//     if (S == 0 && strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("E");
-//       rewardVec = rewardsS0;
-//     }else if(S == 1 && strategy.getOptimal())
-//     {
-//       graph = &S1;
-//       rootNode = graph->findNode("I");
-//       rewardVec = rewardsS1;
-//     }else if(S == 0 && !strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("E");
-//       rewardVec = rewardsS0;
-//     }else if(S == 1 && !strategy.getOptimal())
-//     {
-//       graph = &S0;
-//       rootNode = graph->findNode("I");
-//       rewardVec = rewardsS0;
-//     }
-//     std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
-//     int nbOfTurns = turns.size();
-
-
-//     for (int j = 0; j < nbOfTurns; j++)
-//     {
-//       std::string currTurn = turns[j]; 
-//       currNode = graph->findNode(currTurn);
-//       int nodeId = graph->getNodeId(currNode);
-//       std::vector<double> crpPosterior = strategy.getCrpPrior();
-//       if (j == (nbOfTurns - 1))
-//       {
-//         rewardVec[nodeId] += strategy.getPhi() * (R-rewardVec[nodeId]);
-//       }
-//       else
-//       {
-//         rewardVec[nodeId] +=  strategy.getPhi() * (-rewardVec[nodeId]);;
-//       }
-
-//       //std::cout <<"currTurn="<< currTurn << ", R=" <<R << ", rewardVec[nodeId]=" <<rewardVec[nodeId] <<std::endl;
-
-//       if (S == 0 && strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }else if(S == 1 && strategy.getOptimal())
-//       {
-//         strategy.setRewardsS1(rewardVec);
-//       }else if(S == 0 && !strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }else if(S == 1 && !strategy.getOptimal())
-//       {
-//         strategy.setRewardsS0(rewardVec);
-//       }
-
-//       //currNode->credit = currNode->credit + 1; //Test
-//       //Rcpp::Rcout <<"currNode="<< currNode->node<<std::endl;
-//       episodeTurns.push_back(currTurn);
-//       episodeTurnStates.push_back(S);
-//       episodeTurnTimes.push_back(turn_times_session(session_turn_count));
       
-//       BoostGraph::Edge edge;
-//       if(j==0)
-//       {
-//         edge = graph->findEdge(rootNode, currNode);
-//       }
-//       else
-//       {
-//         edge = graph->findEdge(prevNode, currNode);
-//       }
-
- 
-//       //Rcpp::Rcout <<"prob_a="<< prob_a << ", pathProb=" <<pathProb <<std::endl;
+    //Check if episode ended
+    if (returnToInitState || (i==nrow-1))
+    {
+      //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
+      changeState = false;
+      returnToInitState = false;   
       
-//       session_turn_count++;
-//       prevNode = currNode;
-//     } 
+      episodeNb = episodeNb+1;
       
-//     //Check if episode ended
-//     if (returnToInitState || (i==nrow-1))
-//     {
-//       //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
-//       changeState = false;
-//       returnToInitState = false;   
+      acaCreditUpdate(episodeTurns, episodeTurnStates, episodeTurnTimes, score_episode, strategy);
+      S0.updateEdgeProbabilitiesSoftmax();
+      if(strategy.getOptimal())
+      {
+        S1.updateEdgeProbabilitiesSoftmax();
+      }
       
-//       episodeNb = episodeNb+1;
-           
-//       episode = episode + 1;
-//       resetVector = true;
-//       episodeTurns.clear();
-//       episodeTurnStates.clear();
-//       episodeTurnTimes.clear();
-//     }
-//     S = S_prime;
-//   }
+      score_episode = 0;
+      episode = episode + 1;
+      resetVector = true;
+      episodeTurns.clear();
+      episodeTurnStates.clear();
+      episodeTurnTimes.clear();
+    }
+    S = S_prime;
+    strategy.updatePathProbMat(session);
+  }
+  S0.decayCredits(gamma);
+  S0.updateEdgeProbabilitiesSoftmax();
+  if(strategy.getOptimal())
+  {
+    S1.decayCredits(gamma);
+    S1.updateEdgeProbabilitiesSoftmax();
+  }
 
-//   std::vector<double> rewardsS0 = strategy.getRewardsS0();
-//   std::vector<double> rewardsS1 = strategy.getRewardsS1();
- 
-//   std::cout << "rewardsS0: ";
-//   for (const auto& element : rewardsS0) {
-//     std::cout << element << " ";
-//   }
-//   std::cout << std::endl;
+  return std::make_pair(generated_PathData_sess, generated_TurnsData_sess);
 
-//   std::cout << "rewardsS1: ";
-//   for (const auto& element : rewardsS1) {
-//     std::cout << element << " ";
-//   }
-//   std::cout << std::endl;
+}
 
 
 
-//   return ;
-// }
+
+
