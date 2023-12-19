@@ -17,6 +17,6 @@ void printFirst5Rows(const arma::mat& matrix, std::string matname);
 std::vector<std::string> generatePathTrajectory(Strategy& strategy, BoostGraph* graph, BoostGraph::Vertex rootNode);
 int getNextState(int curr_state, int action);
 double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int state, int turnNb, int totalPaths);
-
+std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session, Strategy& strategy);
 
 #endif

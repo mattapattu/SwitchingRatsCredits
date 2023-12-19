@@ -9,6 +9,9 @@ using namespace Rcpp;
 class Strategy
 {
 public:
+
+    Strategy() {}
+
     // Constructor
     Strategy(const MazeGraph &testModel_, std::string learningRule_, double alpha_, double gamma_, double lambda_, double crpAlpha_, double phi_, double eta_, bool optimal_) : stateS0(testModel_, 0, optimal_), stateS1(testModel_, 1, optimal_)
     {

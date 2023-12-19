@@ -1,7 +1,6 @@
-#include "InverseRL.h"
+#include "InferStrategy.h"
 #include "Pagmoprob.h"
 #include "PagmoMle.h"
-#include "Simulation.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
@@ -88,7 +87,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
 
 }
 
-arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger=false)
+arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger)
 {
     std::vector<double> loglikelihoods;
     double max_posterior = 0.0;
@@ -271,7 +270,7 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
     return winningProbMat;
 }
 
-void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, std::vector<std::string>& cluster, bool logger=false)
+void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, std::vector<std::string>& cluster, bool logger)
 {
     for (const auto& strategyPtr : strategies) {
 
@@ -310,7 +309,7 @@ void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy
 }
 
 
-void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, bool logger=false)
+void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, bool logger)
 {
     for (const auto& strategyPtr : strategies) {
 
@@ -455,9 +454,6 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
 
 
 void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, const std::map<std::pair<std::string, bool>, std::vector<double>>& params ) {
-
-    
-
 
     // Open the file for reading and appending
     std::string filename_cluster = "clusterParams.txt";
@@ -662,7 +658,7 @@ void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 }
 
 
-void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug=false)
+void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -855,78 +851,4 @@ void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
     
     //return{loglikelihood};
     return;
-}
-
-
-
-
-
-int main(int argc, char* argv[]) 
-{
-    std::cout <<"Inside main" <<std::endl;
-    // Replace with the path to your Rdata file and the S4 object name
-    // std::string rdataFilePath = "/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/rat114.Rdata";
-    // std::string s4ObjectName = "ratdata";
-    RInside R;
-
-    //std::vector<std::string> rats = {"rat103", "rat106","rat112", "rat113", "rat114"};
-
-    std::string rat = argv[1];
-    std::vector<std::string> rats = {rat};
-
-    for(const std::string& ratName: rats)
-    {
-        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
-        R.parseEvalQ(cmd);                  
-        Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
-
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
-        R.parseEvalQ(cmd);                  
-        Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
-
-
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
-        R.parseEvalQ(cmd);                  
-        Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
-
-        RatData rdata(ratdata);
-        MazeGraph suboptimalHybrid3(Suboptimal_Hybrid3, false);
-        MazeGraph optimalHybrid3(Optimal_Hybrid3, true);
-    
-        // Write params to file
-        //findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
-
-        // Read the params from from rat param file, e.g rat_103.txt
-        std::string rat = rdata.getRat();
-        std::string filename = rat + ".txt";
-        std::ifstream infile(filename);
-        std::map<std::pair<std::string, bool>, std::vector<double>> params;
-        boost::archive::text_iarchive ia(infile);
-        ia >> params;
-        infile.close();
-
-
-        //Estimate cluster parameters and write to clusterParams.txt
-        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
-
-        //read clusterParams.txt to get the parameters for rat
-        std::string filename_cluster = "clusterParams.txt";
-        std::ifstream cluster_infile(filename_cluster);
-        std::map<std::string, std::vector<double>> clusterParams;
-        boost::archive::text_iarchive ia_cluster(cluster_infile);
-        ia_cluster >> clusterParams;
-        cluster_infile.close();
-
-        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, params, clusterParams, true);
-
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3);
-
-
-
-    // testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
-    }
-        
-    
-   
-
 }
