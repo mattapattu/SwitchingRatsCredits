@@ -24,6 +24,7 @@ public:
         phi = phi_;
         eta = eta_;
         averageReward = 0;
+        generatedTurnCounter = 0;
 
         std::string model = testModel_.getName();
         setName(model);
@@ -137,6 +138,16 @@ public:
     void setAverageReward(double averageReward_)
     {
         averageReward = averageReward_;
+    }
+
+    double getGeneratedTurnCounter()
+    {
+        return generatedTurnCounter;
+    }
+
+    void incrementGeneratedTurnCounter()
+    {
+        generatedTurnCounter++;
     }
 
 
@@ -291,6 +302,7 @@ private:
     double crpAlpha;
     double eta;
     double averageReward;
+    double generatedTurnCounter;
     std::string name;
     arma::mat pathProbMat;
 };

@@ -497,7 +497,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
    //std::cout << "Number of paths in session "<< sessId  << " = " << nrow << std::endl;
 
   int S = states_sess(0) - 1; // start from yhe same state as the session
-  int A = 0;
+  int A = -1;
   std::vector<std::string> episodeTurns;
   std::vector<int> episodeTurnStates;
   std::vector<double> episodeTurnTimes;
@@ -557,6 +557,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       returnToInitState = true;
     }
 
+    //std::cout << "Generated action A=" << A << ", nbOfTurns=" << nbOfTurns << ", i=" << i  << std::endl;
       
       // Based on the TurnModel durations, the durations of the testModel components 
       // are determined.
@@ -564,15 +565,16 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     for(int k=0; k < hybridTurns.size(); k++ )
     {
       std::string node = hybridTurns[k];
-      //Decompose hybrid node to get the TurnModel nodes
-      std::vector<std::string> turnNodes  = graph->getTurnNodes(node);
-
       BoostGraph::Vertex v = graph->findNode(node);
+      double nodeCredits = graph->getNodeCredits(v);
+
       int hybridNodeId = graph->getNodeId(v);
 
       double hybridNodeDuration = 0;
-      hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, turnIdx, totalPaths);
+      hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
       pathDuration = pathDuration + hybridNodeDuration;
+
+      //std::cout << "Generated action A=" << A << ", hybridNodeDuration=" << hybridNodeDuration << std::endl;
 
       generated_TurnsData_sess(turnIdx, 0) = hybridNodeId;
       generated_TurnsData_sess(turnIdx, 1) = S;
@@ -582,15 +584,18 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       generated_TurnsData_sess(turnIdx, 4) = sessId;
       generated_TurnsData_sess(turnIdx, 5) = actionNb;
       generated_TurnsData_sess(turnIdx, 6) = 0;
-      turnIdx++;
-      
-      episodeTurnTimes.push_back(hybridNodeDuration);
 
+      std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", k=" << k << ", currTurn=" << node << ", currTurnDuration=" << hybridNodeDuration << ", nodeCredits=" << nodeCredits  <<std::endl;
+      
+      episodeTurns.push_back(node);
+      episodeTurnStates.push_back(S);
+      episodeTurnTimes.push_back(hybridNodeDuration);
+      turnIdx++;
     }    
     
     //arma::mat durationMat = simulatePathTime(turnTimes, allpaths, actionNb, A, pathStages,nodeGroups);
     
-    //Rcpp::Rcout <<"A=" << A << ", S=" << S << ", sessId=" <<sessId<< std::endl;
+    //std::cout <<"A=" << A << ", S=" << S << ", sessId=" <<sessId<< std::endl;
     generated_PathData_sess(i, 0) = A;
     generated_PathData_sess(i, 1) = S;
     //Rcpp::Rcout <<"R(S, A)=" <<R(S, A)<< std::endl;
@@ -602,18 +607,18 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     
     if (R(S, A) > 0)
     {
-      //Rcpp::Rcout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
+      std::cout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
       generated_TurnsData_sess((turnIdx - 1), 2) = 5;
       score_episode = score_episode + 5;
     }
 
     //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;
 
-      
+  
     //Check if episode ended
     if (returnToInitState || (i==nrow-1))
     {
-      //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
+      std::cout <<  "Inside end episode"<<std::endl;
       changeState = false;
       returnToInitState = false;   
       
@@ -625,6 +630,13 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       {
         S1.updateEdgeProbabilitiesSoftmax();
       }
+
+      std::cout << "S0 probs:";
+      S0.printNodeProbabilities();
+      std::cout << "S1 probs:";
+      S1.printNodeProbabilities();
+
+
       
       score_episode = 0;
       episode = episode + 1;
@@ -644,6 +656,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     S1.updateEdgeProbabilitiesSoftmax();
   }
 
+  
   return std::make_pair(generated_PathData_sess, generated_TurnsData_sess);
 
 }

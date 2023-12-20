@@ -370,6 +370,41 @@ public:
         std::cout << std::endl;
     }
 
+    void printNodeProbabilities() {
+        
+        for (vertex_iterator it = vertices(graph).first; it != vertices(graph).second; ++it)
+        {
+            Vertex node = *it;
+
+            std::vector<Vertex> children;
+            Graph::out_edge_iterator ei, ei_end;
+            //double sumExponentials = 0.0;
+            std::vector<double> values;
+            for (tie(ei, ei_end) = out_edges(node, graph); ei != ei_end; ++ei) {
+                Vertex childVertex = target(*ei, graph); // Get the target vertex of the outgoing                
+                children.push_back(childVertex);
+                //sumExponentials += std::exp(graph[childVertex].credit);
+                values.push_back(graph[childVertex].credit);
+            }
+
+            
+            for (Vertex child : children)
+            {
+                // Calculate the softmax probability
+                //double softmaxProbability = std::exp(graph[child].credit) / sumExponentials;
+                double logsumexp_value = logsumexp(values);
+
+
+                // Update the probability of the edge
+                double prob = exp(graph[child].credit-logsumexp_value);
+                std::cout << graph[node].node << "-->"  << graph[child].node << ", prob=" << prob << "; ";
+
+            }
+
+        }
+        std::cout << std::endl;
+    }
+
     void printNodeEligibilityTraces() const {
         std::cout << "Node eligibility trace:\n";
         vertex_iterator vi, vi_end;
@@ -454,6 +489,16 @@ public:
 
         // Compute the softmax probabilities of the credits
         std::vector<double> probs = softmax(edgeCredits);
+
+    //    std::string parentName = getNodeName(parent);
+    //    std::cout << "edge.src="<<parentName;
+    //     for (int i=0; i < probs.size(); i++)
+    //     {
+    //         std::string dest  = getNodeName(children[i]);
+    //         std::cout << ", edge.dest=" << dest <<  ", prob=" << probs[i] << "; " ;
+    //     }
+    //     std::cout << "\n" ;
+
 
         // Sample one target vertex based on the softmax probabilities
         std::random_device rd;

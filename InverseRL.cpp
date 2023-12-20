@@ -41,7 +41,7 @@ void printFirst5Rows(const arma::mat& matrix, std::string matname) {
 }
 
 
-void updateRewardFunction(const RatData& ratdata, int session, Strategy& strategy, bool sim)
+void updateRewardFunction(const RatData& ratdata, int session, Strategy& strategy)
 {
   arma::mat allpaths = ratdata.getPaths();
   std::string strategy_name = strategy.getName();
@@ -51,6 +51,8 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
   arma::vec allpath_rewards = allpaths.col(2);
   arma::vec sessionVec = allpaths.col(4);
   arma::vec uniqSessIdx = arma::unique(sessionVec);
+
+  bool sim = ratdata.getSim();
   
   BoostGraph& S0 = strategy.getStateS0();
   BoostGraph& S1 = strategy.getStateS1();
@@ -241,7 +243,7 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
 }
 
 
-void initializeRewards(const RatData& ratdata, int session, Strategy& strategy, bool sim)
+void initializeRewards(const RatData& ratdata, int session, Strategy& strategy)
 {
   arma::mat allpaths = ratdata.getPaths();
   std::string strategy_name = strategy.getName();
@@ -251,6 +253,8 @@ void initializeRewards(const RatData& ratdata, int session, Strategy& strategy, 
   arma::vec allpath_rewards = allpaths.col(2);
   arma::vec sessionVec = allpaths.col(4);
   arma::vec uniqSessIdx = arma::unique(sessionVec);
+
+  bool sim = ratdata.getSim();
   
   
   BoostGraph& S0 = strategy.getStateS0();
@@ -476,44 +480,129 @@ int getNextState(int curr_state, int action)
   return (new_state);
 }
 
-double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int state, int turnNb, int totalPaths)
+double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int state, int session, Strategy& strategy)
 {
 
-  std::vector<int> turnStages = {0,totalPaths/4,totalPaths};
+  //std::vector<int> turnStages = {0,totalPaths/4,totalPaths};
+  std::string strategy_name = strategy.getName();
   int start = -1;
   int end = 0;
-  if(turnNb < turnStages[1])
+  arma::uvec indices = arma::find(hybridTurnTimes.col(4) > 10, 1, "first");
+
+  if(session < 10)
   {
-    start = 1;
-    end = turnStages[1] - 1;
+    start = 0;
+    end = indices(0) - 1;
   }
-  else if(turnNb >= turnStages[1])
+  else
   {
-    start = turnStages[1];
-    end = totalPaths-1;
+    start = indices(0);
+    end = hybridTurnTimes.n_rows-1;
   }
 
-  start = start-1;
-  end = end-1;
   //Rcpp::Rcout << "start=" << start << ", end=" << end << std::endl;
   
   arma::mat turnTimesMat_stage = hybridTurnTimes.rows(start,end);
-  
+  arma::vec turnDurations_stage = turnTimesMat_stage.col(5);
+
+  double turnId = hybridTurnId;
+
+  if(!strategy.getOptimal())
+  {
+    if(hybridTurnId == 1)
+    {
+      state = 0;
+      hybridTurnId = 1;
+    }else if(hybridTurnId == 2)
+    {
+      state = 0;
+      hybridTurnId = 2;
+    }else if(hybridTurnId == 3)
+    {
+      state = 0;
+      hybridTurnId = 3;
+    }else if(hybridTurnId == 4)
+    {
+      state = 0;
+      hybridTurnId = 5;
+    }else if(hybridTurnId == 5)
+    {
+      state = 0;
+      hybridTurnId = 6;
+    }else if(hybridTurnId == 6)
+    {
+      state = 0;
+      hybridTurnId = 7;
+    }else if(hybridTurnId == 7)
+    {
+      state = 1;
+      hybridTurnId = 8;
+    }else if(hybridTurnId == 9)
+    {
+      state = 1;
+      hybridTurnId = 1;
+    }else if(hybridTurnId == 10)
+    {
+      state = 1;
+      hybridTurnId = 2;
+    }else if(hybridTurnId == 11)
+    {
+      state = 1;
+      hybridTurnId = 3;
+    }
+  }
+
 
   // Get all turn ids from turnTimesMat belonging to current turnStage
   arma::uvec arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state);
   
   double hybridTurnDuration = 0;
+  
   if(arma_idx.size() > 0)
   {
-    arma::vec turnDurations_stage = turnTimesMat_stage.rows(arma_idx);
-    double mean_value = arma::mean(turnDurations_stage);
-    double std_deviation = arma::stddev(turnDurations_stage);
-    hybridTurnDuration = mean_value + std_deviation * arma::randn();
-  }else{
-    //If turn not present in rat data, set duration to a very high value to give it low credits
-    hybridTurnDuration = 50000;
+    
+    arma::vec turnDurations_stage_turnid = turnDurations_stage.rows(arma_idx);
+    double mean_value = arma::mean(turnDurations_stage_turnid);
+    double std_deviation = arma::stddev(turnDurations_stage_turnid);
+    
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    std::normal_distribution<double> distribution(mean_value, std_deviation);  // mean=0, stddev=1
+
+    hybridTurnDuration = distribution(generator);
+
   }
+  //If turn not present in rat data, set duration to a very low value to give it low credits (aca), high value otherwise
+  if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+  {
+    if(strategy_name == "aca2_Suboptimal_Hybrid3")
+    {
+      if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
+      {
+        hybridTurnDuration = 100;
+      }
+    }else{
+      if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
+      {
+        hybridTurnDuration = 100;
+      }
+    }
+  }else{
+    if(!strategy.getOptimal())
+    {
+      if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
+      {
+        hybridTurnDuration = 50000;
+      }
+    }else{
+      if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
+      {
+        hybridTurnDuration = 50000;
+      }
+    }
+  }
+    
+
   
   return(hybridTurnDuration);
 }

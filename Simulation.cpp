@@ -1,4 +1,3 @@
-#include "Simulation.h"
 #include "InferStrategy.h"
 #include "Pagmoprob.h"
 #include "PagmoMle.h"
@@ -16,7 +15,7 @@
 
 
 
-RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams)
+RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, RInside &R)
 {
         //ACA params
     double alpha_aca_subOptimal = params.find(std::make_pair("aca2", false))->second[0];
@@ -77,6 +76,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     for(int ses=0; ses < sessions; ses++)
     {
+        //std::cout << "ses= " <<  ses << std::endl;
+
         std::shared_ptr<Strategy> strategy;
         if(ses < changepoint_ses)
         {
@@ -97,8 +98,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
       
     }
 
-    RInside R;
-
+    
     R["genData"] = Rcpp::wrap(generated_PathData);
 
     // Save the matrix as RData using RInside
@@ -119,6 +119,7 @@ std::map<std::pair<std::string, bool>, std::vector<double>> findParamsWithSimDat
 
     std::map<std::pair<std::string, bool>, std::vector<double>> paramStrategies;
 
+    std::cout << "Finding params for simdata"<< std::endl;
 
     for (const auto &lr : learningRules) 
     {
@@ -369,7 +370,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 }
 
 
-void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
+void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R)
 {
     // Read the params from from rat param file, e.g rat_103.txt
     std::string rat = ratdata.getRat();
@@ -388,7 +389,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
   
-    RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams);
+    RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R);
     std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
     std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simRatParams);
 
