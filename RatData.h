@@ -17,7 +17,8 @@ class RatData{
               sim = false; 
         }
 
-        RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_): Paths(Paths_), Hybrid3(Hybrid3_), rat(rat_), sim(sim_) {}
+        RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_, std::vector<std::string> generatorStrategies_): Paths(Paths_), 
+        Hybrid3(Hybrid3_), rat(rat_), sim(sim_), generatorStrategies(generatorStrategies_) {}
 
         arma::mat getPaths() const{
             return Paths;
@@ -51,6 +52,16 @@ class RatData{
             return sim;
         }
 
+        void setGeneratorStrategies(std::vector<std::string> genStrategies)
+        {
+            generatorStrategies = genStrategies;   
+        }
+
+        std::vector<std::string> getGeneratorStrategies()
+        {
+            return generatorStrategies;
+        }
+
 
     private:
         std::string rat;
@@ -61,6 +72,7 @@ class RatData{
         arma::mat Hybrid4;
         arma::mat Turns;  
         bool sim;  
+        std::vector<std::string> generatorStrategies;
 
 };
 

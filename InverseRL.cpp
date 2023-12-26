@@ -29,6 +29,29 @@ double computeTrajectoryLik(const RatData& ratdata, int session, Strategy& strat
     return(lik);
 }
 
+std::pair<arma::mat, arma::mat> simulateTrajectory(const RatData& ratdata, int session, Strategy& strategy)
+{
+    bool debug = false;
+    std::string creditAssignment = strategy.getLearningRule();
+    //std::cout << "creditAssignment=" << creditAssignment << std::endl;
+    std::pair<arma::mat, arma::mat> simData;
+    if(creditAssignment == "aca2")
+    {
+       simData = simulateAca2(ratdata, session, strategy);
+    }
+    else if(creditAssignment == "arl")
+    {
+      simData = simulateAvgRwdQLearning(ratdata, session, strategy);
+    }
+    else if(creditAssignment == "drl")
+    {
+      simData = simulateDiscountedRwdQlearning(ratdata, session, strategy);
+    }
+
+    
+    return(simData);
+}
+
 void printFirst5Rows(const arma::mat& matrix, std::string matname) {
   std::cout << "Printing first 5 rows of <<" << matname << std::endl;
   for (int i = 0; i < 5; ++i) {
@@ -487,9 +510,10 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
   std::string strategy_name = strategy.getName();
   int start = -1;
   int end = 0;
-  arma::uvec indices = arma::find(hybridTurnTimes.col(4) > 10, 1, "first");
+  int changepoint_ses = 10; //Rough assumption that durations stabilize after 10 sessions, not related to changepoint in the EM inference.
+  arma::uvec indices = arma::find(hybridTurnTimes.col(4) > changepoint_ses, 1, "first");
 
-  if(session < 10)
+  if(session < changepoint_ses)
   {
     start = 0;
     end = indices(0) - 1;
@@ -558,49 +582,59 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
   
   double hybridTurnDuration = 0;
   
-  if(arma_idx.size() > 0)
+  if(arma_idx.size() > 3)
   {
     
     arma::vec turnDurations_stage_turnid = turnDurations_stage.rows(arma_idx);
     double mean_value = arma::mean(turnDurations_stage_turnid);
     double std_deviation = arma::stddev(turnDurations_stage_turnid);
-    
+    double lambda = 1.0 / mean_value;
+
     std::random_device rd;
     std::default_random_engine generator(rd());
-    std::normal_distribution<double> distribution(mean_value, std_deviation);  // mean=0, stddev=1
+    std::exponential_distribution<> distribution(lambda);
+  // mean=0, stddev=1
 
     hybridTurnDuration = distribution(generator);
 
-  }
-  //If turn not present in rat data, set duration to a very low value to give it low credits (aca), high value otherwise
-  if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
-  {
-    if(strategy_name == "aca2_Suboptimal_Hybrid3")
-    {
-      if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
-      {
-        hybridTurnDuration = 100;
-      }
-    }else{
-      if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
-      {
-        hybridTurnDuration = 100;
-      }
-    }
   }else{
-    if(!strategy.getOptimal())
+    if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
     {
-      if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
-      {
-        hybridTurnDuration = 50000;
-      }
+      hybridTurnDuration = 100;
     }else{
-      if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
-      {
-        hybridTurnDuration = 50000;
-      }
+      hybridTurnDuration = 50000;
     }
   }
+  
+  // //If turn not present in rat data, set duration to a very low value to give it low credits (aca), high value otherwise
+  // if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+  // {
+  //   if(strategy_name == "aca2_Suboptimal_Hybrid3")
+  //   {
+  //     if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
+  //     {
+  //       hybridTurnDuration = 100;
+  //     }
+  //   }else{
+  //     if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
+  //     {
+  //       hybridTurnDuration = 100;
+  //     }
+  //   }
+  // }else{
+  //   if(!strategy.getOptimal())
+  //   {
+  //     if(turnId == 2||turnId == 4||turnId == 5||turnId == 10)
+  //     {
+  //       hybridTurnDuration = 50000;
+  //     }
+  //   }else{
+  //     if(turnId == 2||turnId == 4||turnId == 5||turnId == 6)
+  //     {
+  //       hybridTurnDuration = 50000;
+  //     }
+  //   }
+  // }
     
 
   

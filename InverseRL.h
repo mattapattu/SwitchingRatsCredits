@@ -18,5 +18,8 @@ std::vector<std::string> generatePathTrajectory(Strategy& strategy, BoostGraph* 
 int getNextState(int curr_state, int action);
 double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int state, int session, Strategy& strategy);
 std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session, Strategy& strategy);
+std::pair<arma::mat, arma::mat> simulateAvgRwdQLearning(const RatData& ratdata, int session, Strategy& strategy);
+std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ratdata, int session, Strategy& strategy);
+std::pair<arma::mat, arma::mat> simulateTrajectory(const RatData& ratdata, int session, Strategy& strategy);
 
 #endif

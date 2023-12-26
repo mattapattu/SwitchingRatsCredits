@@ -280,7 +280,7 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       episodeTurnStates.push_back(S);
       episodeTurnTimes.push_back(turn_times_session(session_turn_count));
       
-      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
+      //std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", currTurnDuration=" << turn_times_session(session_turn_count) << ", nodeCredits=" << graph->getNodeCredits(currNode)  <<std::endl;
 
 
       BoostGraph::Edge edge;
@@ -318,7 +318,7 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     //Check if episode ended
     if (returnToInitState || (i==nrow-1))
     {
-      //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
+      //std::cout <<  "Inside end episode"<<std::endl;
       changeState = false;
       returnToInitState = false;   
       
@@ -330,6 +330,11 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       {
         S1.updateEdgeProbabilitiesSoftmax();
       }
+
+      // std::cout << "S0 credits:";
+      // S0.printNodeCredits();
+      // std::cout << "S1 credits:";
+      // S1.printNodeCredits();
       
       score_episode = 0;
       episode = episode + 1;
@@ -405,8 +410,8 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
   }
 
 
-  std::vector<std::string> nodeListS0 = {"E","dc1","fga1","dc1.c2h","c2ba1","a2bc1","a2bc1.c2h","fga1.a2kj","c2ba1.a2kj","a2gf","c2d"};
-  std::vector<std::string> nodeListS1 = {"I","hc1","jka1","hc1.c2d","c2ba1","a2bc1","c2h","a2kj","c2ba1.a2gf","jka1.a2gf","a2bc1.c2d"};
+  //std::vector<std::string> nodeListS0 = {"E","dc1","fga1","dc1.c2h","c2ba1","a2bc1","a2bc1.c2h","fga1.a2kj","c2ba1.a2kj","a2gf","c2d"};
+  //std::vector<std::string> nodeListS1 = {"I","hc1","jka1","hc1.c2d","c2ba1","a2bc1","c2h","a2kj","c2ba1.a2gf","jka1.a2gf","a2bc1.c2d"};
 
     
   //printFirst5Rows(turnTimes,"turnTimes");
@@ -415,8 +420,17 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
   
   double alpha = strategy.getAlpha();
   double gamma = strategy.getGamma();
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
+  std::vector<double> rewardsS0; 
+  std::vector<double> rewardsS1; 
+
+  if(strategy.getOptimal())
+    {
+        rewardsS0 = {0,0,0,0,0,0,0,5,0};
+        rewardsS1 = {0,0,0,0,0,0,0,0,5};
+    }else{
+        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+    }
+
   
 
   int episodeNb = 0; 
@@ -527,18 +541,22 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     {
       graph = &S0;
       rootNode = graph->findNode("E");
+      rewardVec = rewardsS0;
     }else if(S == 1 && strategy.getOptimal())
     {
       graph = &S1;
       rootNode = graph->findNode("I");
+      rewardVec = rewardsS1;
     }else if(S == 0 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("E");
+      rewardVec = rewardsS0;
     }else if(S == 1 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("I");
+      rewardVec = rewardsS0;
     }
     // std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
     
@@ -570,6 +588,8 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
       int hybridNodeId = graph->getNodeId(v);
 
+      score_episode = score_episode + rewardVec[hybridNodeId];
+
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
       pathDuration = pathDuration + hybridNodeDuration;
@@ -585,7 +605,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       generated_TurnsData_sess(turnIdx, 5) = actionNb;
       generated_TurnsData_sess(turnIdx, 6) = 0;
 
-      std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", k=" << k << ", currTurn=" << node << ", currTurnDuration=" << hybridNodeDuration << ", nodeCredits=" << nodeCredits  <<std::endl;
+      // std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", k=" << k << ", currTurn=" << node << ", currTurnDuration=" << hybridNodeDuration << ", nodeCredits=" << nodeCredits  <<std::endl;
       
       episodeTurns.push_back(node);
       episodeTurnStates.push_back(S);
@@ -607,9 +627,9 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     
     if (R(S, A) > 0)
     {
-      std::cout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
+      //std::cout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
       generated_TurnsData_sess((turnIdx - 1), 2) = 5;
-      score_episode = score_episode + 5;
+      //score_episode = score_episode + 5;
     }
 
     //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;
@@ -618,7 +638,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     //Check if episode ended
     if (returnToInitState || (i==nrow-1))
     {
-      std::cout <<  "Inside end episode"<<std::endl;
+      //std::cout <<  "Inside end episode"<<std::endl;
       changeState = false;
       returnToInitState = false;   
       
@@ -631,10 +651,20 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
         S1.updateEdgeProbabilitiesSoftmax();
       }
 
-      std::cout << "S0 probs:";
-      S0.printNodeProbabilities();
-      std::cout << "S1 probs:";
-      S1.printNodeProbabilities();
+      // std::cout << "S0 credits:";
+      // S0.printNodeCredits();
+      // std::cout << "S1 credits:";
+      // S1.printNodeCredits();
+
+      // std::cout << "S0 probs:";
+      // S0.printNodeProbabilities();
+      // std::cout << "S1 probs:";
+      // S1.printNodeProbabilities();
+
+      // std::cout << "S0 probs:";
+      // S0.printNodeProbabilities();
+      // std::cout << "S1 probs:";
+      // S1.printNodeProbabilities();
 
 
       

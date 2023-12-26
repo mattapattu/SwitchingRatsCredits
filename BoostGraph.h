@@ -10,6 +10,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <cstdlib>
+#include <stdexcept>
 //#include <mutex>
 
 
@@ -254,9 +255,14 @@ public:
     {
         for (auto vi = boost::vertices(graph); vi.first != vi.second; ++vi.first) {
             graph[*vi.first].credit += (alpha*td_err*graph[*vi.first].eligibilityTrace) ;
+            
+            if (std::isinf(graph[*vi.first].credit)) {
+                // std::cout << "Node: " << graph[*vi.first].node << " credit is infinity. Check" << std::endl;
+                throw std::runtime_error("Error infinite credit val");
+            }
+
         }
     }
-
 
 
     void setEdgeProbability(const Edge &edge, double probability)
@@ -542,19 +548,19 @@ public:
 
                 if (std::isnan(graph[edge].probability)) {
                     
-                    std::cout << "Node credits: " ;
-                    for (const double& p : values) {
-                        std::cout << p << " ";
-                    }
-                    std::cout << std::endl;
+                    // std::cout << "Node credits: " ;
+                    // for (const double& p : values) {
+                    //     std::cout << p << " ";
+                    // }
+                    // std::cout << std::endl;
 
-                    std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is nan. Check" << std::endl;
-                    std::exit(EXIT_FAILURE);
+                    // std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is nan. Check" << std::endl;
+                    throw std::runtime_error("Error nan probability");
                 }
 
                 if (std::isinf(graph[edge].probability)) {
-                    std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is infinity. Check" << std::endl;
-                    std::exit(EXIT_FAILURE);
+                    // std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is infinity. Check" << std::endl;
+                    throw std::runtime_error("Error infinite probability");
                 }
 
             }

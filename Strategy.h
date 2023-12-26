@@ -284,6 +284,11 @@ public:
         return pathProbMat;
     }
 
+    void resetPathProbMat()
+    {
+        pathProbMat.reset();
+    }
+
     
 
 private:

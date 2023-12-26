@@ -83,7 +83,7 @@ void Strategy::updatePathProbMat(int ses)
                 auto e = graph->findEdge(v1, v2);
                 double probability = exp(graph->getEdgeProbability(e));
 
-                // Rcpp::Rcout << "Edge prob=" << e.probability << std::endl;
+                //Rcpp::Rcout << "Edge src="<< turn1 << ", dest=" << turn2  << ", prob=" << probability << std::endl;
                 pathProb = probability * pathProb;
             }
 
