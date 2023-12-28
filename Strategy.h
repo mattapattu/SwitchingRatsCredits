@@ -156,6 +156,11 @@ public:
         return phi;
     }
 
+    void setPhi(double phi_)
+    {
+        phi = phi_;
+    }
+
     bool getOptimal()
     {
         return optimal;

@@ -61,33 +61,29 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
     
     double crpAlpha = v[0];
+
+    // double rS0_subopt = v[1];
+    // double rS1_subopt = v[2];
+    // double rS0_opt = v[1];
+    // double rS1_opt = v[2];
+
     double phi = v[1];
     double eta = 0;
+    
+    
+       
+    // std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_opt};
 
-    double rS0_aca = v[2];
-    double rS1_aca = v[3];
-    double rS0_arl = v[4];
-    double rS1_arl = v[5];
-    double rS0_drl = v[6];
-    double rS1_drl = v[7];
-
-    double rS0_subopt_aca = v[8];
-    double rS1_subopt_aca = v[9];
-    double rS0_subopt_arl = v[10];
-    double rS1_subopt_arl = v[11];
-    double rS0_subopt_drl = v[12];
-    double rS1_subopt_drl = v[13];
-
-    std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_aca,0};
-    std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_aca};
-    std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_arl,0};
-    std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_arl};
-    std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_drl,0};
-    std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_drl};
+    // std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_opt};
+    
+    // std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_opt};
   
-    std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_subopt_aca,rS1_subopt_aca,0,0,0,0};
-    std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_subopt_arl,rS1_subopt_arl,0,0,0,0};
-    std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_subopt_drl,rS1_subopt_drl,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
 
 
     //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
@@ -102,18 +98,26 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
     auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
-    aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
-    drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
-    arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
+    // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
+    // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
+    // arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
     
-    aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
-    aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
+    // aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
+    // aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
 
-    drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
-    drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
+    // drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
+    // drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
 
-    arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
-    arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);    
+    // arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
+    // arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);   
+
+    // aca2_Suboptimal_Hybrid3->setPhi(phi_acasub);
+    // arl_Suboptimal_Hybrid3->setPhi(phi_arlsub);
+    // drl_Suboptimal_Hybrid3->setPhi(phi_drlsub);
+    // aca2_Optimal_Hybrid3->setPhi(phi_acaopt);
+    // arl_Optimal_Hybrid3->setPhi(phi_arlopt);
+    // drl_Optimal_Hybrid3->setPhi(phi_drlopt);
+
     
     std::vector<std::shared_ptr<Strategy>> strategies;
 
@@ -141,20 +145,15 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     for(int ses=0; ses < sessions; ses++)
     {
         
-        // if(ses==0)
-        // {
-        //     initRewardVals(ratdata, ses, strategies);
-        // }
+        if(ses==0)
+        {
+            initRewardVals(ratdata, ses, strategies);
+        }
 
         estep_cluster_update(ratdata, ses, strategies, cluster, last_choice,false,allResults);
         mstep(ratdata, ses, strategies, cluster,false,allResults);      
 
     }
-
-    // for(int ses=0; ses < sessions; ses++)
-    // {
-    //     compute_marginal_likelihoods(ratdata, ses, strategies);
-    // }
 
     double marginal_lik = 0;
     for (const auto& strategyPtr : strategies) {
@@ -175,11 +174,10 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    // bounds.first={0,0};
-    // bounds.second={20,1};
+    bounds.first={0,0,};
+   bounds.second={20,1};
 
-    bounds.first={0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-   bounds.second={20,1,5,5,5,5,5,5,5,5,5,5,5,5};
     
+
     return(bounds);
   }

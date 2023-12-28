@@ -1,12 +1,18 @@
 #include "InferStrategy.h"
 #include "Pagmoprob.h"
 #include "PagmoMle.h"
+#include "PagmoMultiObjCluster.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/sade.hpp>
 #include <pagmo/algorithms/de.hpp>
 #include <pagmo/archipelago.hpp>
+#include <pagmo/algorithms/moead.hpp>
+#include <pagmo/algorithms/moead_gen.hpp>
+#include <pagmo/bfe.hpp>
+#include <pagmo/batch_evaluators/thread_bfe.hpp>
+#include <pagmo/utils/multi_objective.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -235,6 +241,7 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
 
     }else
     {
+        last_choice = "None";
         if(logger)
         {
             std::cout <<"Not adding any strategies to cluster as multiple strategies have same posterior" << std::endl; 
@@ -329,7 +336,7 @@ void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy
         if(ratdata.getSim())
         {
             sessionResults.setRewardVectorS0(strategy, rewardsS0);
-            sessionResults.setRewardVectorS0(strategy, rewardsS1);
+            sessionResults.setRewardVectorS1(strategy, rewardsS1);
         }     
     }
 
@@ -477,6 +484,156 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 
     return;
 }
+
+void findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, const std::map<std::pair<std::string, bool>, std::vector<double>>& params) {
+
+    // Open the file for reading and appending
+    std::string filename_cluster = "clusterParams.txt";
+    std::ifstream cluster_infile(filename_cluster);
+    std::map<std::string, std::vector<double>> paramClusterMap;
+    boost::archive::text_iarchive ia_cluster(cluster_infile);
+    ia_cluster >> paramClusterMap;
+    cluster_infile.close();
+
+    std::cout << "paramClusterMap: ";
+    for (const auto& entry : paramClusterMap) {
+        const std::string& key = entry.first;
+        const std::vector<double>& values = entry.second;
+
+        // Print key
+        std::cout << "Key: " << key << ", Values: ";
+
+        // Print values in the vector
+        for (double value : values) {
+            std::cout << value << " ";
+        }
+
+        std::cout << std::endl;
+    }
+
+
+    std::cout << "Initializing problem class" <<std::endl;
+    // Create a function to optimize
+    PagmoMultiObjCluster pagmoMultiObjProb(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3, params);
+    //PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
+    std::cout << "Initialized problem class" <<std::endl;
+
+    // Create a problem using Pagmo
+    problem prob{pagmoMultiObjProb};
+    //problem prob{schwefel(30)};
+    
+    std::cout << "created problem" <<std::endl;
+    // 2 - Instantiate a pagmo algorithm (self-adaptive differential
+    // evolution, 100 generations).
+
+    pagmo::thread_bfe thread_bfe;
+    pagmo::moead_gen method (10);
+    method.set_bfe(pagmo::bfe { thread_bfe } );
+    pagmo::algorithm algo = pagmo::algorithm { method };
+    pagmo::population pop { prob, thread_bfe, 28};
+   
+
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
+    }
+    
+
+    std::cout << "DONE1:"  << '\n';
+    //system("pause"); 
+
+    // auto best = pagmo::select_best_N_mo(pop.get_f(), 10);
+
+    // // Print the objective vectors of the best individuals
+    //  std::cout << "Best " << 10 << " Individuals on Pareto Front:\n";
+    // for (const auto& ind : best) {
+    //     std::cout << ind << std::endl;
+    // }
+
+
+    auto f = pop.get_f();
+    auto x = pop.get_x();
+
+    // Sort the individuals by non-domination rank and crowding distance
+    pagmo::vector_double::size_type n = pop.size();
+    std::vector<pagmo::vector_double::size_type> idx = pagmo::sort_population_mo(f);
+
+    //std::vector<double> cd = pagmo::crowding_distance(f);
+
+    double min_lik = 100000;
+    std::vector<double> dec_vec_champion;
+    // Select the first 10 individuals as the best ones
+    for (int i = 0; i < 10; i++) {
+        std::cout << "Individual " << i + 1 << ":" << std::endl;
+        double lik = std::accumulate(f[idx[i]].begin(), f[idx[i]].end(), 0.0);
+        std::cout << "Fitness: [" << f[idx[i]][0] << ", " << f[idx[i]][1] <<  ", " << f[idx[i]][2] << ", " << f[idx[i]][3] << ", " << f[idx[i]][4] << ", " << f[idx[i]][5] << "]" << ", lik=" << lik << std::endl;
+        //std::cout << "Decision vector: [" << x[idx[i]][0] << "]" << std::endl;
+        //std::cout << "Crowding distance: " << cd[idx[i]] << std::endl;
+
+        std::vector<double> dec_vec = x[idx[i]];
+
+        std::cout << "dec_vec: ";
+        for (const auto& val : dec_vec) {
+            std::cout << ", " << val ;
+        }
+
+        std::cout << std::endl;
+
+        if(lik < min_lik)
+        {
+            min_lik = lik;
+            dec_vec_champion = dec_vec;
+        }
+
+    }
+
+    // // Perform the fast non-dominated sorting
+    // auto result = pagmo::fast_non_dominated_sorting(f);
+
+    // std::vector<std::vector<pagmo::population::size_type>> fronts = std::get<0>(result);
+    // //auto crowding = std::get<1>(result);
+
+    // // Print the results
+    // for (int i = 0; i < fronts.size(); i++) {
+    //     std::cout << "Front " << i + 1 << ":" << std::endl;
+    //     for (int j = 0; j < fronts[i].size(); j++) {
+    //         std::cout << "\tIndividual " << fronts[i][j] + 1 << ":" << std::endl;
+    //         double lik = std::accumulate(f[fronts[i][j]].begin(), f[fronts[i][j]].end(), 0.0);
+    //         std::cout << "\tFitness: [" << f[fronts[i][j]][0] << ", " << f[fronts[i][j]][1] <<  ", " << f[fronts[i][j]][2] << ", " << f[fronts[i][j]][3] << ", " << f[fronts[i][j]][4] << ", " << f[fronts[i][j]][5] << "]" << ", lik=" << lik << std::endl;
+
+    //         //std::cout << "\t\tCrowding distance: " << crowding[fronts[i][j]] << std::endl;
+    //     }
+    // }
+
+
+    std::string rat = ratdata.getRat();
+     paramClusterMap[rat] = dec_vec_champion;
+
+    std::cout << "Updated paramClusterMap: ";
+    for (const auto& entry : paramClusterMap) {
+        const std::string& key = entry.first;
+        const std::vector<double>& values = entry.second;
+
+        // Print key
+        std::cout << "Key: " << key << ", Values: ";
+
+        // Print values in the vector
+        for (double value : values) {
+            std::cout << value << " ";
+        }
+
+        std::cout << std::endl;
+    }
+
+    std::ofstream file(filename_cluster);
+    boost::archive::text_oarchive oa(file);
+    oa << paramClusterMap;
+    file.close();
+    
+
+    return;
+}
+
 
 void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
 {
@@ -640,37 +797,46 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     // double lambda_drl_optimal = v[11];
 
     
-    double crpAlpha = v[0];
+   double crpAlpha = v[0];
+
+    // double rS0_subopt = v[1];
+    // double rS1_subopt = v[2];
+    // double rS0_opt = v[1];
+    // double rS1_opt = v[2];
+
     double phi = v[1];
     double eta = 0;
+    
+    // double rS0_aca = v[1];
+    // double rS1_aca = v[2];
+    // double rS0_arl = v[3];
+    // double rS1_arl = v[4];
+    // double rS0_drl = v[5];
+    // double rS1_drl = v[6];
 
-    double rS0_aca = v[2];
-    double rS1_aca = v[3];
-    double rS0_arl = v[4];
-    double rS1_arl = v[5];
-    double rS0_drl = v[6];
-    double rS1_drl = v[7];
+    // double rS0_subopt_aca = v[7];
+    // double rS1_subopt_aca = v[8];
+    // double rS0_subopt_arl = v[9];
+    // double rS1_subopt_arl = v[10];
+    // double rS0_subopt_drl = v[11];
+    // double rS1_subopt_drl = v[12];
 
-    double rS0_subopt_aca = v[8];
-    double rS1_subopt_aca = v[9];
-    double rS0_subopt_arl = v[10];
-    double rS1_subopt_arl = v[11];
-    double rS0_subopt_drl = v[12];
-    double rS1_subopt_drl = v[13];
+    
 
+    //double phi = 0; //phi is replaced by phi_aca...
 
+    // std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_opt};
 
-
-    std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_aca,0};
-    std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_aca};
-    std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_arl,0};
-    std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_arl};
-    std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_drl,0};
-    std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_drl};
+    // std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_opt};
+    
+    // std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_opt};
   
-    std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_subopt_aca,rS1_subopt_aca,0,0,0,0};
-    std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_subopt_arl,rS1_subopt_arl,0,0,0,0};
-    std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_subopt_drl,rS1_subopt_drl,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
 
 
     if(debug)
@@ -689,19 +855,26 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
     auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
-    aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
-    drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
-    arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
+    // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
+    // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
+    // arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
     
     
-    aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
-    aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
+    // aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
+    // aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
 
-    drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
-    drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
+    // drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
+    // drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
 
-    arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
-    arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);    
+    // arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
+    // arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);   
+
+    // aca2_Suboptimal_Hybrid3->setPhi(phi_acasub);
+    // arl_Suboptimal_Hybrid3->setPhi(phi_arlsub);
+    // drl_Suboptimal_Hybrid3->setPhi(phi_drlsub);
+    // aca2_Optimal_Hybrid3->setPhi(phi_acaopt);
+    // arl_Optimal_Hybrid3->setPhi(phi_arlopt);
+    // drl_Optimal_Hybrid3->setPhi(phi_drlopt); 
 
 
     std::vector<std::shared_ptr<Strategy>> strategies;
@@ -721,6 +894,7 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
 
     std::vector<std::string> cluster;
     std::string last_choice;
+    std::vector<std::string> most_likely;
     
     arma::mat probMat;
 
@@ -729,30 +903,22 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     for(int ses=0; ses < sessions; ses++)
     {
         
-        // if(ses==0)
-        // {
-        //     initRewardVals(ratdata, ses, strategies, debug);
-        // }
+        if(ses==0)
+        {
+            initRewardVals(ratdata, ses, strategies, debug);
+        }
 
         arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, allResults);
         mstep(ratdata, ses, strategies, cluster, debug, allResults);
 
         probMat = arma::join_cols(probMat, probMat_sess);
-
+        most_likely.push_back(last_choice);
     }
 
-    // for(int ses=15; ses < sessions; ses++)
-    // {
-    //     compute_marginal_likelihoods(ratdata, ses, 15,  strategies);
-    // }
-
-    // double marginal_lik = 0;
-    // for (const auto& strategyPtr : strategies) {
-    //     std::vector<double> strat_posteriors = strategyPtr->getPosteriors();
-    //     marginal_lik = marginal_lik + std::accumulate(strat_posteriors.begin(), strat_posteriors.end(), 0.0);
-    // }
-    // marginal_lik = marginal_lik* (-1);
-    // std::cout << "marginal_lik=" << marginal_lik << std::endl;
+    for(int ses=0; ses < sessions; ses++)
+    {
+        std::cout << "session " << ses << ", most_likely=" << most_likely[ses] << std::endl;
+    }
 
     arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
@@ -763,7 +929,158 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
 
     probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
 
+    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
 
+}
+
+
+void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, bool debug)
+{
+    //// rat_103
+    //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
+    
+    ////rat_114
+    //std::vector<double> v = {0.0334664, 0.351993, 0.00478871, 1.99929e-07, 0.687998, 0.380462, 9.68234e-07, 0.136651, 8.71086e-06, 0.292224, 3.95355};
+
+    //std::vector<double> v = {0.727389, 0.866576, 0.843969, 0.037089, 0.987229, 0.996802, 0.0137021, 0.815637, 0.996112, 0.0413516, 0.0373898, 0.876589, 4.63767, 4.87372};
+
+    std::string rat = ratdata.getRat();
+    std::vector<double>& v = clusterParams[rat];
+
+    double crpAlpha = v[0];
+    double phi = v[1];
+    double eta = 0;
+
+    double alpha_aca_subOptimal = v[2];
+    double gamma_aca_subOptimal = v[3];
+
+    double alpha_aca_optimal = v[4];
+    double gamma_aca_optimal = v[5];
+
+    //ARL params
+    double alpha_arl_subOptimal = v[6];
+    double beta_arl_subOptimal = 1e-7;
+    double lambda_arl_subOptimal = v[7];
+    
+    double alpha_arl_optimal = v[8];
+    double beta_arl_optimal = 1e-7;
+    double lambda_arl_optimal = v[9];
+ 
+    //DRL params
+    double alpha_drl_subOptimal = v[10];
+    double beta_drl_subOptimal = 1e-4;
+    double lambda_drl_subOptimal = v[11];
+    
+    double alpha_drl_optimal = v[12];
+    double beta_drl_optimal = 1e-4;
+    double lambda_drl_optimal = v[13];
+       
+    // std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_opt};
+
+    // std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_opt};
+    
+    // std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_opt,0};
+    // std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_opt};
+  
+    // std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
+    // std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
+
+
+    //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
+    
+    // Create instances of Strategy
+    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
+    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, crpAlpha, phi, eta, true);
+    
+    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
+    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
+
+    auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
+    auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
+
+    // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
+    // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
+    // arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
+    
+    // aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
+    // aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
+
+    // drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
+    // drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
+
+    // arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
+    // arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);   
+
+    // aca2_Suboptimal_Hybrid3->setPhi(phi_acasub);
+    // arl_Suboptimal_Hybrid3->setPhi(phi_arlsub);
+    // drl_Suboptimal_Hybrid3->setPhi(phi_drlsub);
+    // aca2_Optimal_Hybrid3->setPhi(phi_acaopt);
+    // arl_Optimal_Hybrid3->setPhi(phi_arlopt);
+    // drl_Optimal_Hybrid3->setPhi(phi_drlopt);
+
+    
+    std::vector<std::shared_ptr<Strategy>> strategies;
+
+    strategies.push_back(aca2_Suboptimal_Hybrid3);
+    strategies.push_back(aca2_Optimal_Hybrid3);
+
+    strategies.push_back(drl_Suboptimal_Hybrid3);
+    strategies.push_back(drl_Optimal_Hybrid3);
+
+    strategies.push_back(arl_Suboptimal_Hybrid3);
+    strategies.push_back(arl_Optimal_Hybrid3);
+
+    arma::mat allpaths = ratdata.getPaths();
+    arma::vec sessionVec = allpaths.col(4);
+    arma::vec uniqSessIdx = arma::unique(sessionVec);
+    int sessions = uniqSessIdx.n_elem;
+
+    std::vector<std::string> cluster;
+    std::vector<std::string> most_likely;
+    std::string last_choice;
+    
+    arma::mat probMat;
+
+    RecordResults allResults("None", {}, {}, {}, {}, {});
+
+    for(int ses=0; ses < sessions; ses++)
+    {
+        
+        if(ses==0)
+        {
+            initRewardVals(ratdata, ses, strategies, debug);
+        }
+
+        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, allResults);
+        mstep(ratdata, ses, strategies, cluster, debug, allResults);
+
+        probMat = arma::join_cols(probMat, probMat_sess);
+        most_likely.push_back(last_choice);
+    }
+
+    for(int ses=0; ses < sessions; ses++)
+    {
+        std::cout << "session " << ses << ", most_likely=" << most_likely[ses] << std::endl;
+    }
+
+    
+
+    arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
+
+    probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
 
     // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
@@ -772,9 +1089,7 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
 
-
 }
-
 
 
 void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)

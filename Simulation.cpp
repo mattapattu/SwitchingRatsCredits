@@ -391,11 +391,12 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults)
 {
 
     std::string filename = "confusionMatrix.txt";
-    std::ifstream file(filename);
+    std::ifstream confMat_file(filename);
 
     std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3"};
     std::vector<std::string> columns = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3", "None"};
-    std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
+    //std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
+    std::vector<std::vector<int>> matrix;
 
     std::vector<std::string> rownames = {"acaSubopt", "drlSubopt", "arlSubopt", "acaOpt", "drlOpt", "arlOpt"};
     std::vector<std::string> colnames = {"acaSubopt", "drlSubopt", "arlSubopt", "acaOpt", "drlOpt", "arlOpt", "None"};
@@ -412,21 +413,34 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults)
         colLabelToIndex[columns[j]] = j;
     }
 
-    if (file.is_open()) {
+    if (confMat_file.is_open()) {
+        // Skip the row header
         std::string line;
-        std::getline(file, line);
+        std::getline(confMat_file, line);
 
-        // Read the matrix elements from the file
-        for (int i = 0; i < rows.size(); i++) {
-            // Skip the first column of each line that contains the row name
-            file.ignore(std::numeric_limits<std::streamsize>::max(), ' ');
-            for (int j = 0; j < columns.size(); j++) {
-                file >> matrix[i][j]; // Read the matrix element
+        // Read the matrix
+        std::string rowHeader;
+        
+        while (std::getline(confMat_file, line)) {
+            std::istringstream rowStream(line);
+            std::vector<int> row;
+            int value;
+
+            // Skip the row header
+            rowStream >> rowHeader;
+            //std::cout << "rowHeader=" << rowHeader << std::endl;
+
+            // Read the values in the row
+            while (rowStream >> value) {
+                //std::cout << "value=" << value << std::endl;
+                row.push_back(value);
             }
+
+            matrix.push_back(row);
         }
 
-
-        file.close();
+        // Close the file
+        confMat_file.close();
     } else {
         std::cout << "File not found or could not be opened. Creating a new matrix.\n";
     }
@@ -558,7 +572,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     
     double crpAlpha = v[0];
     double phi = v[1];
-    double eta = 0;
+    double eta = v[14];
 
     double rS0_aca = v[2];
     double rS1_aca = v[3];
@@ -703,7 +717,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
 
-    for(int i=12; i < 13; i++)
+    for(int i=0; i < 12; i++)
     {
         RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R, i);
         std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);

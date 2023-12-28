@@ -56,6 +56,8 @@ int main(int argc, char* argv[])
         //Estimate cluster parameters and write to clusterParams.txt
         //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
+        //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
+
         //read clusterParams.txt to get the parameters for rat
         std::string filename_cluster = "clusterParams.txt";
         std::ifstream cluster_infile(filename_cluster);
@@ -64,12 +66,12 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, true);
+        runEM(rdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, true);
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
-
-
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        
     // testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
     }
         
