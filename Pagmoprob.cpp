@@ -14,12 +14,12 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
     //ARL params
     double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    double beta_arl_subOptimal = 1e-7;
-    double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    double lambda_arl_subOptimal = 0;
     
     double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    double beta_arl_optimal = 1e-7;
-    double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = params.find(std::make_pair("drl", false))->second[0];

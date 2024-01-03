@@ -5,6 +5,9 @@
 
 class RatData{
     public:
+
+        RatData() {}
+
         RatData(const Rcpp::S4 & ratdata){
               
               rat = Rcpp::as<std::string>(ratdata.slot("rat"));
@@ -20,8 +23,14 @@ class RatData{
         RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_, std::vector<std::string> generatorStrategies_): Paths(Paths_), 
         Hybrid3(Hybrid3_), rat(rat_), sim(sim_), generatorStrategies(generatorStrategies_) {}
 
+       
+
         arma::mat getPaths() const{
             return Paths;
+        }
+
+        void setPaths(arma::mat Paths_) {
+            Paths = Paths_;
         }
 
         arma::mat getHybrid1() const {
@@ -34,6 +43,10 @@ class RatData{
 
         arma::mat getHybrid3() const {
             return Hybrid3;
+        }
+
+        void setHybrid3(arma::mat Hybrid3_) {
+            Hybrid3 = Hybrid3_;
         }
 
         arma::mat getHybrid4() const {
@@ -61,6 +74,8 @@ class RatData{
         {
             return generatorStrategies;
         }
+
+
 
 
     private:

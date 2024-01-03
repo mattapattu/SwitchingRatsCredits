@@ -639,6 +639,7 @@ void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 {
     
     std::vector<std::string> learningRules = {"aca2","arl", "drl" };
+    //std::vector<std::string> learningRules = {"arl"};
     std::vector<bool> mazeModels = {true, false };
 
     std::map<std::pair<std::string, bool>, std::vector<double>> paramStrategies;
@@ -748,12 +749,12 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
 
     //ARL params
     double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    double beta_arl_subOptimal = 1e-7;
-    double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    double lambda_arl_subOptimal = 0;
     
     double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    double beta_arl_optimal = 1e-7;
-    double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = params.find(std::make_pair("drl", false))->second[0];
@@ -797,15 +798,14 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     // double lambda_drl_optimal = v[11];
 
     
-   double crpAlpha = v[0];
+    double crpAlpha = v[0];
+    double phi = v[1];
+    double eta = 0;
 
     // double rS0_subopt = v[1];
     // double rS1_subopt = v[2];
     // double rS0_opt = v[1];
     // double rS1_opt = v[2];
-
-    double phi = v[1];
-    double eta = 0;
     
     // double rS0_aca = v[1];
     // double rS1_aca = v[2];
@@ -964,12 +964,12 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
 
     //ARL params
     double alpha_arl_subOptimal = v[6];
-    double beta_arl_subOptimal = 1e-7;
-    double lambda_arl_subOptimal = v[7];
+    double beta_arl_subOptimal = v[7];
+    double lambda_arl_subOptimal = 0;
     
     double alpha_arl_optimal = v[8];
-    double beta_arl_optimal = 1e-7;
-    double lambda_arl_optimal = v[9];
+    double beta_arl_optimal = v[9];
+    double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = v[10];
@@ -1094,29 +1094,29 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
 
 void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
 {
-    std::vector<double> v = {0.0262, 1.17e-4};
+    std::vector<double> v = {4.43e-2, 4.71e-6};
     double alpha = v[0];
-    double gamma = 0;
+    double gamma = v[1];
     double lambda = 0;
 
     double crpAlpha = 0;
     double phi = 0;
     double eta = 0;
-    Strategy strategy(optimalHybrid3,"drl",alpha, gamma, lambda, crpAlpha, phi, eta, true);
+    Strategy strategy(optimalHybrid3,"arl",alpha, gamma, lambda, crpAlpha, phi, eta, true);
     std::cout << "strategy=" << strategy.getName() <<std::endl;    
 
     
-    if(strategy.getName() == "aca2_Suboptimal_Hybrid3" || strategy.getName() == "aca2_Optimal_Hybrid3")
-    {
-        gamma = v[1];
-        lambda = 0;
+    // if(strategy.getName() == "aca2_Suboptimal_Hybrid3" || strategy.getName() == "aca2_Optimal_Hybrid3")
+    // {
+    //     gamma = v[1];
+    //     lambda = 0;
 
-    }else
-    {
-        // gamma = 1e-7;
-        // lambda = v[1];
-        gamma = v[1];
-    }
+    // }else
+    // {
+    //     // gamma = 1e-7;
+    //     // lambda = v[1];
+    //     gamma = v[1];
+    // }
 
     std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
     std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
@@ -1135,7 +1135,7 @@ void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 
     double loglikelihood = 0;
 
-    for(int ses=0; ses < 10; ses++)
+    for(int ses=0; ses < sessions; ses++)
     {
         
         double log_likelihood_ses = strategy.getTrajectoryLikelihood(ratdata, ses); 

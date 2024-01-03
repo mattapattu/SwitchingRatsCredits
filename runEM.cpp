@@ -16,10 +16,10 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    //std::vector<std::string> rats = {"rat103", "rat106","rat112", "rat113", "rat114"};
+    std::vector<std::string> rats = {"rat112", "rat113"};
 
-    std::string rat = argv[1];
-    std::vector<std::string> rats = {rat};
+    // std::string rat = argv[1];
+    // std::vector<std::string> rats = {rat};
 
     for(const std::string& ratName: rats)
     {
@@ -70,9 +70,9 @@ int main(int argc, char* argv[])
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
-        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
         
-    // testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
+        //testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
     }
         
     

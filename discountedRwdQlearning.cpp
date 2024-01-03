@@ -492,7 +492,7 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       rewardsS1 = {0,0,0,0,0,0,0,0,5};
 
   }else{
-      rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+      rewardsS0 = {0,0,0,0,0,0,5,5,0,0,0,0};
       //s0rewards = {0,0,0,0,0,0,5,5,0,0,0,0};
   }
   double previous_turntime = 0;

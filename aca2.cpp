@@ -144,7 +144,15 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
   // {
   //   S1 = strategy.getStateS1();
   // }
+  // std::cout << "Inside getAca2SessionLikelihood" <<", strategy=" << strategy.getName() <<", session=" << session << ", uniqSessIdx.size=" << uniqSessIdx.size() << std::endl;
+  
+  // std::cout << "uniqSessIdx:\n";
+  // for (arma::uword i = 0; i < uniqSessIdx.n_elem; ++i) {
+  //     std::cout << uniqSessIdx(i) << " ";
+  // }
+  // std::cout << std::endl;
 
+  int uniqSessIdx_size = uniqSessIdx.size();
   int sessId = uniqSessIdx(session);
   //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
   arma::uvec sessionIdx = arma::find(sessionVec == sessId);
@@ -428,7 +436,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
         rewardsS0 = {0,0,0,0,0,0,0,5,0};
         rewardsS1 = {0,0,0,0,0,0,0,0,5};
     }else{
-        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+        rewardsS0 = {0,0,0,0,0,0,5,5,0,0,0,0};
     }
 
   
@@ -443,7 +451,16 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
   arma::vec allpath_states = allpaths.col(1);
   arma::vec allpath_rewards = allpaths.col(2);
   arma::vec sessionVec = allpaths.col(4);
+
+  // std::cout << "sessionVec Elements:\n";
+  // for (arma::uword i = 0; i < sessionVec.n_elem; ++i) {
+  //     std::cout << sessionVec(i) << " ";
+  // }
+
   arma::vec uniqSessIdx = arma::unique(sessionVec);
+
+  //std::cout << "strategy=" << strategy.getName() <<", session=" << session << ", uniqSessIdx.size=" << uniqSessIdx.size() << std::endl;
+
   
   arma::vec turnTime_method;
   

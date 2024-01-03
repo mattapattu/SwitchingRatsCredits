@@ -584,6 +584,8 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
   
   if(arma_idx.size() < 3)
   {
+    //std::cout << "hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
+
     if(hybridTurnId == 2 && state == 0){
 
       hybridTurnId = 8;
@@ -595,11 +597,13 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
 
       hybridTurnId = 7;
 
-    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 0)
+    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 1)
     {
       hybridTurnId = 3;
     } 
+    
     arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state); 
+    //std::cout << "New hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
   }
   // else{
   //   // if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
