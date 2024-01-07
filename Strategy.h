@@ -208,11 +208,23 @@ public:
         return stateS0;
     }
 
+    void setStateS0Credits(std::vector<double> v)
+    {
+        stateS0.setVertexCredits(v);
+    }
+
     BoostGraph& getStateS1()
     {
         return stateS1;
     }
+
+    void setStateS1Credits(std::vector<double> v)
+    {
+        stateS1.setVertexCredits(v);
+    }
+
     
+
 
     void setCrpPosterior(double crp, int t)
     {

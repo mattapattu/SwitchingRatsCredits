@@ -270,6 +270,16 @@ public:
         graph[edge].probability = probability;
     }
 
+    void setVertexCredits(const std::vector<double> &creditVector) {
+        // Iterate through the vertices
+        for (auto vd = boost::vertices(graph).first; vd != boost::vertices(graph).second; ++vd) {
+            // Access the vertex descriptor and properties
+            Vertex vertex = *vd;
+            graph[vertex].credit = creditVector[graph[vertex].node_id];         
+        }
+    }
+
+
     Vertex findParent(const Vertex &node)
     {
         // Iterate through the vertices to find the parent

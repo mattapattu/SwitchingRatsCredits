@@ -638,8 +638,8 @@ void findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptim
 void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
 {
     
-    std::vector<std::string> learningRules = {"aca2","arl", "drl" };
-    //std::vector<std::string> learningRules = {"arl"};
+    //std::vector<std::string> learningRules = {"aca2","arl", "drl" };
+    std::vector<std::string> learningRules = {"aca2","drl"};
     std::vector<bool> mazeModels = {true, false };
 
     std::map<std::pair<std::string, bool>, std::vector<double>> paramStrategies;
@@ -747,14 +747,15 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     double alpha_aca_optimal = params.find(std::make_pair("aca2", true))->second[0];
     double gamma_aca_optimal = params.find(std::make_pair("aca2", true))->second[1];
 
+    // COMMENTING OUT ARL
     //ARL params
-    double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    double lambda_arl_subOptimal = 0;
+    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
+    // double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    // double lambda_arl_subOptimal = 0;
     
-    double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
-    double lambda_arl_optimal = 0;
+    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
+    // double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    // double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = params.find(std::make_pair("drl", false))->second[0];
@@ -852,8 +853,9 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
     auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
 
-    auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
+    // COMMENTING OUT ARL
+    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
+    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
     // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
     // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
@@ -884,8 +886,9 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     strategies.push_back(drl_Suboptimal_Hybrid3);
     strategies.push_back(drl_Optimal_Hybrid3);
 
-    strategies.push_back(arl_Suboptimal_Hybrid3);
-    strategies.push_back(arl_Optimal_Hybrid3);
+    // COMMENTING OUT ARL
+    // strategies.push_back(arl_Suboptimal_Hybrid3);
+    // strategies.push_back(arl_Optimal_Hybrid3);
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -924,8 +927,10 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
     arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
-    arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
+    
+    // COMMENTING OUT ARL
+    // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
+    // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
     probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
 
@@ -962,14 +967,15 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
     double alpha_aca_optimal = v[4];
     double gamma_aca_optimal = v[5];
 
+    // COMMENTING OUT ARL
     //ARL params
-    double alpha_arl_subOptimal = v[6];
-    double beta_arl_subOptimal = v[7];
-    double lambda_arl_subOptimal = 0;
+    // double alpha_arl_subOptimal = v[6];
+    // double beta_arl_subOptimal = v[7];
+    // double lambda_arl_subOptimal = 0;
     
-    double alpha_arl_optimal = v[8];
-    double beta_arl_optimal = v[9];
-    double lambda_arl_optimal = 0;
+    // double alpha_arl_optimal = v[8];
+    // double beta_arl_optimal = v[9];
+    // double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = v[10];
@@ -1003,8 +1009,9 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
     auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
     auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
 
-    auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
+    // COMMENTING OUT ARL
+    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
+    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
     // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
     // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
@@ -1035,8 +1042,9 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
     strategies.push_back(drl_Suboptimal_Hybrid3);
     strategies.push_back(drl_Optimal_Hybrid3);
 
-    strategies.push_back(arl_Suboptimal_Hybrid3);
-    strategies.push_back(arl_Optimal_Hybrid3);
+    // COMMENTING OUT ARL
+    // strategies.push_back(arl_Suboptimal_Hybrid3);
+    // strategies.push_back(arl_Optimal_Hybrid3);
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -1077,8 +1085,10 @@ void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHy
     arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
     arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
-    arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
+    
+    // COMMENTING OUT ARL
+    // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
+    // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
     probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
 

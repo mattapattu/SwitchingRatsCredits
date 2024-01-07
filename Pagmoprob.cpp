@@ -12,14 +12,15 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     double alpha_aca_optimal = params.find(std::make_pair("aca2", true))->second[0];
     double gamma_aca_optimal = params.find(std::make_pair("aca2", true))->second[1];
 
+    // COMMENTING OUT ARL
     //ARL params
-    double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    double lambda_arl_subOptimal = 0;
+    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
+    // double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
+    // double lambda_arl_subOptimal = 0;
     
-    double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
-    double lambda_arl_optimal = 0;
+    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
+    // double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    // double lambda_arl_optimal = 0;
  
     //DRL params
     double alpha_drl_subOptimal = params.find(std::make_pair("drl", false))->second[0];
@@ -95,8 +96,9 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
     auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
 
-    auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
+    // COMMENTING OUT ARL
+    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
+    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
     // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
     // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
@@ -127,8 +129,10 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     strategies.push_back(drl_Suboptimal_Hybrid3);
     strategies.push_back(drl_Optimal_Hybrid3);
 
-    strategies.push_back(arl_Suboptimal_Hybrid3);
-    strategies.push_back(arl_Optimal_Hybrid3);
+    // COMMENTING OUT ARL
+
+    // strategies.push_back(arl_Suboptimal_Hybrid3);
+    // strategies.push_back(arl_Optimal_Hybrid3);
 
 
 

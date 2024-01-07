@@ -507,7 +507,7 @@ std::pair<arma::mat, arma::mat> simulateAvgRwdQLearning(const RatData& ratdata, 
       rewardsS0 = {0,0,0,0,0,0,0,5,0};
       rewardsS1 = {0,0,0,0,0,0,0,0,5};
   }else{
-      rewardsS0 = {0,0,0,0,0,0,5,5,0,0,0,0};
+      rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
   }
 
   std::map<std::pair<BoostGraph::Vertex, int>, double> eligibilityTraces;

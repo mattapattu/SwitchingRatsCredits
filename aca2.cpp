@@ -103,6 +103,7 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
   
   double alpha = strategy.getAlpha();
   double gamma = strategy.getGamma();
+
   std::vector<double> rewardsS0 = strategy.getRewardsS0();
   std::vector<double> rewardsS1 = strategy.getRewardsS1();
   
@@ -428,6 +429,9 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
   
   double alpha = strategy.getAlpha();
   double gamma = strategy.getGamma();
+
+  //std::cout << strategy.getName() << ", session=" << session << ", alpha=" <<alpha << ", gamma=" <<gamma << std::endl;
+
   std::vector<double> rewardsS0; 
   std::vector<double> rewardsS1; 
 
@@ -436,7 +440,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
         rewardsS0 = {0,0,0,0,0,0,0,5,0};
         rewardsS1 = {0,0,0,0,0,0,0,0,5};
     }else{
-        rewardsS0 = {0,0,0,0,0,0,5,5,0,0,0,0};
+        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
     }
 
   
@@ -605,7 +609,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
       int hybridNodeId = graph->getNodeId(v);
 
-      score_episode = score_episode + rewardVec[hybridNodeId];
+      //score_episode = score_episode + rewardVec[hybridNodeId];
 
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
@@ -622,7 +626,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       generated_TurnsData_sess(turnIdx, 5) = actionNb;
       generated_TurnsData_sess(turnIdx, 6) = 0;
 
-      // std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", k=" << k << ", currTurn=" << node << ", currTurnDuration=" << hybridNodeDuration << ", nodeCredits=" << nodeCredits  <<std::endl;
+      //std::cout << "S=" <<S << ", A=" << A << ", ses="<< session << ", i=" << i << ", k=" << k << ", currTurn=" << node << ", currTurnDuration=" << hybridNodeDuration << ", nodeCredits=" << nodeCredits  <<std::endl;
       
       episodeTurns.push_back(node);
       episodeTurnStates.push_back(S);
@@ -646,7 +650,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     {
       //std::cout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
       generated_TurnsData_sess((turnIdx - 1), 2) = 5;
-      //score_episode = score_episode + 5;
+      score_episode = score_episode + 5;
     }
 
     //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;
@@ -655,7 +659,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     //Check if episode ended
     if (returnToInitState || (i==nrow-1))
     {
-      //std::cout <<  "Inside end episode"<<std::endl;
+      // std::cout <<  "Episode end, score_episode=" << score_episode <<std::endl;
       changeState = false;
       returnToInitState = false;   
       

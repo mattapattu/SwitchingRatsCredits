@@ -582,29 +582,35 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
   
   double hybridTurnDuration = 0;
   
-  if(arma_idx.size() < 3)
-  {
-    //std::cout << "hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
+  // if(arma_idx.size() < 3)
+  // {
+  //   //std::cout << "hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
 
-    if(hybridTurnId == 2 && state == 0){
+  //   if(hybridTurnId == 2 && state == 0){
 
-      hybridTurnId = 8;
+  //     hybridTurnId = 8;
 
-    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 0)
-    {
-      hybridTurnId = 3;
-    }else if(hybridTurnId == 2 && state == 1){
+  //   }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 0)
+  //   {
+  //     hybridTurnId = 3;
+  //   }else if(hybridTurnId == 2 && state == 1){
 
-      hybridTurnId = 7;
+  //     hybridTurnId = 7;
 
-    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 1)
-    {
-      hybridTurnId = 3;
-    } 
+  //   }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 1)
+  //   {
+  //     hybridTurnId = 3;
+  //   }else if((hybridTurnId == 8) && state == 0) // special case rat_113
+  //   {
+  //     hybridTurnId = 7;
+  //   }
     
-    arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state); 
-    //std::cout << "New hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
-  }
+  //   arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state); 
+  //   //std::cout << "New hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
+  // }
+
+
+
   // else{
   //   // if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
   //   // {
@@ -615,7 +621,58 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
     
   // }
 
+  if(arma_idx.size() < 5)
+  {
+    //std::cout << "hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
 
+    if(hybridTurnId == 2 && state == 0){
+
+      //hybridTurnId = 7;
+      if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+      {
+        hybridTurnDuration = 100;
+      }else{
+        hybridTurnDuration = 50000;
+      }
+
+
+    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 0)
+    {
+      //hybridTurnId = 3;
+      if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+      {
+        hybridTurnDuration = 100;
+      }else{
+        hybridTurnDuration = 50000;
+      }
+    }else if(hybridTurnId == 2 && state == 1){
+
+      //hybridTurnId = 7;
+      if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+      {
+        hybridTurnDuration = 100;
+      }else{
+        hybridTurnDuration = 50000;
+      }
+
+    }else if((hybridTurnId == 4 || hybridTurnId == 5|| hybridTurnId == 6 ) && state == 1)
+    {
+      //hybridTurnId = 3;
+      if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
+      {
+        hybridTurnDuration = 100;
+      }else{
+        hybridTurnDuration = 50000;
+      }
+    }else if((hybridTurnId == 8) && state == 0) // special case rat_113
+    {
+      //hybridTurnId = 7;
+      hybridTurnDuration = 4000; //update later
+    }
+    
+    //arma_idx = arma::find(turnTimesMat_stage.col(3) == hybridTurnId && turnTimesMat_stage.col(2) == state); 
+    //std::cout << "New hybridTurnId=" << hybridTurnId << ", state=" << state << ", arma_idx.size()=" << arma_idx.size() << std::endl;
+  }else{
     arma::vec turnDurations_stage_turnid = turnDurations_stage.rows(arma_idx);
     double mean_value = arma::mean(turnDurations_stage_turnid);
     double std_deviation = arma::stddev(turnDurations_stage_turnid);
@@ -628,6 +685,10 @@ double simulateTurnDuration(arma::mat hybridTurnTimes, int hybridTurnId, int sta
 
     hybridTurnDuration = distribution(generator);
 
+  }
+
+
+    
   
   // //If turn not present in rat data, set duration to a very low value to give it low credits (aca), high value otherwise
   // if(strategy_name == "aca2_Suboptimal_Hybrid3" || strategy_name == "aca2_Optimal_Hybrid3")
