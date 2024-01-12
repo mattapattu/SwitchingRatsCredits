@@ -1,7 +1,6 @@
 
 #include "Strategy.h"
 #include "InverseRL.h"
-#include "matplotlibcpp.h"
 
 
 
@@ -95,47 +94,5 @@ void Strategy::updatePathProbMat(int ses)
     return;
 }
 
-
-void Strategy::plotPathProbs()
-{
-
-    namespace plt = matplotlibcpp;
-
-    arma::uvec selectedColumnsIndices = {0, 3, 4, 6, 9, 10};
-    arma::mat selectedColumns = pathProbMat.cols(selectedColumnsIndices);
-
-    // Extract column 13 for the x-axis
-    arma::vec xAxis = pathProbMat.col(12);
-
-    // Convert Armadillo matrices to std::vector for plotting
-    std::vector<double> xData = arma::conv_to<std::vector<double>>::from(xAxis);
-
-    std::vector<std::string> columnLabels = {"Path1, S0", "Path4, S0", "Path5, S0", "Path1, S1", "Path4, S1", "Path5, S1"};
-
-    // Plot each selected column against the x-axis
-    for (size_t i = 0; i < selectedColumns.n_cols; ++i)
-    {
-        std::vector<double> yData = arma::conv_to<std::vector<double>>::from(selectedColumns.col(i));
-
-        // Plot the data
-        plt::plot(xData, yData);
-    }
-
-    // Add labels and legend
-    plt::xlabel("Column 13");
-    plt::ylabel("Selected Columns");
-    plt::legend();
-
-    // Show the plot
-    plt::show();
-
-    // std::vector<double> y = { 1, 3, 2, 4 };
-    // plt::plot(y);
-
-    // plt::show();
-
-
-    return;
-}
 
 

@@ -1,10 +1,10 @@
 
 CXX = g++
 CXXFLAGS = -g -std=gnu++17
-LIBRARIES = -lpagmo -lboost_serialization -ltbb -pthread -lR -lRInside  -lpython3.10
-INCLUDES = -I /home/mattapattu/.local/include -I"/usr/share/R/include" -I"/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/Rcpp/include" -I"/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RcppArmadillo/include" -I"/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RInside/include" -I"/usr/include/python3.10" -I"/usr/lib/python3/dist-packages/numpy/core/include"
-LIB_PATHS = -L /home/mattapattu/.local/lib -L/usr/lib/R/lib -L"/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RInside/lib"
-RPATH = -Wl,-R/home/mattapattu/.local/lib -Wl,-rpath,/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RInside/lib
+LIBRARIES = -lpagmo -lboost_serialization -ltbb -pthread -lR -lRInside 
+INCLUDES = -I /home/amoongat/.local/include -I"/usr/include/R" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/Rcpp/include" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/RcppArmadillo/include" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/RInside/include" -I"/usr/include/python3.10" -I"/usr/lib/python3/dist-packages/numpy/core/include" -I"/home/amoongat/pagmo/boost-ver/include"
+LIB_PATHS = -L /home/amoongat/.local/lib64 -L/usr/lib64/R/lib -L"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/RInside/lib" -L"/home/amoongat/pagmo/boost-ver/lib" -L"/tmp/my_installed_onetbb/lib64"
+RPATH = -Wl,-R/home/amoongat/.local/lib64 -Wl,-rpath,/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/Rcpp/RInside/lib
 
 SRC =  InverseRL.cpp Strategy.cpp aca2.cpp discountedRwdQlearning.cpp avgRewardQLearning.cpp Pagmoprob.cpp PagmoMle.cpp PagmoMultiObjCluster.cpp InferStrategy.cpp Simulation.cpp runEM.cpp
 TARGET = inverseRL
