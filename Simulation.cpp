@@ -175,6 +175,57 @@ bool check_path5(arma::mat data) {
 }
 
 
+bool checkConsecutiveThreshold(arma::mat data, double threshold, int consecutiveCount, int changepoint) {
+
+    arma::mat dataS0 = data.rows(find(data.col(1) == 0));
+    arma::mat dataS1 = data.rows(find(data.col(1) == 1));
+  
+    arma::vec ema0 = ema_rewards(dataS0, 0);
+    arma::vec ema1 = ema_rewards(dataS1, 1);
+
+    bool S0condition = false;
+    bool S1condition = false;
+
+    int consecutiveRows = 0;
+
+    // ema0 = ema0.subvec(changepoint, ema0.n_elem-1);
+    // ema1 = ema1.subvec(changepoint, ema1.n_elem-1);
+    
+    for (unsigned int i = changepoint; i < ema0.n_elem; ++i) {
+        if (ema0(i) < threshold) {
+            consecutiveRows++;
+            if (consecutiveRows >= consecutiveCount) {
+                S0condition = true;
+                break; // Exit loop if condition is met
+            }
+        } else {
+            consecutiveRows = 0; // Reset consecutive count if the condition is not met
+        }
+    }
+
+
+    consecutiveRows = 0;
+
+    for (unsigned int i = changepoint; i < ema1.n_elem; ++i) {
+        if (ema1(i) < threshold) {
+            consecutiveRows++;
+            if (consecutiveRows >= consecutiveCount) {
+                S1condition = true;
+                break; // Exit loop if condition is met
+            }
+        } else {
+            consecutiveRows = 0; // Reset consecutive count if the condition is not met
+        }
+    }
+
+    if(S0condition || S1condition)
+    {
+        return true;
+    }
+
+    // No consecutive rows meeting the condition
+    return false;
+}
 
 
 
@@ -228,12 +279,23 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     int sessions = uniqSessIdx.n_elem;
 
 
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    //std::srand(static_cast<unsigned>(std::time(nullptr)));
 
+    int start = -1;
+    int end = -1;
 
+    if(rat == "rat_106")
+    {
+        start = 4;
+        end = 6;
+    }else
+    {
+        start = 8;
+        end = 12;
+    }    
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distribution(5,6);
+    std::uniform_int_distribution<int> distribution(4,6);
     int changepoint_ses = distribution(gen);
     //int changepoint_ses = 50;
 
@@ -255,18 +317,19 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
 
+    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
+
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
     
-    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
     //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
     
     //strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-
     //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
     //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
     //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
@@ -302,16 +365,39 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     {
         while(!endLoop)
         {
-            std::srand(static_cast<unsigned>(std::time(nullptr)));
+            //std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+            std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
+
+            //std::vector<double> creditsS0_Subopt = {0,0,0,0,0,0,0,0,0,0,0,0};
+            std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
+            std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
+
+            std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
+            std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
+
+            trueStrategy1->setRewardsS0(s0rewards);
+            trueStrategy1->setRewardsS1(s1rewards);
 
             for(int ses=0; ses < sessions; ses++)
             {
                 strategy = randomPair.first;
                 trueGenStrategies.push_back(strategy->getName());
 
+                strategy->setStateS0Credits(creditsS0_Opt);
+                strategy->setStateS1Credits(creditsS1_Opt);
+
+
                 std::pair<arma::mat, arma::mat> simData = simulateTrajectory(ratdata, ses, *strategy);
                 arma::mat generated_PathData_sess = simData.first;
                 arma::mat generated_TurnsData_sess = simData.second;
+
+                trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
+                
+                //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
+                
+                creditsS0_Opt =  trueStrategy1->getS0Credits(); 
+                creditsS1_Opt =  trueStrategy1->getS1Credits(); 
 
                 generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
                 generated_TurnsData = arma::join_cols(generated_TurnsData, generated_TurnsData_sess);
@@ -344,18 +430,15 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             }
 
             loopCounter++;
-            if(loopCounter > 500)
+            if(loopCounter > 50)
             {
-                std::cout << "Loop counter reached 500 simulations:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+                std::cout << "Loop counter reached 50 simulations:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
                 break;
             }
         }
     
-    }else
+    }else //Generate switching simulations
     {
-        std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,0};
-        randomPair.first->setStateS0Credits(initCreditsS0);
-
         // std::vector<double> initCreditsS0Opt = {0,0,0,1.5,0,0,1.5,0};
         // std::vector<double> initCreditsS1Opt = {0,0,0,1.5,0,0,0,1.5};
         // randomPair.second->setStateS0Credits(initCreditsS0Opt);
@@ -363,19 +446,54 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
         while(!endLoop)
         {
-            std::srand(static_cast<unsigned>(std::time(nullptr)));
+            //std::srand(static_cast<unsigned>(std::time(nullptr)));
+            std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,0};
+            randomPair.first->setStateS0Credits(initCreditsS0);
+
+
+            
+            std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
+            std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
+
+            //std::vector<double> creditsS0_Subopt = {0,0,0,0,0,0,0,0,0,0,0,0};
+            std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
+            std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
+
+            std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
+            std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
+
+            trueStrategy2->setRewardsS0(s0rewards);
+            trueStrategy2->setRewardsS1(s1rewards);
+
+            std::vector<double> s0rewardsSubOpt = {0,0,0,0,0,0,5,5,0,0,0,0};
+            trueStrategy1->setRewardsS0(s0rewardsSubOpt);
+
+
 
             for(int ses=0; ses < sessions; ses++)
             {
                 std::pair<arma::mat, arma::mat> simData;
                 arma::mat generated_PathData_sess;
                 arma::mat generated_TurnsData_sess;
-                std::shared_ptr<Strategy> randomPair_first_bkp = std::make_shared<Strategy>(*randomPair.first);
+                // std::shared_ptr<Strategy> randomPair_first_bkp = std::make_shared<Strategy>(*randomPair.first);
+                // std::shared_ptr<Strategy> randomPair_second_bkp = std::make_shared<Strategy>(*randomPair.second);
+
                 bool path5Cond = false;
                 int counter = 0;
 
+                //Start suboptimal portion of switching simulations
                 if(ses < changepoint_ses)
                 {
+                    
+                    // randomPair.first->setStateS0Credits(creditsS0_Subopt);
+                    // std::cout <<"creditsS0_Subopt:";
+                    std::vector<double> initCr = randomPair.first->getS0Credits(); 
+                    for (const double& value : initCr) {
+                        std::cout << value << " ";
+                    }
+
+                    // std::cout << std::endl;
+
                     while(!path5Cond)
                     {
                         strategy = randomPair.first;
@@ -391,7 +509,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                         if(s0indices.size()==0||s1indices.size()==0)
                         {
-                            randomPair.first = randomPair_first_bkp;
+                            randomPair.first->setStateS0Credits(initCreditsS0);
+                            //std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
                             continue;
                         }
 
@@ -403,28 +522,98 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                         {
                             path5Cond = true;
                              //To recreate rat switching behaviour, updating randomPair.second
-                            simulateTrajectory(ratdata, ses, *randomPair.second);
+                            // simulateTrajectory(ratdata, ses, *randomPair.second);
+                            //std::cout << "ses:" << ses << " successfully generated" << std::endl;
                         }else
                         {
                             path5Cond = false;
-                            randomPair.first = randomPair_first_bkp;
+                            //randomPair.first->setStateS0Credits(creditsS0_Subopt);
                             counter++;
-                            if(counter > 500)
+                            if(counter > 1)
                             {
-                                std::cout << "Counter reached 500 for ses:" << ses << ". Exiting" << std::endl;
+                                //std::cout << "Counter reached 500 for ses:" << ses << ". Exiting" << std::endl;
                                 break;
                             }
                         }
 
                     }
-                }else{
+                }else{  //Start Optimal portion of switching simulations
 
-                    strategy = randomPair.second;
-                    simData = simulateTrajectory(ratdata, ses, *randomPair.second);
-                    generated_PathData_sess = simData.first;
-                    generated_TurnsData_sess = simData.second;
+                    if(randomPair.second->getName()=="aca2_Optimal_Hybrid3")
+                    {
+                        randomPair.second->setStateS0Credits(creditsS0_Opt);
+                        randomPair.second->setStateS1Credits(creditsS1_Opt);
+                    }
+                    
+                    // std::cout <<"ses=" <<ses <<std::endl;
+                    // std::cout <<"creditsS0_Opt:";
+                    // for (const double& value : creditsS0_Opt) {
+                    //     std::cout << value << " ";
+                    // }
+                    // std::cout << std::endl;
 
-                }
+                    // std::cout <<"creditsS1_Opt:";
+                    // for (const double& value : creditsS1_Opt) {
+                    //     std::cout << value << " ";
+                    // }
+                    // std::cout << std::endl;
+
+                    while(!path5Cond)
+                    {
+                        
+                        strategy = randomPair.second;
+                        simData = simulateTrajectory(ratdata, ses, *randomPair.second);
+                        generated_PathData_sess = simData.first;
+                        generated_TurnsData_sess = simData.second;
+
+
+                        arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
+                        arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
+
+                        arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
+                        arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
+
+                        if(s0indices.size()==0||s1indices.size()==0)
+                        {
+                            randomPair.second->setStateS0Credits(creditsS0_Opt);
+                            randomPair.second->setStateS1Credits(creditsS1_Opt);
+                            //std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
+                            continue;
+                        }
+
+                        double s0RewardsMean = arma::mean(genDataS0.col(2));
+                        double s1RewardsMean = arma::mean(genDataS1.col(2));
+
+
+                        if(s0RewardsMean > 3 && s1RewardsMean > 3)
+                        {
+                            path5Cond = true;
+                            //std::cout << "ses:" << ses << " successfully generated" << std::endl;
+                                //To recreate rat switching behaviour, updating randomPair.second
+                        }else
+                        {
+                            path5Cond = false;
+                            randomPair.second->setStateS0Credits(creditsS0_Opt);
+                            randomPair.second->setStateS1Credits(creditsS1_Opt);
+                            counter++;
+                            if(counter > 1)
+                            {
+                                //std::cout << "Counter reached 500 for ses:" << ses << ". Exiting" << std::endl;
+                                break;
+                            }
+                        }
+                    }
+
+                } //End session of switching simulations
+
+                trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
+                trueStrategy2->getTrajectoryLikelihood(ratdata, ses);
+                
+                //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
+                
+                creditsS0_Opt =  trueStrategy2->getS0Credits(); 
+                creditsS1_Opt =  trueStrategy2->getS1Credits(); 
+
                 trueGenStrategies.push_back(strategy->getName());
 
                 generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
@@ -448,10 +637,10 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 if(check_path5(subMat))
                 {
                     isGenDataGood = true;
-                    //std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
+                    std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
                 }else{
                     isGenDataGood = false;
-                    //std::cout << "check_path5 failed after " << changepoint_ses << " sessions" <<std::endl;
+                    std::cout << "check_path5 failed after " << changepoint_ses << " sessions" <<std::endl;
                 }
             }
 
@@ -461,12 +650,19 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 //2nd test: check if simulation is learning
                 if(check_ema(generated_PathData))
                 {
-                    isGenDataGood = true;
-                    //std::cout << "check_ema is successful. EXit loop" <<std::endl;
+                    // if(!checkConsecutiveThreshold(generated_PathData, 0.6, 30, changepoint_ses))
+                    // {
+                    //     isGenDataGood = true;
+                    //     std::cout << "checkConsecutiveThreshold false. Good sim" <<std::endl;
+                    // }else{
+                    //     isGenDataGood = false;
+                    //     std::cout << "checkConsecutiveThreshold true. Check sim" <<std::endl;
+                    // }
+                    
 
                 }else{
                     isGenDataGood = false;
-                    //std::cout << "check_ema failed. Re-generate try: " << loopCounter <<std::endl;
+                    std::cout << "check_ema failed. Re-generate try: " << loopCounter <<std::endl;
                 }
             }
 
@@ -491,9 +687,9 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             }
 
             loopCounter++;
-            if(loopCounter > 1000)
+            if(loopCounter > 100)
             {
-                std::cout << "Loop counter reached 500 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
                 break;
             }
         }

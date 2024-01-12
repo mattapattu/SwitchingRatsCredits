@@ -279,6 +279,23 @@ public:
         }
     }
 
+    std::vector<double> getVertexCredits()
+    {
+        std::vector<double> vertexCredits(boost::num_vertices(graph), 0.0);
+        for (auto vd = boost::vertices(graph).first; vd != boost::vertices(graph).second; ++vd) {
+            // Access the vertex descriptor and properties
+            Vertex vertex = *vd;
+            int nodeId = graph[vertex].node_id;
+            double nodeCredits = graph[vertex].credit;
+            vertexCredits[nodeId] = nodeCredits;
+        
+        }
+
+        return vertexCredits;
+    }
+
+    
+
 
     Vertex findParent(const Vertex &node)
     {

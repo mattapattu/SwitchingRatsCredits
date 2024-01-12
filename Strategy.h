@@ -208,6 +208,12 @@ public:
         return stateS0;
     }
 
+    std::vector<double> getS0Credits()
+    {
+        std::vector<double> v = stateS0.getVertexCredits();
+        return v;
+    }
+
     void setStateS0Credits(std::vector<double> v)
     {
         stateS0.setVertexCredits(v);
@@ -216,6 +222,12 @@ public:
     BoostGraph& getStateS1()
     {
         return stateS1;
+    }
+
+    std::vector<double> getS1Credits()
+    {
+        std::vector<double> v = stateS1.getVertexCredits();
+        return v;
     }
 
     void setStateS1Credits(std::vector<double> v)
