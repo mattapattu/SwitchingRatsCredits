@@ -129,12 +129,12 @@ bool check_path5(arma::mat data) {
   
       // Check if any element in ema0 is greater than 0.8
     bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-        return element > 0.8;
+        return element > 0.95;
     });
 
     // Check if any element in ema1 is greater than 0.8
     bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-        return element > 0.8;
+        return element > 0.95;
     });
 
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
@@ -286,8 +286,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     if(rat == "rat_106")
     {
-        start = 4;
-        end = 6;
+        start = 8;
+        end = 12;
     }else
     {
         start = 8;
@@ -295,7 +295,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     }    
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distribution(4,6);
+    std::uniform_int_distribution<int> distribution(8,12);
     int changepoint_ses = distribution(gen);
     //int changepoint_ses = 50;
 
@@ -317,9 +317,9 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
 
-    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
     strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
@@ -487,10 +487,10 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                     
                     // randomPair.first->setStateS0Credits(creditsS0_Subopt);
                     // std::cout <<"creditsS0_Subopt:";
-                    std::vector<double> initCr = randomPair.first->getS0Credits(); 
-                    for (const double& value : initCr) {
-                        std::cout << value << " ";
-                    }
+                    // std::vector<double> initCr = randomPair.first->getS0Credits(); 
+                    // for (const double& value : initCr) {
+                    //     std::cout << value << " ";
+                    // }
 
                     // std::cout << std::endl;
 
