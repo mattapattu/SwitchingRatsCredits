@@ -1076,7 +1076,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     std::string mainDirPath = rat;
     std::string subDirPath = "/Strat" + genStrategyId;
     std::string fullPath = mainDirPath + subDirPath;
-    std::string filename = "confusionMatrix_" + rat+ "_"+ genStrategyId + "_" + iteration +".txt";
+    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + iteration +".txt";
     std::string filePath = fullPath + "/my_file.txt";
 
 
@@ -1122,13 +1122,12 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     //     std::cout << '\n';
     // }
 
-    if (!fs::exists(fullPath)) {
+    if (!std::filesystem::exists(fullPath)) {
         // Create the subdirectory
-        if (fs::create_directory(fullPath)) {
+        if (std::filesystem::create_directory(fullPath)) {
             std::cout << "Subdirectory created: " << fullPath << std::endl;
         } else {
             std::cerr << "Failed to create the subdirectory." << std::endl;
-            return 1;
         }
     } else {
         std::cout << "Subdirectory already exists: " << fullPath << std::endl;
