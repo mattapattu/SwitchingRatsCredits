@@ -12,6 +12,8 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
+#include <mpi.h>
+
 
 
 
@@ -1068,8 +1070,101 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string
 
 }
 
+void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int genStrategyId , int iteration)
+{
+    
+    std::string mainDirPath = rat;
+    std::string subDirPath = "/Strat" + genStrategyId;
+    std::string fullPath = mainDirPath + subDirPath;
+    std::string filename = "confusionMatrix_" + rat+ "_"+ genStrategyName + "_" + iteration +".txt";
+    std::string filePath = fullPath + "/my_file.txt";
 
-void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::vector<double> v, bool debug)
+
+    std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3"};
+    std::vector<std::string> columns = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3", "None"};
+    //std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
+    std::vector<std::vector<int>> matrix = std::vector<std::vector<int>>(6, std::vector<int>(7, 0));
+
+    std::vector<std::string> rownames = {"acaSubopt", "drlSubopt", "arlSubopt", "acaOpt", "drlOpt", "arlOpt"};
+    std::vector<std::string> colnames = {"acaSubopt", "drlSubopt", "arlSubopt", "acaOpt", "drlOpt", "arlOpt", "None"};
+
+    std::map<std::string, int> rowLabelToIndex;
+    std::map<std::string, int> colLabelToIndex;
+
+    // Fill the maps with indices
+    for (int i = 0; i < rows.size(); ++i) {
+        rowLabelToIndex[rows[i]] = i;
+    }
+
+    for (int j = 0; j < columns.size(); ++j) {
+        colLabelToIndex[columns[j]] = j;
+    }
+
+
+    
+    for(size_t i=0; i<allSesResults.size();i++)
+    {
+        RecordResults recordResultsSes =  allSesResults[i];
+        std::string selectedStrategy = recordResultsSes.getSelectedStrategy();   //column label
+        std::string trueStrategy = recordResultsSes.getTrueGeneratingStrategy(); // rowLabel
+
+        // std::cout << "trueStrategy=" << trueStrategy << ", idx=" << rowLabelToIndex[trueStrategy] << "; selectedStrategy=" << selectedStrategy << ", idx=" << colLabelToIndex[selectedStrategy] << std::endl;
+
+        matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] = matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] +1  ;
+    }
+
+    // Print the matrix
+    // std::cout << "Matrix print after update:" << std::endl;
+    // for (size_t i = 0; i < matrix.size(); ++i) {
+    //     for (size_t j = 0; j < matrix[i].size(); ++j) {
+    //         std::cout << matrix[i][j] << ' ';
+    //     }
+    //     std::cout << '\n';
+    // }
+
+    if (!fs::exists(fullPath)) {
+        // Create the subdirectory
+        if (fs::create_directory(fullPath)) {
+            std::cout << "Subdirectory created: " << fullPath << std::endl;
+        } else {
+            std::cerr << "Failed to create the subdirectory." << std::endl;
+            return 1;
+        }
+    } else {
+        std::cout << "Subdirectory already exists: " << fullPath << std::endl;
+    }
+
+
+
+
+    std::ofstream outfile(filePath);
+
+    if (outfile.is_open()) {
+        // Write the column names to the first line, separated by spaces
+        outfile << std::setw(10) << " "; // Leave some space for the row names
+        for (const auto& colname : colnames) {
+            outfile << std::setw(10) << colname;
+        }
+        outfile << "\n"; // End the line
+
+        // Write the matrix elements and the row names, separated by spaces
+        for (size_t i = 0; i < matrix.size(); i++) {
+            outfile << std::setw(10) << rownames[i]; // Write the row name
+            for (size_t j = 0; j < matrix[i].size(); j++) {
+                outfile << std::setw(10) << matrix[i][j]; // Write the matrix element
+            }
+            outfile << "\n"; // End the line
+        }
+
+        outfile.close();
+        std::cout << "Matrix written to file.\n";
+    } else {
+        std::cout << "File could not be opened for writing.\n";
+    }
+}
+
+
+void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::vector<double> v, bool debug, int genStrategyId, int iteration)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -1229,7 +1324,8 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
     probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
-    updateConfusionMatrix(allSesResults, rat);
+    //updateConfusionMatrix(allSesResults, rat);
+    writeResults(allSesResults, rat, genStrategyId , iteration)
 
 
     aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
@@ -1263,15 +1359,30 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
 
-    for(int i=0; i < 5; i++)
+    // Initialize MPI
+    int rank, size;
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Calculate the range of iterations for each process
+    int partition_size = 30 / size;
+    int start = rank * partition_size;
+    int end = (rank == size - 1) ? 30 : start + partition_size;
+
+    for(int i = start; i < end; i++)
     {
+        int genStrategyId = (i+1)%5;
+        int iteration = (i+1)/5;
+        
         RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R, i);
         std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
         std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3,simRatParams);
-        runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simRatParams, simClusterParams, true);
+        runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simRatParams, simClusterParams, true, genStrategyId , iteration);
 
     }
   
+    MPI_Finalize();
      
 
 }

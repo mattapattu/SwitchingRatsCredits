@@ -1,5 +1,5 @@
 
-CXX = g++
+CXX = mpic++
 CXXFLAGS = -g -std=gnu++17
 LIBRARIES = -lpagmo -lboost_serialization -ltbb -pthread -lR -lRInside 
 INCLUDES = -I /home/amoongat/.local/include -I"/usr/include/R" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/Rcpp/include" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/RcppArmadillo/include" -I"/home/amoongat/R/x86_64-redhat-linux-gnu-library/4.0/RInside/include" -I"/usr/include/python3.10" -I"/usr/lib/python3/dist-packages/numpy/core/include" -I"/home/amoongat/pagmo/boost-ver/include"
