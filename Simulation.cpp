@@ -1079,7 +1079,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     std::string mainDirPath = rat;
     std::string subDirPath = "/Strat" + genStrategyId;
     std::string fullPath = mainDirPath + subDirPath;
-    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + iteration +".txt";
+    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + std::to_string(iteration) +".txt";
     std::string filePath = fullPath + "/my_file.txt";
 
 
