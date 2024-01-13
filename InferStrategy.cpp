@@ -420,42 +420,55 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 
     std::cout << "creating archipelago" <<std::endl;
     // 3 - Instantiate an archipelago with 5 islands having each 5 individuals.
-    archipelago archi{5u, algo, prob, 7u};
+    // archipelago archi{5u, algo, prob, 7u};
 
-    // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(5);
-    std::cout << "DONE1:"  << '\n';
-    //system("pause"); 
+    // // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    // archi.evolve(5);
+    // std::cout << "DONE1:"  << '\n';
+    // //system("pause"); 
 
-    // 5 - Wait for the evolutions to finish.
-    archi.wait_check();
+    // // 5 - Wait for the evolutions to finish.
+    // archi.wait_check();
 
-    // 6 - Print the fitness of the best solution in each island.
+    // // 6 - Print the fitness of the best solution in each island.
     
 
-    //system("pause"); 
+    // //system("pause"); 
 
-    double champion_score = 1000000;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        std::vector<double> dec_vec = isl.get_population().champion_x();
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+    // double champion_score = 1000000;
+    // std::vector<double> dec_vec_champion;
+    // for (const auto &isl : archi) {
+    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    //     // for (auto const& i : dec_vec)
+    //     //     std::cout << i << ", ";
+    //     // std::cout << "\n" ;
 
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
-    }
+    //     double champion_isl = isl.get_population().champion_f()[0];
+    //     if(champion_isl < champion_score)
+    //     {
+    //         champion_score = champion_isl;
+    //         dec_vec_champion = dec_vec;
+    //     }
+    // }
 
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
+    island isl{algo, prob, 35u};
+
+    // 4 - Run the evolution on the single island 5 times.
+    isl.evolve(5);
+    //std::cout << "DONE1:" << '\n';
+
+    // 5 - Wait for the evolution to finish.
+    isl.wait_check();
+
+    // 6 - Print the fitness of the best solution in the island.
+    std::vector<double> dec_vec_champion = isl.get_population().champion_x();
+    double champion_score = isl.get_population().champion_f()[0];
+
+    // std::cout << "Final champion = " << champion_score << std::endl;
+    // for (auto const& i : dec_vec_champion)
+    //     std::cout << i << ", ";
+    // std::cout << "\n" ;
 
     std::string rat = ratdata.getRat();
     paramClusterMap[rat] = dec_vec_champion;
@@ -678,42 +691,55 @@ void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 
             std::cout << "creating archipelago" <<std::endl;
             // 3 - Instantiate an archipelago with 5 islands having each 5 individuals.
-            archipelago archi{5u, algo, prob, 7u};
+            // archipelago archi{5u, algo, prob, 7u};
 
-            // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
-            archi.evolve(5);
-            //std::cout << "DONE1:"  << '\n';
-            //system("pause"); 
+            // // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
+            // archi.evolve(5);
+            // //std::cout << "DONE1:"  << '\n';
+            // //system("pause"); 
 
-            // 5 - Wait for the evolutions to finish.
-            archi.wait_check();
+            // // 5 - Wait for the evolutions to finish.
+            // archi.wait_check();
 
-            // 6 - Print the fitness of the best solution in each island.
+            // // 6 - Print the fitness of the best solution in each island.
             
 
-            //system("pause"); 
+            // //system("pause"); 
 
-            double champion_score = 1000000;
-            std::vector<double> dec_vec_champion;
-            for (const auto &isl : archi) {
-                // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-                std::vector<double> dec_vec = isl.get_population().champion_x();
-                // for (auto const& i : dec_vec)
-                //     std::cout << i << ", ";
-                // std::cout << "\n" ;
+            // double champion_score = 1000000;
+            // std::vector<double> dec_vec_champion;
+            // for (const auto &isl : archi) {
+            //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+            //     std::vector<double> dec_vec = isl.get_population().champion_x();
+            //     // for (auto const& i : dec_vec)
+            //     //     std::cout << i << ", ";
+            //     // std::cout << "\n" ;
 
-                double champion_isl = isl.get_population().champion_f()[0];
-                if(champion_isl < champion_score)
-                {
-                    champion_score = champion_isl;
-                    dec_vec_champion = dec_vec;
-                }
-            }
+            //     double champion_isl = isl.get_population().champion_f()[0];
+            //     if(champion_isl < champion_score)
+            //     {
+            //         champion_score = champion_isl;
+            //         dec_vec_champion = dec_vec;
+            //     }
+            // }
 
-            std::cout << "Final champion = " << champion_score << std::endl;
-            for (auto const& i : dec_vec_champion)
-                std::cout << i << ", ";
-            std::cout << "\n" ;
+            // std::cout << "Final champion = " << champion_score << std::endl;
+            // for (auto const& i : dec_vec_champion)
+            //     std::cout << i << ", ";
+            // std::cout << "\n" ;
+
+            island isl{algo, prob, 35u};
+
+            // 4 - Run the evolution on the single island 5 times.
+            isl.evolve(5);
+            //std::cout << "DONE1:" << '\n';
+
+            // 5 - Wait for the evolution to finish.
+            isl.wait_check();
+
+            // 6 - Print the fitness of the best solution in the island.
+            std::vector<double> dec_vec_champion = isl.get_population().champion_x();
+            double champion_score = isl.get_population().champion_f()[0];
 
             std::pair<std::string, bool> key(lr, optimal);
             paramStrategies[key] = dec_vec_champion;
