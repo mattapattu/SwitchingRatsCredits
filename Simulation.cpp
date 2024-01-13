@@ -1076,7 +1076,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     std::string mainDirPath = rat;
     std::string subDirPath = "/Strat" + genStrategyId;
     std::string fullPath = mainDirPath + subDirPath;
-    std::string filename = "confusionMatrix_" + rat+ "_"+ genStrategyName + "_" + iteration +".txt";
+    std::string filename = "confusionMatrix_" + rat+ "_"+ genStrategyId + "_" + iteration +".txt";
     std::string filePath = fullPath + "/my_file.txt";
 
 
@@ -1325,7 +1325,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 
     probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
     //updateConfusionMatrix(allSesResults, rat);
-    writeResults(allSesResults, rat, genStrategyId , iteration)
+    writeResults(allSesResults, rat, genStrategyId , iteration);
 
 
     aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
