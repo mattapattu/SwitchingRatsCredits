@@ -23,16 +23,16 @@ int main(int argc, char* argv[])
 
     for(const std::string& ratName: rats)
     {
-        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
+        std::string cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/"+ ratName +".Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/Hybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
 
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/SubOptimalHybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
 
