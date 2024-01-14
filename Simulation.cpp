@@ -1121,7 +1121,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     // }
 
 
-    std::string mainDirPath = "/home/amoongat/Projects/SwitchingRatsCredits/Results" + rat;
+    std::string mainDirPath = "/home/amoongat/Projects/SwitchingRatsCredits/Results/" + rat;
     std::filesystem::path main_dir(mainDirPath);
 
      // Create the main directory if it does not exist
