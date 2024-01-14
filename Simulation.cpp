@@ -1376,12 +1376,12 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
     for(int i = start; i < end; i++)
     {
-        int genStrategyId = (i+1)%5;
-        int iteration = (i+1)/5;
+        int genStrategyId = i%6;
+        int iteration = i/6;
 
-        std::cout << "Rank=" <<rank << ", start=" <<start <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
         
-        RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R, i);
+        RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R, genStrategyId);
         std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
         std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3,simRatParams);
         runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simRatParams, simClusterParams, true, genStrategyId , iteration);
