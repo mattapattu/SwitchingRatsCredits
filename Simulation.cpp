@@ -1121,7 +1121,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     // }
 
 
-    std::string mainDirPath = "/home/amoongat/" + rat;
+    std::string mainDirPath = "/home/amoongat/Projects/SwitchingRatsCredits/Results" + rat;
     std::filesystem::path main_dir(mainDirPath);
 
      // Create the main directory if it does not exist
@@ -1129,9 +1129,14 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
         std::filesystem::create_directory(main_dir);
     }
 
-    std::string subDir = "Strat" + genStrategyId;
+    std::string subDir = "Strat_" + std::to_string(genStrategyId);
     // Path to the subdirectory
     std::filesystem::path sub_dir(main_dir / subDir);
+
+    std::string stringpath = sub_dir.generic_string();
+
+
+    std::cout << "genStrategyId=" << genStrategyId << "sub_dir=" << stringpath << std::endl;
 
     if (!std::filesystem::exists(sub_dir)) {
         std::filesystem::create_directory(sub_dir);
