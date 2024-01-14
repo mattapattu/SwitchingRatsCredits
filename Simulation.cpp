@@ -1078,13 +1078,6 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string
 void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int genStrategyId , int iteration)
 {
     
-    std::string mainDirPath = rat;
-    std::string subDirPath = "/Strat" + genStrategyId;
-    std::string fullPath = mainDirPath + subDirPath;
-    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + std::to_string(iteration) +".txt";
-    std::string filePath = fullPath + "/my_file.txt";
-
-
     std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3"};
     std::vector<std::string> columns = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3", "None"};
     //std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
@@ -1127,21 +1120,42 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     //     std::cout << '\n';
     // }
 
-    if (!std::filesystem::exists(fullPath)) {
-        // Create the subdirectory
-        if (std::filesystem::create_directory(fullPath)) {
-            std::cout << "Subdirectory created: " << fullPath << std::endl;
-        } else {
-            std::cerr << "Failed to create the subdirectory." << std::endl;
-        }
-    } else {
-        std::cout << "Subdirectory already exists: " << fullPath << std::endl;
+
+    std::string mainDirPath = "/home/amoongat/" + rat;
+    std::filesystem::path main_dir(mainDirPath);
+
+     // Create the main directory if it does not exist
+    if (!std::filesystem::exists(main_dir)) {
+        std::filesystem::create_directory(main_dir);
     }
 
+    std::string subDir = "Strat" + genStrategyId;
+    // Path to the subdirectory
+    std::filesystem::path sub_dir(main_dir / subDir);
+
+    if (!std::filesystem::exists(sub_dir)) {
+        std::filesystem::create_directory(sub_dir);
+    }
+
+    //std::string fullPath = mainDirPath + subDirPath;
+    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + std::to_string(iteration) +".txt";
+    // std::string filePath = fullPath + "/my_file.txt";
+
+    // if (!std::filesystem::exists(mainDirPath)) {
+    //     // Create the subdirectory
+    //     if (std::filesystem::create_directory(mainDirPath)) {
+    //         std::cout << "Subdirectory created: " << fullPath << std::endl;
+    //     } else {
+    //         std::cerr << "Failed to create the subdirectory." << std::endl;
+    //     }
+    // } else {
+    //     std::cout << "Subdirectory already exists: " << fullPath << std::endl;
+    // }
 
 
 
-    std::ofstream outfile(filePath);
+
+    std::ofstream outfile(sub_dir / filename);
 
     if (outfile.is_open()) {
         // Write the column names to the first line, separated by spaces
