@@ -236,7 +236,9 @@ bool checkConsecutiveThreshold(arma::mat data, double threshold, int consecutive
 
 RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, RInside &R, int selectStrat)
 {
-        //ACA params
+    
+    std::cout << "Inside generateSimulation, selectStrat=" << selectStrat << std::endl;
+    //ACA params
     double alpha_aca_subOptimal = params.find(std::make_pair("aca2", false))->second[0];
     double gamma_aca_subOptimal = params.find(std::make_pair("aca2", false))->second[1];
 
