@@ -1121,7 +1121,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     // }
 
 
-    std::string mainDirPath = "/home/amoongat/Results" + rat;
+    std::string mainDirPath = "/home/amoongat/" + rat;
     std::filesystem::path main_dir(mainDirPath);
 
      // Create the main directory if it does not exist
@@ -1138,7 +1138,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     }
 
     //std::string fullPath = mainDirPath + subDirPath;
-    std::string filename = "confusionMatrix_" + rat+ "_"+ subDirPath + "_" + std::to_string(iteration) +".txt";
+    std::string filename = "confusionMatrix_" + rat+ "_"+ std::to_string(iteration) +".txt";
     // std::string filePath = fullPath + "/my_file.txt";
 
     // if (!std::filesystem::exists(mainDirPath)) {
