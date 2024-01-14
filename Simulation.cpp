@@ -702,13 +702,13 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::cout << "Generated sim:" << randomPair.first->getName() << " and " << randomPair.second->getName() << std::endl;
   
-    R["genData"] = Rcpp::wrap(generated_PathData);
+    // R["genData"] = Rcpp::wrap(generated_PathData);
 
-    // Save the matrix as RData using RInside
-    std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat +".RData";
+    // // Save the matrix as RData using RInside
+    // std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat +".RData";
     
-    std::string rCode = "saveRDS(genData, file='" + filename + "')";
-    R.parseEvalQ(rCode.c_str());
+    // std::string rCode = "saveRDS(genData, file='" + filename + "')";
+    // R.parseEvalQ(rCode.c_str());
     
     RatData simRatdata(generated_PathData,generated_TurnsData,rat, true, trueGenStrategies);
 
