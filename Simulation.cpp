@@ -1377,7 +1377,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         int genStrategyId = (i+1)%5;
         int iteration = (i+1)/5;
 
-        std::cout << "Starting genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        std::cout << "Rank=" <<rank << ", start=" <<start <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
         
         RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, ratParams,clusterParams, R, i);
         std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
