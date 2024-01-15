@@ -462,7 +462,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
             std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
 
-            std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
+            //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
             std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
 
@@ -492,7 +492,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 if(ses < changepoint_ses)
                 {
                     
-                    randomPair.first->setStateS0Credits(creditsS0_Subopt);
+                    randomPair.first->setStateS0Credits(creditsS0_Opt);
                     // std::cout <<"creditsS0_Subopt:";
                     // std::vector<double> initCr = randomPair.first->getS0Credits(); 
                     // for (const double& value : initCr) {
