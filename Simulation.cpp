@@ -516,7 +516,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                         if(s0indices.size()==0||s1indices.size()==0)
                         {
-                            randomPair.first->setStateS0Credits(initCreditsS0);
+                            randomPair.first->setStateS0Credits(creditsS0_Opt);
                             //std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
                             continue;
                         }
