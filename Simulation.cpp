@@ -454,15 +454,15 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         while(!endLoop)
         {
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
-            std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,0};
-            randomPair.first->setStateS0Credits(initCreditsS0);
+            //std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,0};
+            //randomPair.first->setStateS0Credits(initCreditsS0);
 
 
             
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
             std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
 
-            //std::vector<double> creditsS0_Subopt = {0,0,0,0,0,0,0,0,0,0,0,0};
+            std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
             std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
 
@@ -492,7 +492,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 if(ses < changepoint_ses)
                 {
                     
-                    // randomPair.first->setStateS0Credits(creditsS0_Subopt);
+                    randomPair.first->setStateS0Credits(creditsS0_Subopt);
                     // std::cout <<"creditsS0_Subopt:";
                     // std::vector<double> initCr = randomPair.first->getS0Credits(); 
                     // for (const double& value : initCr) {
@@ -546,11 +546,9 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                     }
                 }else{  //Start Optimal portion of switching simulations
 
-                    if(randomPair.second->getName()=="aca2_Optimal_Hybrid3")
-                    {
-                        randomPair.second->setStateS0Credits(creditsS0_Opt);
-                        randomPair.second->setStateS1Credits(creditsS1_Opt);
-                    }
+                    randomPair.second->setStateS0Credits(creditsS0_Opt);
+                    randomPair.second->setStateS1Credits(creditsS1_Opt);
+
                     
                     // std::cout <<"ses=" <<ses <<std::endl;
                     // std::cout <<"creditsS0_Opt:";
