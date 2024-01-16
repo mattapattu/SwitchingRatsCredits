@@ -134,12 +134,12 @@ bool check_path5(arma::mat data) {
   
       // Check if any element in ema0 is greater than 0.8
     bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-        return element > 0.95;
+        return element > 0.8;
     });
 
     // Check if any element in ema1 is greater than 0.8
     bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-        return element > 0.95;
+        return element > 0.8;
     });
 
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
@@ -289,18 +289,18 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     //std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    int start = -1;
-    int end = -1;
+    // int start = -1;
+    // int end = -1;
 
-    if(rat == "rat_106")
-    {
-        start = 8;
-        end = 12;
-    }else
-    {
-        start = 8;
-        end = 12;
-    }    
+    // if(rat == "rat_106")
+    // {
+    //     start = 8;
+    //     end = 12;
+    // }else
+    // {
+    //     start = 8;
+    //     end = 12;
+    // }    
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distribution(8,12);
@@ -695,7 +695,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             loopCounter++;
             if(loopCounter > 100)
             {
-                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+                std::cout << rat <<  ", loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
                 break;
             }
         }
