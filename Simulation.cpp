@@ -145,7 +145,7 @@ bool check_path5(arma::mat data) {
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
     if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
     {
-        std::cout << "check_ema failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 <<std::endl;
+        std::cout << "check_ema failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema0 = " << anyGreaterThanPointEight_ema0 <<std::endl;
         return false;
     }
 
@@ -303,7 +303,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     // }    
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distribution(8,12);
+    std::uniform_int_distribution<int> distribution(5,9);
     int changepoint_ses = distribution(gen);
     //int changepoint_ses = 50;
 
