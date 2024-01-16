@@ -430,10 +430,10 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 endLoop = true;
             }else
             {
-                // generated_PathData.reset();
-                // generated_TurnsData.reset();
-                // strategy->resetPathProbMat();
-                // strategy->resetCredits();
+                generated_PathData.reset();
+                generated_TurnsData.reset();
+                strategy->resetPathProbMat();
+                strategy->resetCredits();
             }
 
             loopCounter++;
