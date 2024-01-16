@@ -145,6 +145,7 @@ bool check_path5(arma::mat data) {
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
     if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
     {
+        std::cout << "check_ema failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 <<std::endl;
         return false;
     }
 
