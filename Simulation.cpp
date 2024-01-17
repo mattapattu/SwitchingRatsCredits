@@ -520,12 +520,12 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                         arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
                         arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
 
-                        if(s0indices.size()==0||s1indices.size()==0)
-                        {
-                            randomPair.first->setStateS0Credits(creditsS0_Opt);
-                            //std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
-                            continue;
-                        }
+                        // if(s0indices.size()==0||s1indices.size()==0)
+                        // {
+                        //     randomPair.first->setStateS0Credits(creditsS0_Opt);
+                        //     std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
+                        //     continue;
+                        // }
 
                         // double s0RewardsMean = arma::mean(genDataS0.col(2));
                         // double s1RewardsMean = arma::mean(genDataS1.col(2));
