@@ -462,7 +462,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> distribution(5,9);
+            std::uniform_int_distribution<int> distribution(2,4);
             changepoint_ses = distribution(gen);
    
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
@@ -517,7 +517,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                     arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
                     arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-                    
+
                 }else{  //Start Optimal portion of switching simulations
 
                     randomPair.second->setStateS0Credits(creditsS0_Opt);
