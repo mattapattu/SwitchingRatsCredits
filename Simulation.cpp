@@ -463,6 +463,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<int> distribution(9,12);
+            changepoint_ses = distribution(gen);
    
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
             std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
