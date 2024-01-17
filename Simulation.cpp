@@ -132,22 +132,22 @@ bool check_path5(arma::mat data) {
   // Compute the EMA of occurrence of Path5 for state 1
   arma::vec ema1 = ema_path5(dataS1);
   
-      // Check if any element in ema0 is greater than 0.8
-    bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-        return element > 0.8;
-    });
+    //   // Check if any element in ema0 is greater than 0.8
+    // bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
+    //     return element > 0.8;
+    // });
 
-    // Check if any element in ema1 is greater than 0.8
-    bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-        return element > 0.8;
-    });
+    // // Check if any element in ema1 is greater than 0.8
+    // bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
+    //     return element > 0.8;
+    // });
 
-    // If path5 prob goes above 0.8 for any state, return false (bad simulation)
-    if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
-    {
-        std::cout << "check_path5 failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema0 = " << anyGreaterThanPointEight_ema0 <<std::endl;
-        return false;
-    }
+    // // If path5 prob goes above 0.8 for any state, return false (bad simulation)
+    // if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
+    // {
+    //     std::cout << "check_path5 failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema0 = " << anyGreaterThanPointEight_ema0 <<std::endl;
+    //     return false;
+    // }
 
 
   bool S0Path5 = false;
@@ -462,14 +462,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
             std::random_device rd;
             std::mt19937 gen(rd());
-            if(rat=="rat_103")
-            {
-                std::uniform_int_distribution<int> distribution(6,8);
-                changepoint_ses = distribution(gen);
-            }else{
-                std::uniform_int_distribution<int> distribution(2,4);
-                changepoint_ses = distribution(gen);
-            }
+            std::uniform_int_distribution<int> distribution(9,12);
    
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
             std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
