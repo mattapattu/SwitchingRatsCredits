@@ -440,7 +440,14 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
         rewardsS0 = {0,0,0,0,0,0,0,5,0};
         rewardsS1 = {0,0,0,0,0,0,0,0,5};
     }else{
-        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+        std::string rat = ratdata.getRat();
+        if(rat=="rat103")
+        {
+          rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
+        }else{
+          rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+        }
+        
     }
 
   
