@@ -484,7 +484,14 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             trueStrategy2->setRewardsS0(s0rewards);
             trueStrategy2->setRewardsS1(s1rewards);
 
-            std::vector<double> s0rewardsSubOpt = {0,0,0,0,0,0,5,5,0,0,0,0};
+            std::vector<double> s0rewardsSubOpt;
+            if(rat=="rat_103")
+            {
+                s0rewardsSubOpt = {0,0,0,0,0,0,0,5,0,0,0,0};
+            }else{
+                s0rewardsSubOpt = {0,0,0,0,0,0,5,0,0,0,0,0};
+            }
+            
             trueStrategy1->setRewardsS0(s0rewardsSubOpt);
 
 

@@ -11,6 +11,8 @@
 #include <boost/graph/graph_utility.hpp>
 #include <cstdlib>
 #include <stdexcept>
+#include <random>
+#include <chrono>
 //#include <mutex>
 
 
@@ -532,10 +534,13 @@ public:
     //     }
     //     std::cout << "\n" ;
 
+        unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
 
+        // Create a random number generator with the seed value
+        std::mt19937 gen(seed);
         // Sample one target vertex based on the softmax probabilities
-        std::random_device rd;
-        std::mt19937 gen(rd());
+        // std::random_device rd;
+        // std::mt19937 gen(rd());
         std::discrete_distribution<> dist(probs.begin(), probs.end());
         Vertex sampled = children[dist(gen)];
         return(sampled);
