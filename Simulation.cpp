@@ -507,49 +507,17 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                     // std::cout << std::endl;
 
-                    while(!path5Cond)
-                    {
-                        strategy = randomPair.first;
-                        simData = simulateTrajectory(ratdata, ses, *randomPair.first);
-                        generated_PathData_sess = simData.first;
-                        generated_TurnsData_sess = simData.second;
+                    strategy = randomPair.first;
+                    simData = simulateTrajectory(ratdata, ses, *randomPair.first);
+                    generated_PathData_sess = simData.first;
+                    generated_TurnsData_sess = simData.second;
 
-                        arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                        arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
+                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
+                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
 
-                        arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                        arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-
-                        // if(s0indices.size()==0||s1indices.size()==0)
-                        // {
-                        //     randomPair.first->setStateS0Credits(creditsS0_Opt);
-                        //     std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
-                        //     continue;
-                        // }
-
-                        // double s0RewardsMean = arma::mean(genDataS0.col(2));
-                        // double s1RewardsMean = arma::mean(genDataS1.col(2));
-
-
-                        // if(s0RewardsMean > 3 && s1RewardsMean < 1.5)
-                        // {
-                        //     path5Cond = true;
-                        //      //To recreate rat switching behaviour, updating randomPair.second
-                        //     // simulateTrajectory(ratdata, ses, *randomPair.second);
-                        //     //std::cout << "ses:" << ses << " successfully generated" << std::endl;
-                        // }else
-                        // {
-                        //     path5Cond = false;
-                        //     //randomPair.first->setStateS0Credits(creditsS0_Subopt);
-                        //     counter++;
-                        //     if(counter > 1)
-                        //     {
-                        //         //std::cout << "Counter reached 500 for ses:" << ses << ". Exiting" << std::endl;
-                        //         break;
-                        //     }
-                        // }
-
-                    }
+                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
+                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
+                    
                 }else{  //Start Optimal portion of switching simulations
 
                     randomPair.second->setStateS0Credits(creditsS0_Opt);
@@ -569,51 +537,18 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                     // }
                     // std::cout << std::endl;
 
-                    while(!path5Cond)
-                    {
-                        
-                        strategy = randomPair.second;
-                        simData = simulateTrajectory(ratdata, ses, *randomPair.second);
-                        generated_PathData_sess = simData.first;
-                        generated_TurnsData_sess = simData.second;
+                    strategy = randomPair.second;
+                    simData = simulateTrajectory(ratdata, ses, *randomPair.second);
+                    generated_PathData_sess = simData.first;
+                    generated_TurnsData_sess = simData.second;
 
 
-                        arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                        arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
+                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
+                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
 
-                        arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                        arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
+                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
+                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
 
-                        if(s0indices.size()==0||s1indices.size()==0)
-                        {
-                            randomPair.second->setStateS0Credits(creditsS0_Opt);
-                            randomPair.second->setStateS1Credits(creditsS1_Opt);
-                            //std::cout << "ses:" << ses << " s0indices.size()=" << s0indices.size() << ", s1indices.size()=" << s1indices.size() << std::endl;
-                            continue;
-                        }
-
-                        // double s0RewardsMean = arma::mean(genDataS0.col(2));
-                        // double s1RewardsMean = arma::mean(genDataS1.col(2));
-
-
-                        // if(s0RewardsMean > 3 && s1RewardsMean > 3)
-                        // {
-                        //     path5Cond = true;
-                        //     //std::cout << "ses:" << ses << " successfully generated" << std::endl;
-                        //         //To recreate rat switching behaviour, updating randomPair.second
-                        // }else
-                        // {
-                        //     path5Cond = false;
-                        //     randomPair.second->setStateS0Credits(creditsS0_Opt);
-                        //     randomPair.second->setStateS1Credits(creditsS1_Opt);
-                        //     counter++;
-                        //     if(counter > 1)
-                        //     {
-                        //         //std::cout << "Counter reached 500 for ses:" << ses << ". Exiting" << std::endl;
-                        //         break;
-                        //     }
-                        // }
-                    }
 
                 } //End session of switching simulations
 
