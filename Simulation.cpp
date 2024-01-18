@@ -496,7 +496,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                 bool path5Cond = false;
                 int counter = 0;
-                int reward = 0;
+                double reward = 0.0;
                 if(ses < 5)
                 {
                     reward = ses+1;
