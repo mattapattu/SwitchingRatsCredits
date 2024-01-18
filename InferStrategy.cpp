@@ -333,11 +333,9 @@ void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy
             strategyPtr->setCrpPosterior(0,ses);
         }   
 
-        if(ratdata.getSim())
-        {
-            sessionResults.setRewardVectorS0(strategy, rewardsS0);
-            sessionResults.setRewardVectorS1(strategy, rewardsS1);
-        }     
+        sessionResults.setRewardVectorS0(strategy, rewardsS0);
+        sessionResults.setRewardVectorS1(strategy, rewardsS1);
+  
     }
 
     return;
@@ -758,7 +756,7 @@ void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 }
 
 
-void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug)
+RecordResults runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -966,7 +964,7 @@ void runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHyb
     // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-
+    return allResults;
 }
 
 
