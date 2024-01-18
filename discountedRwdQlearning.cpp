@@ -484,22 +484,22 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0; 
-  std::vector<double> rewardsS1; 
-  if(strategy.getOptimal())
-  {
-      rewardsS0 = {0,0,0,0,0,0,0,5,0};
-      rewardsS1 = {0,0,0,0,0,0,0,0,5};
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(); 
+  std::vector<double> rewardsS1 = strategy.getRewardsS1(); 
+  // if(strategy.getOptimal())
+  // {
+  //     rewardsS0 = {0,0,0,0,0,0,0,5,0};
+  //     rewardsS1 = {0,0,0,0,0,0,0,0,5};
 
-  }else{
-      std::string rat = ratdata.getRat();
-      if(rat=="rat103")
-      {
-        rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
-      }else{
-        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
-      }
-  }
+  // }else{
+  //     std::string rat = ratdata.getRat();
+  //     if(rat=="rat103")
+  //     {
+  //       rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
+  //     }else{
+  //       rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+  //     }
+  // }
   double previous_turntime = 0;
 
   std::map<std::pair<BoostGraph::Vertex, int>, double> eligibilityTraces;

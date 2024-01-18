@@ -132,22 +132,22 @@ bool check_path5(arma::mat data) {
   // Compute the EMA of occurrence of Path5 for state 1
   arma::vec ema1 = ema_path5(dataS1);
   
-    //   // Check if any element in ema0 is greater than 0.8
-    // bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-    //     return element > 0.8;
-    // });
+      // Check if any element in ema0 is greater than 0.8
+    bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
+        return element > 0.8;
+    });
 
-    // // Check if any element in ema1 is greater than 0.8
-    // bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-    //     return element > 0.8;
-    // });
+    // Check if any element in ema1 is greater than 0.8
+    bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
+        return element > 0.8;
+    });
 
-    // // If path5 prob goes above 0.8 for any state, return false (bad simulation)
-    // if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
-    // {
-    //     std::cout << "check_path5 failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema0 = " << anyGreaterThanPointEight_ema0 <<std::endl;
-    //     return false;
-    // }
+    // If path5 prob goes above 0.8 for any state, return false (bad simulation)
+    if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
+    {
+        std::cout << "check_path5 failed, Path5 prob > 0.95; anyGreaterThanPointEight_ema1 = " << anyGreaterThanPointEight_ema1 << ", anyGreaterThanPointEight_ema0 = " << anyGreaterThanPointEight_ema0 <<std::endl;
+        return false;
+    }
 
 
   bool S0Path5 = false;
@@ -462,8 +462,16 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> distribution(9,12);
-            changepoint_ses = distribution(gen);
+
+            if(rat=="rat_103"|| rat=="rat_112")
+            {
+                std::uniform_int_distribution<int> distribution(9,12);
+                changepoint_ses = distribution(gen);
+            }else{
+                std::uniform_int_distribution<int> distribution(2,4);
+                changepoint_ses = distribution(gen);
+            }
+            
    
             std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
             std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
@@ -472,23 +480,11 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
             std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
 
-            std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
-            std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
-
-            trueStrategy2->setRewardsS0(s0rewards);
-            trueStrategy2->setRewardsS1(s1rewards);
+            std::vector<double> s0rewards; 
+            std::vector<double> s1rewards;
 
             std::vector<double> s0rewardsSubOpt;
-            if(rat=="rat_103")
-            {
-                s0rewardsSubOpt = {0,0,0,0,0,0,0,5,0,0,0,0};
-            }else{
-                s0rewardsSubOpt = {0,0,0,0,0,0,5,0,0,0,0,0};
-            }
             
-            trueStrategy1->setRewardsS0(s0rewardsSubOpt);
-
-
 
             for(int ses=0; ses < sessions; ses++)
             {
@@ -500,6 +496,32 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                 bool path5Cond = false;
                 int counter = 0;
+                int reward = 0;
+                if(ses < 5)
+                {
+                    reward = ses+1;
+                }else{
+                    reward = 5;
+                }
+
+                if(rat=="rat_103")
+                {
+                    s0rewardsSubOpt = {0,0,0,0,0,0,0,reward,0,0,0,0};
+                }else{
+                    s0rewardsSubOpt = {0,0,0,0,0,0,reward,0,0,0,0,0};
+                }
+                
+                trueStrategy1->setRewardsS0(s0rewardsSubOpt);
+
+                s0rewards = {0,0,0,0,0,0,0,reward,0};
+                s1rewards = {0,0,0,0,0,0,0,0,reward};
+                trueStrategy2->setRewardsS0(s0rewards);
+                trueStrategy2->setRewardsS1(s1rewards);
+
+                randomPair.first->setRewardsS0(s0rewardsSubOpt);
+                randomPair.second->setRewardsS0(s0rewards);
+                randomPair.second->setRewardsS1(s1rewards);
+
 
                 //Start suboptimal portion of switching simulations
                 if(ses < changepoint_ses)

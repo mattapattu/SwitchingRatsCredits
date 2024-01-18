@@ -432,23 +432,23 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
   //std::cout << strategy.getName() << ", session=" << session << ", alpha=" <<alpha << ", gamma=" <<gamma << std::endl;
 
-  std::vector<double> rewardsS0; 
-  std::vector<double> rewardsS1; 
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(); 
+  std::vector<double> rewardsS1 = strategy.getRewardsS1(); 
 
-  if(strategy.getOptimal())
-    {
-        rewardsS0 = {0,0,0,0,0,0,0,5,0};
-        rewardsS1 = {0,0,0,0,0,0,0,0,5};
-    }else{
-        std::string rat = ratdata.getRat();
-        if(rat=="rat103")
-        {
-          rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
-        }else{
-          rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
-        }
+  // if(strategy.getOptimal())
+  //   {
+  //       rewardsS0 = {0,0,0,0,0,0,0,5,0};
+  //       rewardsS1 = {0,0,0,0,0,0,0,0,5};
+  //   }else{
+  //       std::string rat = ratdata.getRat();
+  //       if(rat=="rat103")
+  //       {
+  //         rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
+  //       }else{
+  //         rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+  //       }
         
-    }
+  //   }
 
   
 
