@@ -499,8 +499,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 // }
 
                 RecordResults trueRes_ses = allRes[ses];
-                std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = trueRes_ses.getRewardVectorS0();
-                std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = trueRes_ses.getRewardVectorS1();
+                const std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = trueRes_ses.getRewardVectorS0();
+                const std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = trueRes_ses.getRewardVectorS1();
 
 
                 std::vector<double> trueRewards_pair_firstS0 = trueRewardVecMapS0[trueStrategy1->getName()];
