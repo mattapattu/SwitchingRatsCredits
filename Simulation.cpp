@@ -463,12 +463,12 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             std::random_device rd;
             std::mt19937 gen(rd());
 
-            if(rat=="rat_103"|| rat=="rat_112")
+            if(rat=="rat_103")
             {
                 std::uniform_int_distribution<int> distribution(9,12);
                 changepoint_ses = distribution(gen);
             }else{
-                std::uniform_int_distribution<int> distribution(2,4);
+                std::uniform_int_distribution<int> distribution(2,6);
                 changepoint_ses = distribution(gen);
             }
             
