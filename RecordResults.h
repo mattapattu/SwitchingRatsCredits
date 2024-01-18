@@ -77,7 +77,7 @@ public:
 
 
     // Getter and Setter for rewardVectorS0
-    std::map<std::string, std::vector<double>>& getRewardVectorS0() const {
+    std::map<std::string, std::vector<double>>& getRewardVectorS0() {
         return rewardVectorS0;
     }
 
@@ -86,7 +86,7 @@ public:
     }
 
     // Getter and Setter for rewardVectorS1
-    std::map<std::string, std::vector<double>>& getRewardVectorS1() const {
+    std::map<std::string, std::vector<double>>& getRewardVectorS1() {
         return rewardVectorS1;
     }
 
