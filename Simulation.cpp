@@ -287,9 +287,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     int sessions = uniqSessIdx.n_elem;
 
 
-    RecordResults allRes =  runEM(ratdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, false);
-    std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = allRes.getRewardVectorS0();
-    std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = allRes.getRewardVectorS1();
+    std::vector<RecordResults> allRes =  runEM(ratdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, false);
     // std::random_device rd;
     // std::mt19937 gen(rd());
     // std::uniform_int_distribution<int> distribution(5,9);
@@ -500,20 +498,25 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 //     s0rewardsSubOpt = {0,0,0,0,0,0,reward,0,0,0,0,0};
                 // }
 
+                RecordResults trueRes_ses = allRes[ses];
+                std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = trueRes_ses.getRewardVectorS0();
+                std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = trueRes_ses.getRewardVectorS1();
+
+
                 std::vector<double> trueRewards_pair_firstS0 = trueRewardVecMapS0[trueStrategy1->getName()];
 
                 std::vector<double> trueRewards_pair_secondS0 = trueRewardVecMapS0[trueStrategy2->getName()];
                 std::vector<double> trueRewards_pair_secondS1 = trueRewardVecMapS1[trueStrategy2->getName()];    
 
                 
-                trueStrategy1->setRewardsS0(trueRewards_pair_firstS0[ses]);
+                trueStrategy1->setRewardsS0(trueRewards_pair_firstS0);
 
-                trueStrategy2->setRewardsS0(trueRewards_pair_secondS0[ses]);
-                trueStrategy2->setRewardsS1(trueRewards_pair_secondS1[ses]);
+                trueStrategy2->setRewardsS0(trueRewards_pair_secondS0);
+                trueStrategy2->setRewardsS1(trueRewards_pair_secondS1);
 
-                randomPair.first->setRewardsS0(trueRewards_pair_firstS0[ses]);
-                randomPair.second->setRewardsS0(trueRewards_pair_secondS0[ses]);
-                randomPair.second->setRewardsS1(trueRewards_pair_secondS1[ses]);
+                randomPair.first->setRewardsS0(trueRewards_pair_firstS0);
+                randomPair.second->setRewardsS0(trueRewards_pair_secondS0);
+                randomPair.second->setRewardsS1(trueRewards_pair_secondS1);
 
 
                 //Start suboptimal portion of switching simulations

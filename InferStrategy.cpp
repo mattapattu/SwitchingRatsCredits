@@ -756,7 +756,7 @@ void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optim
 }
 
 
-RecordResults runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug)
+std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::pair<std::string, bool>, std::vector<double>> params, std::map<std::string, std::vector<double>> clusterParams, bool debug)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -925,7 +925,8 @@ RecordResults runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     
     arma::mat probMat;
 
-    RecordResults allResults("None", {}, {}, {}, {}, {});
+    // RecordResults allResults("None", {}, {}, {}, {}, {});
+    std::vector<RecordResults> allSesResults;
 
     for(int ses=0; ses < sessions; ses++)
     {
@@ -935,11 +936,15 @@ RecordResults runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
             initRewardVals(ratdata, ses, strategies, debug);
         }
 
-        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, allResults);
-        mstep(ratdata, ses, strategies, cluster, debug, allResults);
+        RecordResults sessionResults;
+
+        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, sessionResults);
+        mstep(ratdata, ses, strategies, cluster, debug, sessionResults);
 
         probMat = arma::join_cols(probMat, probMat_sess);
         most_likely.push_back(last_choice);
+
+        allSesResults.push_back(sessionResults);
     }
 
     for(int ses=0; ses < sessions; ses++)
@@ -964,7 +969,7 @@ RecordResults runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    return allResults;
+    return allSesResults;
 }
 
 
