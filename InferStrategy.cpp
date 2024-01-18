@@ -938,7 +938,7 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
 
         RecordResults sessionResults;
 
-        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, sessionResults);
+        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, debug, sessionResults);
         mstep(ratdata, ses, strategies, cluster, debug, sessionResults);
 
         probMat = arma::join_cols(probMat, probMat_sess);
@@ -947,10 +947,14 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         allSesResults.push_back(sessionResults);
     }
 
-    for(int ses=0; ses < sessions; ses++)
+    if(debug)
     {
-        std::cout << "session " << ses << ", most_likely=" << most_likely[ses] << std::endl;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            std::cout << "session " << ses << ", most_likely=" << most_likely[ses] << std::endl;
+        }
     }
+    
 
     arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
     arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
