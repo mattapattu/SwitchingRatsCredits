@@ -797,9 +797,10 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     double lambda_drl_optimal = v[7];
 
     
-    double crpAlpha = 1e-7;
     double phi = v[8];
-    double eta = 100;
+    double crpAlpha = v[9];
+    double eta = v[10];
+
 
     if(debug)
     {

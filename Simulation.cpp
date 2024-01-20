@@ -263,9 +263,9 @@ RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, Ma
     double lambda_drl_optimal = v[7];
 
     
-    double crpAlpha = 1e-7;
     double phi = v[8];
-    double eta = 100;
+    double crpAlpha = v[9];
+    double eta = v[10];
 
     auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
     auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, crpAlpha, phi, eta, true);

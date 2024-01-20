@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
         std::cout << "rat=" << rdata.getRat() << std::endl;
     
         // Write params to file
-        // findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
+        findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
 
         ////Read the params from from rat param file, e.g rat_103.txt
         std::string rat = rdata.getRat();
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
         
         //testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
     }

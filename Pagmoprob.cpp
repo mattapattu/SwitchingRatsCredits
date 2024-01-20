@@ -30,15 +30,14 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     double lambda_drl_optimal = v[7];
 
     
-    double crpAlpha = 1e-7;
-
     // double rS0_subopt = v[1];
     // double rS1_subopt = v[2];
     // double rS0_opt = v[1];
     // double rS1_opt = v[2];
 
     double phi = v[8];
-    double eta = 100;
+    double crpAlpha = v[9];
+    double eta = v[10];
 
 
     //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
@@ -132,8 +131,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    bounds.first={0,0,0,0,0,0,0,0,0};
-    bounds.second={1,1,1,1,1,1,1,1,1};
+    bounds.first={0,0,0,0,0,0,0,0,0,0,0};
+    bounds.second={1,1,1,1,1,1,1,1,1,100,100};
 
     
 
