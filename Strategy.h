@@ -265,6 +265,17 @@ public:
         return crpPosteriors;
     }
 
+
+    void setCrpPriorInEachTrial(double v)
+    {
+        crpPriorInEachTrial.push_back(v);
+    }
+
+    std::vector<double> getCrpPriorInEachTrial()
+    {
+        return crpPriorInEachTrial;
+    }
+
     void initRewards(const RatData &ratdata);
 
     void updateRewards(const RatData &ratdata, int session);
@@ -328,6 +339,7 @@ private:
     std::vector<double> rewardsS0;
     std::vector<double> rewardsS1;
     std::vector<double> marginalLikelihood;
+    std::vector<double> crpPriorInEachTrial;
     bool optimal;
     double alpha;
     double gamma;
