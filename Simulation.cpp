@@ -483,7 +483,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     int sessions = uniqSessIdx.n_elem;
 
 
-    std::vector<RecordResults> allRes =  runEM(ratdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, false);
+    std::vector<RecordResults> allRes =  runEM(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, false);
     // std::random_device rd;
     // std::mt19937 gen(rd());
     // std::uniform_int_distribution<int> distribution(5,9);

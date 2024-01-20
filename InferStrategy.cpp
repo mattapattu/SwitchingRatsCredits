@@ -414,7 +414,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 
     std::cout << "Initializing problem class" <<std::endl;
     // Create a function to optimize
-    PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3, params);
+    PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
     //PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
     std::cout << "Initialized problem class" <<std::endl;
 
