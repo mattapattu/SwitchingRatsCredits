@@ -321,6 +321,17 @@ RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, Ma
         drl_Suboptimal_Hybrid3_cpy->setRewardsS0(s0rewardsSubOpt);
 
 
+        aca2_Optimal_Hybrid3->setRewardsS0(s0rewards);
+        aca2_Optimal_Hybrid3->setRewardsS1(s1rewards);
+
+        drl_Optimal_Hybrid3->setRewardsS0(s0rewards);
+        drl_Optimal_Hybrid3->setRewardsS1(s1rewards);
+
+        aca2_Suboptimal_Hybrid3->setRewardsS0(s0rewardsSubOpt);
+        drl_Suboptimal_Hybrid3->setRewardsS0(s0rewardsSubOpt);
+
+
+        
         for(int ses=0; ses < sessions; ses++)
         {
            
@@ -333,6 +344,30 @@ RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, Ma
 
            drl_Optimal_Hybrid3->setStateS0Credits(drl_Optimal_Hybrid3_cpy->getS0Credits());
            drl_Optimal_Hybrid3->setStateS1Credits(drl_Optimal_Hybrid3_cpy->getS1Credits());
+
+        //    RecordResults trueRes_ses = allRes[ses];
+        //    std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = trueRes_ses.getRewardVectorS0();
+        //    std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = trueRes_ses.getRewardVectorS1();
+
+
+        //     std::vector<double> trueRewards_aca2_Suboptimal_Hybrid3S0 = trueRewardVecMapS0[trueStrategy1->getName()];
+        //     std::vector<double> trueRewards_drl_Suboptimal_Hybrid3S0 = trueRewardVecMapS0[trueStrategy1->getName()];
+
+        //     std::vector<double> trueRewards_aca2_Optimal_Hybrid3S0 = trueRewardVecMapS0[aca2_Optimal_Hybrid3->getName()];
+        //     std::vector<double> trueRewards_aca2_Optimal_Hybrid3S1 = trueRewardVecMapS1[aca2_Optimal_Hybrid3->getName()];    
+
+        //     std::vector<double> trueRewards_drl_Optimal_Hybrid3S0 = trueRewardVecMapS0[drl_Optimal_Hybrid3->getName()];
+        //     std::vector<double> trueRewards_drl_Optimal_Hybrid3S1 = trueRewardVecMapS1[drl_Optimal_Hybrid3->getName()];  
+
+            
+        //     aca2_Suboptimal_Hybrid3->setRewardsS0(trueRewards_aca2_Suboptimal_Hybrid3S0);
+        //     drl_Suboptimal_Hybrid3->setRewardsS0(trueRewards_drl_Suboptimal_Hybrid3S0);
+
+        //     aca2_Optimal_Hybrid3->setRewardsS0(trueRewards_aca2_Optimal_Hybrid3S0);
+        //     aca2_Optimal_Hybrid3->setRewardsS1(trueRewards_aca2_Optimal_Hybrid3S1);
+
+        //     drl_Optimal_Hybrid3->setRewardsS0(trueRewards_drl_Optimal_Hybrid3S0);
+        //     drl_Optimal_Hybrid3->setRewardsS1(trueRewards_drl_Optimal_Hybrid3S1);
 
             std::pair<arma::mat, arma::mat> simData;
             arma::mat generated_PathData_sess;
