@@ -5,42 +5,11 @@
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
-    //ACA params
-    double alpha_aca_subOptimal = params.find(std::make_pair("aca2", false))->second[0];
-    double gamma_aca_subOptimal = params.find(std::make_pair("aca2", false))->second[1];
+        double alpha_aca_subOptimal = v[0];
+    double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = params.find(std::make_pair("aca2", true))->second[0];
-    double gamma_aca_optimal = params.find(std::make_pair("aca2", true))->second[1];
-
-    // COMMENTING OUT ARL
-    //ARL params
-    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    // double beta_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    // double lambda_arl_subOptimal = 0;
-    
-    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    // double beta_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
-    // double lambda_arl_optimal = 0;
- 
-    //DRL params
-    double alpha_drl_subOptimal = params.find(std::make_pair("drl", false))->second[0];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = params.find(std::make_pair("drl", false))->second[1];
-    
-    double alpha_drl_optimal = params.find(std::make_pair("drl", true))->second[0];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = params.find(std::make_pair("drl", true))->second[1];
-
-    
-    // double crpAlpha = v[0];
-    // double phi = v[1];
-    // double eta = 0;
-
-    // double alpha_aca_subOptimal = v[0];
-    // double gamma_aca_subOptimal = v[1];
-
-    // double alpha_aca_optimal = v[2];
-    // double gamma_aca_optimal = v[3];
+    double alpha_aca_optimal = v[2];
+    double gamma_aca_optimal = v[3];
 
     // //ARL params
     // double alpha_arl_subOptimal = v[4];
@@ -52,39 +21,24 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     // double lambda_arl_optimal = v[7];
  
     // //DRL params
-    // double alpha_drl_subOptimal = v[8];
-    // double beta_drl_subOptimal = 1e-4;
-    // double lambda_drl_subOptimal = v[9];
+    double alpha_drl_subOptimal = v[4];
+    double beta_drl_subOptimal = 1e-4;
+    double lambda_drl_subOptimal = v[5];
     
-    // double alpha_drl_optimal = v[10];
-    // double beta_drl_optimal = 1e-4;
-    // double lambda_drl_optimal = v[11];
+    double alpha_drl_optimal = v[6];
+    double beta_drl_optimal = 1e-4;
+    double lambda_drl_optimal = v[7];
 
     
-    double crpAlpha = v[0];
+    double crpAlpha = 1e-7;
 
     // double rS0_subopt = v[1];
     // double rS1_subopt = v[2];
     // double rS0_opt = v[1];
     // double rS1_opt = v[2];
 
-    double phi = v[1];
-    double eta = 0;
-    
-    
-       
-    // std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_opt};
-
-    // std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_opt};
-    
-    // std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_opt};
-  
-    // std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
-    // std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
-    // std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_opt,rS1_opt,0,0,0,0};
+    double phi = v[8];
+    double eta = 100;
 
 
     //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
@@ -178,8 +132,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    bounds.first={0,0,};
-   bounds.second={20,1};
+    bounds.first={0,0,0,0,0,0,0,0,0};
+    bounds.second={1,1,1,1,1,1,1,1,1};
 
     
 

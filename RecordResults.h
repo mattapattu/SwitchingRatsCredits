@@ -104,6 +104,18 @@ public:
         allResults.push_back(sessionResults);
     }
 
+    void addCrpPriorSes(std::vector<double> v)
+    {
+        crpPriorSes = v;
+    }
+
+
+    std::vector<double> getCrpPriorSes()
+    {
+        return crpPriorSes;
+    }
+
+
 
     // // Display results for a single session
     // void displayResults() const {
@@ -127,6 +139,7 @@ private:
     std::map<std::string, double> posteriors;
     std::map<std::string, std::vector<double>> rewardVectorS0;
     std::map<std::string, std::vector<double>> rewardVectorS1;
+    std::vector<double> crpPriorSes;
 
     // Container to store results for all sessions
     std::vector<RecordResults> allResults;
