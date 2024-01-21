@@ -43,20 +43,20 @@ int main(int argc, char* argv[])
         std::cout << "rat=" << rdata.getRat() << std::endl;
     
         // Write params to file
-        findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
+        // findParams(rdata, suboptimalHybrid3, optimalHybrid3);    
 
-        ////Read the params from from rat param file, e.g rat_103.txt
-        std::string rat = rdata.getRat();
-        std::string filename = rat + ".txt";
-        std::ifstream infile(filename);
-        std::map<std::pair<std::string, bool>, std::vector<double>> params;
-        boost::archive::text_iarchive ia(infile);
-        ia >> params;
-        infile.close();
+        // ////Read the params from from rat param file, e.g rat_103.txt
+        // std::string rat = rdata.getRat();
+        // std::string filename = rat + ".txt";
+        // std::ifstream infile(filename);
+        // std::map<std::pair<std::string, bool>, std::vector<double>> params;
+        // boost::archive::text_iarchive ia(infile);
+        // ia >> params;
+        // infile.close();
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        // findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
+        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
