@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 
     //std::vector<std::string> rats = {"rat103"};
 
-    // std::string rat = argv[1];
-    // std::vector<std::string> rats = {rat};
+    //  std::string rat = argv[1];
+    //  std::vector<std::string> rats = {rat};
 
     for(const std::string& ratName: rats)
     {
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
+        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
@@ -70,11 +70,11 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
+        runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
         
         //testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
     }

@@ -2,6 +2,7 @@
 #include "RecordResults.h"
 #include "Strategy.h"
 #include "InferStrategy.h"
+#include <algorithm>
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
@@ -30,15 +31,9 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     double lambda_drl_optimal = v[7];
 
     
-    double crpAlpha = 1e-7;
-
-    // double rS0_subopt = v[1];
-    // double rS1_subopt = v[2];
-    // double rS0_opt = v[1];
-    // double rS1_opt = v[2];
-
     double phi = v[8];
-    double eta = 100;
+    double crpAlpha = v[9];
+    double eta = v[10];
     
     
        
@@ -137,9 +132,41 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
     if(marginal_lik == 0)
     {
+        std::cout << "marginal_lik=0, v=";
+        // Print the vector elements
+        for (double x : v)
+        {
+            std::cout << x << ", ";
+        }
+        std::cout << "\n";
+
+
         marginal_lik = 100000; // Penalize to prevent zero likelihoods
     }
-    return{marginal_lik};
+
+    // Count the number of optimal and suboptimal strategies
+    double optimalCount = std::count_if(cluster.begin(), cluster.end(),
+            [](const std::string& stratName) {
+                return stratName.find("Optimal") != std::string::npos;
+            });
+
+    double suboptimalCount = std::count_if(cluster.begin(), cluster.end(),
+        [](const std::string& stratName) {
+            return stratName.find("Suboptimal") != std::string::npos;
+        });
+
+    // // // Check if the vector contains either one optimal and one suboptimal strategy, or only one optimal strategy
+    // if (!((optimalCount == 1 && suboptimalCount == 1) || (optimalCount == 1 && suboptimalCount == 0)))
+    // {
+    //     std::cout << "Cluster not complying with constraints\n";
+    //     //marginal_lik = 100000;
+    // }else{
+    //     std::cout << "Cluster contains either one optimal and one suboptimal strategy, or only one optimal strategy, marginal_lik=" << marginal_lik << std::endl  ;
+    // }
+
+
+
+    return{marginal_lik, optimalCount-1, suboptimalCount-1};
 
 }
 
@@ -147,13 +174,11 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    bounds.first={0,0,0,0,0,0,0,0,0};
-    bounds.second={1,1,1,1,1,1,1,1,1};
+    bounds.first={0,0,0,0,0,0,0,0,0,1e-16, 1e-16};
+    bounds.second={1,1,1,1,1,1,1,1,1,100,100};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};
     //bounds.second={1,1,1,1,1,1,1,1,1e-3,1,10};
-
-    
 
     return(bounds);
   }
