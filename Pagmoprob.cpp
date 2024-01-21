@@ -2,6 +2,8 @@
 #include "RecordResults.h"
 #include "Strategy.h"
 #include "InferStrategy.h"
+#include <algorithm>
+
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
@@ -123,6 +125,31 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     {
         marginal_lik = 100000; // Penalize to prevent zero likelihoods
     }
+
+    std::vector<std::string> strategies = {"aca2_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Suboptimal_Hybrid3","drl_Optimal_Hybrid3"};
+
+    // Count the number of optimal and suboptimal strategies
+    int optimalCount = std::count_if(strategies.begin(), strategies.end(),
+            [](const std::string& strategy) {
+                return strategy.find("Optimal") != std::string::npos;
+            });
+
+    int suboptimalCount = std::count_if(strategies.begin(), strategies.end(),
+        [](const std::string& strategy) {
+            return strategy.find("Suboptimal") != std::string::npos;
+        });
+
+    // Check if the vector contains either one optimal and one suboptimal strategy, or only one optimal strategy
+    if (!((optimalCount == 1 && suboptimalCount == 1) || (optimalCount == 1 && suboptimal == 0)))
+    {
+        //std::cout << "The vector contains either one optimal and one suboptimal strategy, or only one optimal strategy\n";
+        marginal_lik = 100000;
+    }
+    // else
+    // {
+    //     std::cout << "The vector does not contain either one optimal and one suboptimal strategy, or only one optimal strategy\n";
+    // }
+
     return{marginal_lik};
 
 }
