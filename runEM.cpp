@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
+        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
