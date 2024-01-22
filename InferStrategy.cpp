@@ -14,8 +14,8 @@
 #include <pagmo/batch_evaluators/thread_bfe.hpp>
 #include <pagmo/utils/multi_objective.hpp>
 #include <pagmo/problems/unconstrain.hpp>
-#include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/algorithms/pso_gen.hpp>
+#include <pagmo/algorithms/gaco.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -431,7 +431,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     problem prob{pagmoprob};
     //problem prob{schwefel(30)};
 
-    unconstrain unprob{prob, "kuri"};
+    //unconstrain unprob{prob, "kuri"};
 
 
     std::cout << prob << std::endl;
@@ -490,10 +490,11 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 
 
     pagmo::thread_bfe thread_bfe;
-    pagmo::pso_gen method ( 10 );
+    //pagmo::pso_gen method ( 10 );
+    pagmo::gaco method(10);
     method.set_bfe ( pagmo::bfe { thread_bfe } );
     pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { unprob, thread_bfe, 35 };
+    pagmo::population pop { prob, thread_bfe, 100 };
     // Evolve the population for 100 generations
     for ( auto evolution = 0; evolution < 5; evolution++ ) {
         pop = algo.evolve(pop);
@@ -582,7 +583,7 @@ void findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptim
     pagmo::moead_gen method (10);
     method.set_bfe(pagmo::bfe { thread_bfe } );
     pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { prob, thread_bfe, 28};
+    pagmo::population pop { prob, thread_bfe, 50};
    
 
     // Evolve the population for 100 generations
