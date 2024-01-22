@@ -175,7 +175,7 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
     std::pair<vector_double, vector_double> bounds;
 
     bounds.first={0,0,0,0,0,0,0,0,0,1e-16, 1e-16};
-    bounds.second={1,1,1,1,1,1,1,1,1,100,100};
+    bounds.second={1,1,1,1,1,1,1,1,1,5,5};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};
     //bounds.second={1,1,1,1,1,1,1,1,1e-3,1,10};
