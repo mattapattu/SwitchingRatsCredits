@@ -217,6 +217,7 @@ public:
     void setStateS0Credits(std::vector<double> v)
     {
         stateS0.setVertexCredits(v);
+        stateS0.updateEdgeProbabilitiesSoftmax();
     }
 
     BoostGraph& getStateS1()
@@ -233,6 +234,7 @@ public:
     void setStateS1Credits(std::vector<double> v)
     {
         stateS1.setVertexCredits(v);
+        stateS1.updateEdgeProbabilitiesSoftmax();
     }
 
     
@@ -292,6 +294,15 @@ public:
             stateS1.updateEdgeProbabilitiesSoftmax();
         }
         return;
+    }
+
+    void printEdgeProbs()
+    {
+        stateS0.printNodeProbabilities();
+        if(optimal)
+        {
+            stateS1.printNodeProbabilities();
+        }
     }
 
     // void updateEdgeProbabilities()

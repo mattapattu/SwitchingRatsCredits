@@ -141,7 +141,7 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         std::cout << "\n";
 
 
-        marginal_lik = 100000; // Penalize to prevent zero likelihoods
+        //marginal_lik = 100000; // Penalize to prevent zero likelihoods
     }
 
     // Count the number of optimal and suboptimal strategies
@@ -165,8 +165,8 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     // }
 
 
-
-    return{marginal_lik, optimalCount-1, suboptimalCount-1};
+    double cluster_size = cluster.size();
+    return{marginal_lik, optimalCount-1, suboptimalCount-1, 1-marginal_lik, 1-cluster_size};
 
 }
 
@@ -174,7 +174,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    bounds.first={1e-3,1e-8,1e-3,1e-8,1e-3,1e-8,1e-3,1e-8,1e-8,1e-8, 1e-8};
+    //bounds.first={1e-8,0.5,1e-8,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
+    bounds.first={1e-2,0.5,1e-2,0.5,1e-2,1e-8,1e-2,1e-8,1e-8,1e-8,1e-8};
     bounds.second={1,1,1,1,1,1,1,1,1,5,5};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};

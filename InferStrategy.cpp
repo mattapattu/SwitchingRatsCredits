@@ -24,6 +24,8 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
+#include <Eigen/Dense>
+
 
 
 
@@ -431,77 +433,146 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     problem prob{pagmoprob};
     //problem prob{schwefel(30)};
 
-    //unconstrain unprob{prob, "kuri"};
-
+    unconstrain unprob{prob, "kuri"};
 
     std::cout << prob << std::endl;
-    //std::cout << "created problem" <<std::endl;
-    // 2 - Instantiate a pagmo algorithm (self-adaptive differential
-    // evolution, 100 generations).
-    //pagmo::algorithm algo{sade(10,2,2)};
-    //pagmo::algorithm algo{sade(20)};
+    std::cout << "created problem" <<std::endl;
 
-    //pagmo::cstrs_self_adaptive algo{10, sade()};
+    const auto nvar = 11u;
+    const auto nval = 50u;
+    const auto nisl = 5u;
+    const auto nind = 10u;
+    std::pair<vector_double, vector_double> bounds = prob.get_bounds();
+
+    // Define the grid vector as a 2D vector of Eigen vectors
+    arma::mat grid(nval, nvar);
+
+
+    // Loop over the variables and the values
+    for (auto i = 0u; i < nvar; ++i) {
+        // Convert the bounds to log scale
+        // Generate a vector of linearly spaced values in the log scale
+        arma::vec log_lin = arma::linspace<arma::vec>(bounds.first[i], bounds.second[i], nval);
+
+
+        // Convert the values back to the original scale
+        //arma::vec log_exp = arma::pow(log_lin,10);
+
+
+        // Assign the values to the grid vector
+        grid.col(i) = log_lin;
+
+    }
+
+    // std::cout << "Init pop="  << std::endl;
+    // grid.print();
+    
+    std::vector<double> df(11, 0.0);
+
+
+
+
+    //2 - Instantiate a pagmo algorithm (self-adaptive differential
+    ////evolution, 100 generations).
+    //pagmo::algorithm algo{sade(10,2,2)};
+    //pagmo::algorithm algo{de1220(10)};
+    ////pagmo::algorithm algo{sade(20)};
+
+    // pagmo::cstrs_self_adaptive algo{10, sade()};
     //algo.set_verbosity(100);
 
 
-    //std::cout << "creating archipelago" <<std::endl;
-    // 3 - Instantiate an archipelago with 5 islands having each 5 individuals.
+    
+    ///3 - Instantiate an archipelago with 5 islands having each 5 individuals.
     //archipelago archi{5u, algo, prob, 7u};
 
-    //archipelago archi{5u, algo, unprob, 15u};
+    // Define the archipelago
+    pagmo::archipelago archi;
+    std::cout << "creating archipelago with " << nisl << " islands" <<std::endl;
+    // Loop over the islands
+    for (auto i = 0u; i < nisl; ++i) {
+        // Initialize the population with random individuals
+        pagmo::population pop{unprob, nind};
 
-    // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    //archi.evolve(5);
-    //std::cout << "DONE1:"  << '\n';
-    //system("pause"); 
+        // std::cout << "Initializing island=" << i << " with " << nind << " individuals" <<std::endl;
 
-    // 5 - Wait for the evolutions to finish.
-    //archi.wait_check();
+        // Loop over the individuals
+        for (auto j = 0u; j < nind; ++j) {
+            // Get the indices of the grid values for the current individual
 
-    // 6 - Print the fitness of the best solution in each island.
+            std::vector<double> stdVector = arma::conv_to<std::vector<double>>::from(grid.row(10*i+j));
 
-    // std::cout << "DONE1:"  << '\n';  
+            // Set the decision vector of the current individual
+            pop.set_x(j,stdVector);
 
-    //system("pause"); 
-
-    // double champion_score = 1e8;
-    // std::vector<double> dec_vec_champion;
-    // for (const auto &isl : archi) {
-    //     std::vector<double> dec_vec = isl.get_population().champion_x();
-        
-    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-    //     // for (auto const& i : dec_vec)
-    //     //     std::cout << i << ", ";
-    //     // std::cout << "\n" ;
-
-    //     double champion_isl = isl.get_population().champion_f()[0];
-    //     if(champion_isl < champion_score)
-    //     {
-    //         champion_score = champion_isl;
-    //         dec_vec_champion = dec_vec;
-    //     }
-    // }
-
-    // std::cout << "Final champion = " << champion_score << std::endl;
-    // for (auto const& i : dec_vec_champion)
-    //     std::cout << i << ", ";
-    // std::cout << "\n" ;
+            // std::cout << "Setting " << j << "th individual of island "<< i <<" to: ";
+            // for (double value : stdVector) {
+            //     std::cout << value << " ";
+            // }
+            // std::cout << "\n";    
 
 
-    pagmo::thread_bfe thread_bfe;
-    //pagmo::pso_gen method ( 10 );
-    pagmo::gaco method(10);
-    method.set_bfe ( pagmo::bfe { thread_bfe } );
-    pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { prob, thread_bfe, 100 };
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
-        pop = algo.evolve(pop);
+        }
+
+        // Create an algorithm for the current island (here we use sade as an example)
+        //pagmo::algorithm algo{sade(10,2,2)};
+        pagmo::algorithm algo{de(10)};
+        algo.set_verbosity(1);
+
+
+        // Add the island to the archipelago
+        archi.push_back(algo, pop);
     }
 
-    std::vector<double> dec_vec_champion = pop.champion_x();
-    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    //archipelago archi{10u, algo, unprob, 20u};
+
+    ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    archi.evolve(10);
+    std::cout << "DONE1:"  << '\n';
+    ////system("pause"); 
+
+    ///5 - Wait for the evolutions to finish.
+    archi.wait_check();
+
+    ///6 - Print the fitness of the best solution in each island.
+
+    double champion_score = 1e8;
+    std::vector<double> dec_vec_champion;
+    for (const auto &isl : archi) {
+        std::vector<double> dec_vec = isl.get_population().champion_x();
+        
+        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+        // for (auto const& i : dec_vec)
+        //     std::cout << i << ", ";
+        // std::cout << "\n" ;
+
+        double champion_isl = isl.get_population().champion_f()[0];
+        if(champion_isl < champion_score)
+        {
+            champion_score = champion_isl;
+            dec_vec_champion = dec_vec;
+        }
+    }
+
+    std::cout << "Final champion = " << champion_score << std::endl;
+    for (auto const& i : dec_vec_champion)
+        std::cout << i << ", ";
+    std::cout << "\n" ;
+
+
+    // pagmo::thread_bfe thread_bfe;
+    // //pagmo::pso_gen method ( 10 );
+    // pagmo::gaco method(10);
+    // method.set_bfe ( pagmo::bfe { thread_bfe } );
+    // pagmo::algorithm algo = pagmo::algorithm { method };
+    // pagmo::population pop { prob, thread_bfe, 100 };
+    // // Evolve the population for 100 generations
+    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    //     pop = algo.evolve(pop);
+    // }
+
+    // std::vector<double> dec_vec_champion = pop.champion_x();
+    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
 
     const auto fv = prob.fitness(dec_vec_champion);
