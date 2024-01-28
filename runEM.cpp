@@ -18,8 +18,10 @@ int main(int argc, char* argv[])
 
     // std::vector<std::string> rats = {"rat106","rat112"};
 
-    std::string rat = argv[1];
-    std::vector<std::string> rats = {rat};
+    std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
+
+    //std::string rat = argv[1];
+    //std::vector<std::string> rats = {rat};
 
     for(const std::string& ratName: rats)
     {
@@ -56,19 +58,19 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
+        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
         //read clusterParams.txt to get the parameters for rat
-        std::string filename_cluster = "clusterParams.txt";
+        std::string filename_cluster = "clusterMLEParams.txt";
         std::ifstream cluster_infile(filename_cluster);
         std::map<std::string, std::vector<double>> clusterParams;
         boost::archive::text_iarchive ia_cluster(cluster_infile);
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        // runEM(rdata, suboptimalHybrid3, optimalHybrid3, params,clusterParams, true);
+        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
@@ -76,6 +78,32 @@ int main(int argc, char* argv[])
         
         //testLogLik(rdata, suboptimalHybrid3, optimalHybrid3);
     }
+
+    for(const std::string& ratName: rats)
+    {
+        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
+
+        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
+
+
+        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
+        R.parseEvalQ(cmd);                  
+        Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
+
+        RatData rdata(ratdata);
+        MazeGraph suboptimalHybrid3(Suboptimal_Hybrid3, false);
+        MazeGraph optimalHybrid3(Optimal_Hybrid3, true);
+
+        std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
+
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+
+    }
+
         
     
    
