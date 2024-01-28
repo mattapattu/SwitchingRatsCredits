@@ -1588,6 +1588,11 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     int start = rank * partition_size;
     int end = (rank == size - 1) ? 30 : start + partition_size;
 
+    unsigned int cores = std::thread::hardware_concurrency();
+    std::cout << "Number of available cores: " << cores << std::endl;
+
+
+
     std::string rat = ratdata.getRat();
 
     for(int i = 0; i < 30; i++)
