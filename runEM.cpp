@@ -18,10 +18,10 @@ int main(int argc, char* argv[])
 
     // std::vector<std::string> rats = {"rat106","rat112"};
 
-    std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
+    //std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
 
-    //std::string rat = argv[1];
-    //std::vector<std::string> rats = {rat};
+    std::string rat = argv[1];
+    std::vector<std::string> rats = {rat};
 
     for(const std::string& ratName: rats)
     {
