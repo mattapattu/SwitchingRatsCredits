@@ -1546,6 +1546,8 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     int start = rank * partition_size;
     int end = (rank == size - 1) ? 30 : start + partition_size;
 
+    std::string rat = ratdata.getRat();
+
     for(int i = start; i < end; i++)
     {
         int genStrategyId = i%6;
