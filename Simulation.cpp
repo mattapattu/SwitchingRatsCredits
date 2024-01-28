@@ -676,11 +676,11 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 
             if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
             {
-                std::uniform_int_distribution<int> distribution(3,5);
+                std::uniform_int_distribution<int> distribution(2,5);
                 changepoint_ses = distribution(gen);
 
             }else{
-                std::uniform_int_distribution<int> distribution(3,5);
+                std::uniform_int_distribution<int> distribution(2,5);
                 changepoint_ses = distribution(gen);
             }
             
@@ -1584,9 +1584,9 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     cluster_infile.close();
 
     // Calculate the range of iterations for each process
-    int partition_size = 30 / size;
-    int start = rank * partition_size;
-    int end = (rank == size - 1) ? 30 : start + partition_size;
+    //int partition_size = 30 / size;
+    //int start = rank * partition_size;
+    //int end = (rank == size - 1) ? 30 : start + partition_size;
 
     unsigned int cores = std::thread::hardware_concurrency();
     std::cout << "Number of available cores: " << cores << std::endl;
