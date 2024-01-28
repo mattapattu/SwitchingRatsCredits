@@ -355,11 +355,13 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     S = S_prime;
     strategy.updatePathProbMat(session);
   }
-  S0.decayCredits(gamma);
+  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  //double decay_factor = gamma;
+  S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
   {
-    S1.decayCredits(gamma);
+    S1.decayCredits(decay_factor);
     S1.updateEdgeProbabilitiesSoftmax();
   }
 
@@ -432,23 +434,16 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
   //std::cout << strategy.getName() << ", session=" << session << ", alpha=" <<alpha << ", gamma=" <<gamma << std::endl;
 
-  std::vector<double> rewardsS0 = strategy.getRewardsS0(); 
-  std::vector<double> rewardsS1 = strategy.getRewardsS1(); 
+  std::vector<double> rewardsS0; 
+  std::vector<double> rewardsS1; 
 
-  // if(strategy.getOptimal())
-  //   {
-  //       rewardsS0 = {0,0,0,0,0,0,0,5,0};
-  //       rewardsS1 = {0,0,0,0,0,0,0,0,5};
-  //   }else{
-  //       std::string rat = ratdata.getRat();
-  //       if(rat=="rat103")
-  //       {
-  //         rewardsS0 = {0,0,0,0,0,0,0,5,0,0,0,0};
-  //       }else{
-  //         rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
-  //       }
-        
-  //   }
+  if(strategy.getOptimal())
+  {
+        rewardsS0 = {0,0,0,0,0,0,0,5,0};
+  rewardsS1 = {0,0,0,0,0,0,0,0,5};
+  }else{
+  rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
+  }
 
   
 
@@ -706,11 +701,14 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     S = S_prime;
     strategy.updatePathProbMat(session);
   }
-  S0.decayCredits(gamma);
+  
+  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  //double decay_factor = gamma;
+  S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
   {
-    S1.decayCredits(gamma);
+    S1.decayCredits(decay_factor);
     S1.updateEdgeProbabilitiesSoftmax();
   }
 
