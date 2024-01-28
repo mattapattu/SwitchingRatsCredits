@@ -1600,7 +1600,8 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         int genStrategyId = i%6;
         int iteration = i/6;
 
-        std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        //std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        std::cout << "genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
         
         try {
             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, genStrategyId);
