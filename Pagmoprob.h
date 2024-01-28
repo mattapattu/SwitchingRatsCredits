@@ -12,6 +12,7 @@
 
 
 
+
 using namespace Rcpp;
 using namespace pagmo;
 
@@ -47,6 +48,19 @@ public:
   }
 
 
+  // std::vector<std::atomic<std::pair<double, std::vector<double>>>> getIndexedValues()
+  // {
+  //   return indexedValues;
+  // }
+
+  // void addIndexedValues(std::pair<double, std::vector<double>> x) const
+  // {
+  //   //std::lock_guard<std::mutex> lock(vectorMutex);
+  //   // Perform operations on threadSafeVector
+  //   indexedValues.push_back(x);
+
+  // }
+
 
 private:
   // Members
@@ -54,6 +68,8 @@ private:
   const MazeGraph& Suboptimal_Hybrid3;
   const MazeGraph& Optimal_Hybrid3;
   const std::map<std::pair<std::string, bool>, std::vector<double>> params;
+  //mutable std::vector<std::atomic<std::pair<double, std::vector<double>>>> indexedValues;
+  // mutable std::mutex  vectorMutex;
 
   
 };

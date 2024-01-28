@@ -17,6 +17,8 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
+#include <stdexcept>
+
 
 
 
@@ -145,6 +147,7 @@ bool check_path5(arma::mat data) {
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
     if(anyGreaterThanPointEight_ema1 || anyGreaterThanPointEight_ema0)
     {
+        std::cout << "check_ema failed, anyGreaterThanPointEight_ema0: " << anyGreaterThanPointEight_ema0 << ", anyGreaterThanPointEight_ema1:" << anyGreaterThanPointEight_ema1 <<std::endl;
         return false;
     }
 
@@ -485,7 +488,7 @@ RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, Ma
                 if(ses < changepoint_ses)
                 {
                     
-                    randomPair.first->setStateS0Credits(creditsS0_Opt);
+                    //randomPair.first->setStateS0Credits(creditsS0_Opt);
                     // std::cout <<"creditsS0_Subopt:";
                     // std::vector<double> initCr = randomPair.first->getS0Credits(); 
                     // for (const double& value : initCr) {
@@ -536,15 +539,15 @@ RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, Ma
 
                 } //End session of switching simulations
 
-                trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
-                trueStrategy2->getTrajectoryLikelihood(ratdata, ses);
+                // trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
+                // trueStrategy2->getTrajectoryLikelihood(ratdata, ses);
                 
-                //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
+                // //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
                 
-                creditsS0_Opt =  trueStrategy2->getS0Credits(); 
-                creditsS1_Opt =  trueStrategy2->getS1Credits(); 
+                // creditsS0_Opt =  trueStrategy2->getS0Credits(); 
+                // creditsS1_Opt =  trueStrategy2->getS1Credits(); 
 
-                trueGenStrategies.push_back(strategy->getName());
+                // trueGenStrategies.push_back(strategy->getName());
 
                 generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
                 generated_TurnsData = arma::join_cols(generated_TurnsData, generated_TurnsData_sess);
@@ -865,10 +868,11 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
             std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             randomPair.first->setStateS0Credits(initCreditsS0);
 
-            std::vector<double> initCreditsOptS0 = {0,0,0,4,0,0,0,4,0};
-            std::vector<double> initCreditsOptS1 = {0,0,0,4,0,0,0,0,4};
+            std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
+            std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
             randomPair.second->setStateS0Credits(initCreditsOptS0);
             randomPair.second->setStateS1Credits(initCreditsOptS1);
 
@@ -1232,139 +1236,96 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
 
     // Create a problem using Pagmo
     problem prob{pagmoprob};
-    //problem prob{schwefel(30)};
 
     unconstrain unprob{prob, "kuri"};
+    // //2 - Instantiate a pagmo algorithm (self-adaptive differential
+    // ////evolution, 100 generations).
+    // pagmo::algorithm algo{de(10)};
+    //pagmo::algorithm algo{de(10)};
+    // ////pagmo::algorithm algo{sade(20)};
+
+    // // pagmo::cstrs_self_adaptive algo{10, sade()};
+    // //algo.set_verbosity(100);
+
+
     
-    std::cout << "created problem" <<std::endl;
+    // ///3 - Instantiate an archipelago with 5 islands having each 5 individuals.
+    // archipelago archi{5u, algo, prob, 10u};
 
-    const auto nvar = 11u;
-    const auto nval = 50u;
-    const auto nisl = 5u;
-    const auto nind = 10u;
-    std::pair<vector_double, vector_double> bounds = prob.get_bounds();
+    // pagmo::vector_double x;
 
-    // Define the grid vector as a 2D vector of Eigen vectors
-    arma::mat grid(nval, nvar);
+    // std::string rat = ratdata.getRat();
 
-
-    // Loop over the variables and the values
-    for (auto i = 0u; i < nvar; ++i) {
-        // Convert the bounds to log scale
-        // Generate a vector of linearly spaced values in the log scale
-        arma::vec log_lin = arma::linspace<arma::vec>(bounds.first[i], bounds.second[i], nval);
-
-
-        // Convert the values back to the original scale
-        //arma::vec log_exp = arma::pow(log_lin,10);
-
-
-        // Assign the values to the grid vector
-        grid.col(i) = log_lin;
-
-    }
-
-    // std::cout << "Init pop="  << std::endl;
-    // grid.print();
-    std::vector<double> df(11, 0.0);
-
-
-    pagmo::archipelago archi;
-    std::cout << "creating archipelago with " << nisl << " islands" <<std::endl;
-    // Loop over the islands
-    for (auto i = 0u; i < nisl; ++i) {
-        // Initialize the population with random individuals
-        pagmo::population pop{unprob, nind};
-
-        // std::cout << "Initializing island=" << i << " with " << nind << " individuals" <<std::endl;
-
-        // Loop over the individuals
-        for (auto j = 0u; j < nind; ++j) {
-            // Get the indices of the grid values for the current individual
-
-            std::vector<double> stdVector = arma::conv_to<std::vector<double>>::from(grid.row(10*i+j));
-
-            // Set the decision vector of the current individual
-            pop.set_x(j,stdVector);
-            // std::cout << "Setting " << j << "th individual of island "<< i <<" to: ";
-            // for (double value : stdVector) {
-            //     std::cout << value << " ";
-            // }
-            // std::cout << "\n";    
-
-
-        }
-
-        // Create an algorithm for the current island (here we use sade as an example)
-        //pagmo::algorithm algo{sade(10,2,2)};
-        pagmo::algorithm algo{de(10)};
-        //algo.set_verbosity(1);
-
-
-        // Add the island to the archipelago
-        archi.push_back(algo, pop);
-    }
-
-
-
-
-
-    // // 2 - Instantiate a pagmo algorithm (self-adaptive differential
-    // // evolution, 100 generations).
-    // pagmo::algorithm algo{sade(10,2,2)};
-
-    // std::cout << "creating archipelago" <<std::endl;
-    // // 3 - Instantiate an archipelago with 5 islands having each 5 individuals.
-    // archipelago archi{10u, algo, unprob, 20u};
-
-    // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(10);
-    std::cout << "DONE1:"  << '\n';
-    //system("pause"); 
-
-    // 5 - Wait for the evolutions to finish.
-    archi.wait_check();
-
-    // 6 - Print the fitness of the best solution in each island.
-    
-
-    //system("pause"); 
-
-    double champion_score = 1000000;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        std::vector<double> dec_vec = isl.get_population().champion_x();
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
-
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
-    }
-
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
-
-    // pagmo::thread_bfe thread_bfe;
-    // //pagmo::pso_gen method ( 10 );
-    // pagmo::gaco method(10);
-    // method.set_bfe ( pagmo::bfe { thread_bfe } );
-    // pagmo::algorithm algo = pagmo::algorithm { method };
-    // pagmo::population pop { prob, thread_bfe, 100 };
-    // // Evolve the population for 100 generations
-    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
-    //     pop = algo.evolve(pop);
+    // if(rat=="rat_103")
+    // {
+    //     x = {0.0512163,0.604501,0.0174739,0.997324,0.0643306,0.0749193,0.267144,0.287502,0.17852,0.208163,0.208163};
+    // }else if(rat=="rat_106")
+    // {
+    //     x = {0.11001,0.814603,0.77613,0.678799,0.982517,0.416417,0.116914,0.109011,0.51933,3.26825,2.71595};
+    // }else if(rat=="rat_112")
+    // {
+    //     x = {0.471254,0.870826,0.536322,0.772659,0.834925,0.124491,0.0937769,0.724525,4.47328e-05,3.68155,2.07546};
+    // }else if(rat=="rat_113")
+    // {
+    //     x = {0.0886012,0.809331,0.229893,0.583015,0.608807,0.452799,0.0425939,0.435701,0.887568,1.33651,1.9136};   
+    // }else if(rat=="rat_114")
+    // {
+    //     x = {0.485305,0.869402,0.86441,0.644401,0.903296,0.157035,0.0535516,0.521759,0.870354,0.508055,0.1315};  
     // }
 
-    // std::vector<double> dec_vec_champion = pop.champion_x();
-    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    // pagmo::population pop = archi[0].get_population();
+    // pop.set_x(0,x);
+    // archi[0].set_population(pop);
+
+
+    // //     // Add the island to the archipelago
+    // //     archi.push_back(algo, pop);
+    // // }
+
+    // // archipelago archi{10u, algo, unprob, 20u};
+
+    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    // archi.evolve(10);
+    // std::cout << "DONE1:"  << '\n';
+
+    // ///5 - Wait for the evolutions to finish.
+    // archi.wait_check();
+
+    // double champion_score = 1000000;
+    // std::vector<double> dec_vec_champion;
+    // for (const auto &isl : archi) {
+    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    //     // for (auto const& i : dec_vec)
+    //     //     std::cout << i << ", ";
+    //     // std::cout << "\n" ;
+
+    //     double champion_isl = isl.get_population().champion_f()[0];
+    //     if(champion_isl < champion_score)
+    //     {
+    //         champion_score = champion_isl;
+    //         dec_vec_champion = dec_vec;
+    //     }
+    // }
+
+    // std::cout << "Final champion = " << champion_score << std::endl;
+    // for (auto const& i : dec_vec_champion)
+    //     std::cout << i << ", ";
+    // std::cout << "\n" ;
+
+    pagmo::thread_bfe thread_bfe;
+    pagmo::pso_gen method ( 10 );
+    //pagmo::gaco method(10);
+    method.set_bfe ( pagmo::bfe { thread_bfe } );
+    pagmo::algorithm algo = pagmo::algorithm { method };
+    pagmo::population pop { unprob, thread_bfe, 100 };
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
+    }
+
+    std::vector<double> dec_vec_champion = pop.champion_x();
+    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
     return dec_vec_champion;
 }
@@ -1653,14 +1614,22 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
 
+    std::string rat = ratdata.getRat();
+
     for(int i=0; i < 5; i++)
     {
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+        try {
+            RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+            //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+            std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
 
-        RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
-        //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-        std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-        runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
+        }catch (const std::out_of_range& e) {
+        // Handle the out_of_range exception
+         std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
+        }
+
 
     }
   

@@ -166,6 +166,18 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
 
     double cluster_size = cluster.size();
+
+    std::vector<double> params(v.begin(), v.end());
+
+    //std::cout << "marginal_lik=" << marginal_lik << ", optimalCount=" << optimalCount << ", suboptimalCount=" << suboptimalCount << ", cluster_size=" << cluster_size << std::endl;
+
+    // if(marginal_lik < 10000 && optimalCount==1 && suboptimalCount<=1 && cluster_size>=1)
+    // {
+    //     std::cout << "Adding to vector, indexedValues.size=" << indexedValues.size() << std::endl;
+    //     addIndexedValues(std::make_pair(marginal_lik, params));
+
+    // }
+    
     return{marginal_lik, optimalCount-1, suboptimalCount-1, 1-marginal_lik, 1-cluster_size};
 
 }
@@ -174,8 +186,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    //bounds.first={1e-8,0.5,1e-8,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
-    bounds.first={1e-2,0.5,1e-2,0.5,1e-2,1e-8,1e-2,1e-8,1e-8,1e-8,1e-8};
+    bounds.first={1e-2,0.5,1e-2,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
+    //bounds.first={1e-2,0.5,1e-2,0.8,1e-2,1e-2,1e-2,1e-2,0.1,1e-8,1e-8};
     bounds.second={1,1,1,1,1,1,1,1,1,5,5};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};
