@@ -1303,14 +1303,14 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
         matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] = matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] +1  ;
     }
 
-    // Print the matrix
-    // std::cout << "Matrix print after update:" << std::endl;
-    // for (size_t i = 0; i < matrix.size(); ++i) {
-    //     for (size_t j = 0; j < matrix[i].size(); ++j) {
-    //         std::cout << matrix[i][j] << ' ';
-    //     }
-    //     std::cout << '\n';
-    // }
+    //Print the matrix
+    std::cout << "Matrix print after update:" << std::endl;
+    for (size_t i = 0; i < matrix.size(); ++i) {
+        for (size_t j = 0; j < matrix[i].size(); ++j) {
+            std::cout << matrix[i][j] << ' ';
+        }
+        std::cout << '\n';
+    }
 
 
     std::string mainDirPath = "/home/amoongat/Projects/SwitchingRatsCredits/Results/" + rat;
