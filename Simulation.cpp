@@ -1273,7 +1273,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
     std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3"};
     std::vector<std::string> columns = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "None"};
     //std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
-    std::vector<std::vector<int>> matrix = std::vector<std::vector<int>>(6, std::vector<int>(7, 0));
+    std::vector<std::vector<int>> matrix = std::vector<std::vector<int>>(4, std::vector<int>(5, 0));
 
     std::vector<std::string> rownames = {"acaSubopt", "drlSubopt", "acaOpt", "drlOpt"};
     std::vector<std::string> colnames = {"acaSubopt", "drlSubopt", "acaOpt", "drlOpt", "None"};
@@ -1298,7 +1298,7 @@ void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int
         std::string selectedStrategy = recordResultsSes.getSelectedStrategy();   //column label
         std::string trueStrategy = recordResultsSes.getTrueGeneratingStrategy(); // rowLabel
 
-        // std::cout << "trueStrategy=" << trueStrategy << ", idx=" << rowLabelToIndex[trueStrategy] << "; selectedStrategy=" << selectedStrategy << ", idx=" << colLabelToIndex[selectedStrategy] << std::endl;
+        std::cout << "trueStrategy=" << trueStrategy << ", idx=" << rowLabelToIndex[trueStrategy] << "; selectedStrategy=" << selectedStrategy << ", idx=" << colLabelToIndex[selectedStrategy] << std::endl;
 
         matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] = matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] +1  ;
     }
