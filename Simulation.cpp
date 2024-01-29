@@ -1601,13 +1601,13 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         int iteration = i/6;
 
         //std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
-        std::cout << "genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        std::cout << "i=" << i <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
         
         try {
             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, genStrategyId);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, genStrategyId,iteration);
-            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
+            std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true, genStrategyId,iteration);
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception
