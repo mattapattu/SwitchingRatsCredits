@@ -1133,12 +1133,12 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
         //     std::cout << i << ", ";
         // std::cout << "\n" ;
 
-        pagmo::thread_bfe thread_bfe;
+    //pagmo::thread_bfe thread_bfe;
     pagmo::pso_gen method ( 10 );
     //pagmo::gaco method(10);
-    method.set_bfe ( pagmo::bfe { thread_bfe } );
+    //method.set_bfe ( pagmo::bfe { thread_bfe } );
     pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { unprob, thread_bfe, 100 };
+    pagmo::population pop { unprob, 100 };
     // Evolve the population for 100 generations
     for ( auto evolution = 0; evolution < 5; evolution++ ) {
         pop = algo.evolve(pop);
@@ -1525,54 +1525,6 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 
 }
 
-// void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R)
-// {
-//     //read clusterParams.txt to get the parameters for rat
-//     std::string filename_cluster = "clusterMLEParams.txt";
-//     std::ifstream cluster_infile(filename_cluster);
-//     std::map<std::string, std::vector<double>> clusterParams;
-//     boost::archive::text_iarchive ia_cluster(cluster_infile);
-//     ia_cluster >> clusterParams;
-//     cluster_infile.close();
-
-//     // Initialize MPI
-//     int rank, size;
-//     MPI_Init(NULL, NULL);
-//     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-//     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-//     // Calculate the range of iterations for each process
-//     int partition_size = 30 / size;
-//     int start = rank * partition_size;
-//     int end = (rank == size - 1) ? 30 : start + partition_size;
-
-//     std::string rat = ratdata.getRat();
-
-//     for(int i = start; i < end; i++)
-//     {
-//         int genStrategyId = i%6;
-//         int iteration = i/6;
-
-//         std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
-        
-//         try {
-//             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, genStrategyId);
-//             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-//             std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-//             runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
-
-//         }catch (const std::out_of_range& e) {
-//         // Handle the out_of_range exception
-//          std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
-//         }
-
-//     }
-  
-//     MPI_Finalize();
-     
-
-// }
-
 void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R)
 {
     //read clusterParams.txt to get the parameters for rat
@@ -1583,19 +1535,20 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
 
+    // Initialize MPI
+    int rank, size;
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
     // Calculate the range of iterations for each process
-    //int partition_size = 30 / size;
-    //int start = rank * partition_size;
-    //int end = (rank == size - 1) ? 30 : start + partition_size;
-
-    unsigned int cores = std::thread::hardware_concurrency();
-    std::cout << "Number of available cores: " << cores << std::endl;
-
-
+    int partition_size = 30 / size;
+    int start = rank * partition_size;
+    int end = (rank == size - 1) ? 30 : start + partition_size;
 
     std::string rat = ratdata.getRat();
 
-    for(int i = 0; i < 30; i++)
+    for(int i = start; i < end; i++)
     {
         int genStrategyId = i%6;
         int iteration = i/6;
@@ -1616,10 +1569,58 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
     }
   
-    //MPI_Finalize();
+    MPI_Finalize();
      
 
 }
+
+// void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R)
+// {
+//     //read clusterParams.txt to get the parameters for rat
+//     std::string filename_cluster = "clusterMLEParams.txt";
+//     std::ifstream cluster_infile(filename_cluster);
+//     std::map<std::string, std::vector<double>> clusterParams;
+//     boost::archive::text_iarchive ia_cluster(cluster_infile);
+//     ia_cluster >> clusterParams;
+//     cluster_infile.close();
+
+//     // Calculate the range of iterations for each process
+//     //int partition_size = 30 / size;
+//     //int start = rank * partition_size;
+//     //int end = (rank == size - 1) ? 30 : start + partition_size;
+
+//     unsigned int cores = std::thread::hardware_concurrency();
+//     std::cout << "Number of available cores: " << cores << std::endl;
+
+
+
+//     std::string rat = ratdata.getRat();
+
+//     for(int i = 0; i < 30; i++)
+//     {
+//         int genStrategyId = i%6;
+//         int iteration = i/6;
+
+//         //std::cout << "Rank=" <<rank << ", start=" <<start << ", end=" << end <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+//         std::cout << "i=" << i <<  ", genStrategyId=" <<genStrategyId << " and iteration=" <<iteration <<std::endl;
+        
+//         try {
+//             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, genStrategyId);
+//             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+//             std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+//             runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true, genStrategyId,iteration);
+
+//         }catch (const std::out_of_range& e) {
+//         // Handle the out_of_range exception
+//          std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
+//         }
+
+//     }
+  
+//     //MPI_Finalize();
+     
+
+// }
 
 
 
