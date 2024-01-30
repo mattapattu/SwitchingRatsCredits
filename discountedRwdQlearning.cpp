@@ -569,10 +569,10 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       double turntime = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
       pathDuration = pathDuration + turntime;
 
-      // if(j== (nbOfTurns-1) && R(S,A) > 0)
-      // {
-      //   currTurnReward = 5;
-      // }
+      if(j== (nbOfTurns-1) && R(S,A) > 0)
+      {
+        currTurnReward = 5;
+      }
       // rewardVec[hybridNodeId] += strategy.getPhi()*(trueReward-rewardVec[hybridNodeId]);
 
       // if(S == 1 && strategy.getOptimal())
@@ -582,7 +582,7 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       //   strategy.setRewardsS0(rewardVec);
       // }
 
-      currTurnReward = rewardVec[hybridNodeId];
+      //currTurnReward = rewardVec[hybridNodeId];
       
       //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
 

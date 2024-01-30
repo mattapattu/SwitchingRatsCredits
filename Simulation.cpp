@@ -136,12 +136,12 @@ bool check_path5(arma::mat data) {
   
       // Check if any element in ema0 is greater than 0.8
     bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-        return element > 0.85;
+        return element > 0.95;
     });
 
     // Check if any element in ema1 is greater than 0.8
     bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-        return element > 0.85;
+        return element > 0.95;
     });
 
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
@@ -236,421 +236,6 @@ bool checkConsecutiveThreshold(arma::mat data, double threshold, int consecutive
 }
 
 
-RatData generateSimulationMLE(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, RInside &R, int selectStrat)
-{
-    std::string rat = ratdata.getRat();
-    std::vector<double> v = clusterParams[rat];
-
-    double alpha_aca_subOptimal = v[0];
-    double gamma_aca_subOptimal = v[1];
-
-    double alpha_aca_optimal = v[2];
-    double gamma_aca_optimal = v[3];
-
-    //ARL params
-    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    // double beta_arl_subOptimal = 1e-7;
-    // double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    
-    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    // double beta_arl_optimal = 1e-7;
-    // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
- 
-    //DRL params
-    double alpha_drl_subOptimal = v[4];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[5];
-    
-    double alpha_drl_optimal = v[6];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
-
-    
-    double crpAlpha = 1e-7;
-    double phi = v[8];
-    double eta = 100;
-
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, crpAlpha, phi, eta, true);
-    
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
-
-    arma::mat allpaths = ratdata.getPaths();
-    arma::vec sessionVec = allpaths.col(4);
-    arma::vec uniqSessIdx = arma::unique(sessionVec);
-    int sessions = uniqSessIdx.n_elem;
-
-    std::vector<RecordResults> allRes =  runEM(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, false);
-    // std::random_device rd;
-    // std::mt19937 gen(rd());
-    // std::uniform_int_distribution<int> distribution(5,9);
-    // int changepoint_ses = distribution(gen);
-    int changepoint_ses = -1;
-
-    std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
-
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-    
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(drl_Optimal_Hybrid3, drl_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
-    
-    //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    
-    //strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
-    //strategyPairVector.push_back(std::make_pair(arl_Optimal_Hybrid3, arl_Optimal_Hybrid3));
-
-
-
-    // std::random_device rd;
-    // std::mt19937 gen(rd());
-    //std::uniform_int_distribution<std::size_t> dist(0, strategyPairVector.size() - 1);
-    
-    // Selecting a random pair
-    //std::size_t randomIndex = dist(gen);
-    auto randomPair = strategyPairVector[selectStrat];
-
-
-    arma::mat generated_PathData;
-    arma::mat generated_TurnsData;
-   
-    
-    // To store vector of true generatorStrateies
-    std::vector<std::string> trueGenStrategies;
-  
-   bool endLoop = false;
-   int loopCounter = 0;
-
-    std::shared_ptr<Strategy> strategy;
-
-    if(randomPair.first->getName() == randomPair.second->getName())
-    {
-        while(!endLoop)
-        {
-            //std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-            std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
-
-
-            std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
-
-            //std::vector<double> creditsS0_Subopt = {0,0,0,0,0,0,0,0,0,0,0,0};
-            std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
-            std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
-
-            std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
-            std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
-
-            trueStrategy1->setRewardsS0(s0rewards);
-            trueStrategy1->setRewardsS1(s1rewards);
-
-            for(int ses=0; ses < sessions; ses++)
-            {
-                strategy = randomPair.first;
-                trueGenStrategies.push_back(strategy->getName());
-
-                strategy->setStateS0Credits(creditsS0_Opt);
-                strategy->setStateS1Credits(creditsS1_Opt);
-
-
-                std::pair<arma::mat, arma::mat> simData = simulateTrajectory(ratdata, ses, *strategy);
-                arma::mat generated_PathData_sess = simData.first;
-                arma::mat generated_TurnsData_sess = simData.second;
-
-                trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
-                
-                //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
-                
-                creditsS0_Opt =  trueStrategy1->getS0Credits(); 
-                creditsS1_Opt =  trueStrategy1->getS1Credits(); 
-
-                generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
-                generated_TurnsData = arma::join_cols(generated_TurnsData, generated_TurnsData_sess);
-            
-            }
-            bool isGenDataGood = true;
-
-            if(isGenDataGood)
-            {
-                //2nd test: check if simulation is learning
-                if(check_ema(generated_PathData))
-                {
-                    isGenDataGood = true;
-                    //std::cout << "check_ema is successful. EXit loop" <<std::endl;
-
-                }else{
-                    isGenDataGood = false;
-                    //std::cout << "check_ema failed. Re-generate try: " << loopCounter <<std::endl;
-                }
-            }
-            if(isGenDataGood)
-            {
-                endLoop = true;
-            }else
-            {
-                generated_PathData.reset();
-                generated_TurnsData.reset();
-                strategy->resetPathProbMat();
-                strategy->resetCredits();
-            }
-
-            loopCounter++;
-            if(loopCounter > 50)
-            {
-                std::cout << "Loop counter reached 50 simulations:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
-                break;
-            }
-        }
-    
-    }else //Generate switching simulations
-    {
-
-        while(!endLoop)
-        {
-
-            std::random_device rd;
-            std::mt19937 gen(rd());
-
-            if(rat=="rat_103")
-            {
-                std::uniform_int_distribution<int> distribution(2,5);
-                changepoint_ses = distribution(gen);
-            }else{
-                std::uniform_int_distribution<int> distribution(2,5);
-                changepoint_ses = distribution(gen);
-            }
-            
-   
-            std::shared_ptr<Strategy> trueStrategy1 = std::make_shared<Strategy>(*randomPair.first);
-            std::shared_ptr<Strategy> trueStrategy2 = std::make_shared<Strategy>(*randomPair.second);
-
-            //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
-            std::vector<double> creditsS0_Opt = {0,0,0,0,0,0,0,0,0};
-            std::vector<double> creditsS1_Opt = {0,0,0,0,0,0,0,0,0};
-
-            std::vector<double> s0rewards; 
-            std::vector<double> s1rewards;
-
-            std::vector<double> s0rewardsSubOpt;
-            
-
-            for(int ses=0; ses < sessions; ses++)
-            {
-                std::pair<arma::mat, arma::mat> simData;
-                arma::mat generated_PathData_sess;
-                arma::mat generated_TurnsData_sess;
-                // std::shared_ptr<Strategy> randomPair_first_bkp = std::make_shared<Strategy>(*randomPair.first);
-                // std::shared_ptr<Strategy> randomPair_second_bkp = std::make_shared<Strategy>(*randomPair.second);
-
-                bool path5Cond = false;
-                int counter = 0;
-                double reward = 0.0;
-                if(ses < 5)
-                {
-                    reward = ses+1;
-                }else{
-                    reward = 5;
-                }
-
-
-                RecordResults trueRes_ses = allRes[ses];
-                std::map<std::string, std::vector<double>>& trueRewardVecMapS0 = trueRes_ses.getRewardVectorS0();
-                std::map<std::string, std::vector<double>>& trueRewardVecMapS1 = trueRes_ses.getRewardVectorS1();
-
-
-                std::vector<double> trueRewards_pair_firstS0 = trueRewardVecMapS0[trueStrategy1->getName()];
-
-                std::vector<double> trueRewards_pair_secondS0 = trueRewardVecMapS0[trueStrategy2->getName()];
-                std::vector<double> trueRewards_pair_secondS1 = trueRewardVecMapS1[trueStrategy2->getName()];    
-
-                
-                trueStrategy1->setRewardsS0(trueRewards_pair_firstS0);
-
-                trueStrategy2->setRewardsS0(trueRewards_pair_secondS0);
-                trueStrategy2->setRewardsS1(trueRewards_pair_secondS1);
-
-                randomPair.first->setRewardsS0(trueRewards_pair_firstS0);
-                randomPair.second->setRewardsS0(trueRewards_pair_secondS0);
-                randomPair.second->setRewardsS1(trueRewards_pair_secondS1);
-
-
-                //Start suboptimal portion of switching simulations
-                if(ses < changepoint_ses)
-                {
-                    
-                    //randomPair.first->setStateS0Credits(creditsS0_Opt);
-                    // std::cout <<"creditsS0_Subopt:";
-                    // std::vector<double> initCr = randomPair.first->getS0Credits(); 
-                    // for (const double& value : initCr) {
-                    //     std::cout << value << " ";
-                    // }
-
-                    // std::cout << std::endl;
-
-                    strategy = randomPair.first;
-                    simData = simulateTrajectory(ratdata, ses, *randomPair.first);
-                    generated_PathData_sess = simData.first;
-                    generated_TurnsData_sess = simData.second;
-
-                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
-
-                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-
-                }else{  //Start Optimal portion of switching simulations
-
-                    
-                    // std::cout <<"ses=" <<ses <<std::endl;
-                    // std::cout <<"creditsS0_Opt:";
-                    // for (const double& value : creditsS0_Opt) {
-                    //     std::cout << value << " ";
-                    // }
-                    // std::cout << std::endl;
-
-                    // std::cout <<"creditsS1_Opt:";
-                    // for (const double& value : creditsS1_Opt) {
-                    //     std::cout << value << " ";
-                    // }
-                    // std::cout << std::endl;
-
-                    strategy = randomPair.second;
-                    simData = simulateTrajectory(ratdata, ses, *randomPair.second);
-                    generated_PathData_sess = simData.first;
-                    generated_TurnsData_sess = simData.second;
-
-
-                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
-
-                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-
-
-                } //End session of switching simulations
-
-                // trueStrategy1->getTrajectoryLikelihood(ratdata, ses);
-                // trueStrategy2->getTrajectoryLikelihood(ratdata, ses);
-                
-                // //creditsS0_Subopt =  trueStrategy1->getS0Credits(); 
-                
-                // creditsS0_Opt =  trueStrategy2->getS0Credits(); 
-                // creditsS1_Opt =  trueStrategy2->getS1Credits(); 
-
-                // trueGenStrategies.push_back(strategy->getName());
-
-                generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
-                generated_TurnsData = arma::join_cols(generated_TurnsData, generated_TurnsData_sess);
-            
-            }
-
-            // arma::mat allpaths = ratdata.getPaths();
-            // arma::vec sessionVec = allpaths.col(4);
-            // arma::vec uniqSessIdx = arma::unique(sessionVec);
-            // std::cout << "uniqSessIdx.size=" << uniqSessIdx.size() << std::endl;
-
-            bool isGenDataGood = true;
-            if(!randomPair.first->getOptimal())
-            {
-                arma::uvec indices = arma::find(generated_PathData.col(4) < changepoint_ses);
-                
-                arma::mat subMat = generated_PathData.rows(indices); //Update
-                //std::cout << "indices.size=" << indices.size() << ", subMat rows=" << subMat.n_rows << std::endl;
-                //First check of genData: If Path5 prob > 0.5 for any state, it is good    
-                if(check_path5(subMat))
-                {
-                    isGenDataGood = true;
-                    std::cout << rat << ", check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
-                }else{
-                    isGenDataGood = false;
-                    std::cout << rat << ", check_path5 failed after " << changepoint_ses << " sessions" <<std::endl;
-                }
-            }
-
-
-            if(isGenDataGood)
-            {
-                //2nd test: check if simulation is learning
-                if(check_ema(generated_PathData))
-                {
-                    // if(!checkConsecutiveThreshold(generated_PathData, 0.6, 30, changepoint_ses))
-                    // {
-                    //     isGenDataGood = true;
-                    //     std::cout << "checkConsecutiveThreshold false. Good sim" <<std::endl;
-                    // }else{
-                    //     isGenDataGood = false;
-                    //     std::cout << "checkConsecutiveThreshold true. Check sim" <<std::endl;
-                    // }
-                    
-
-                }else{
-                    isGenDataGood = false;
-                    std::cout << "check_ema failed. Re-generate try: " << loopCounter <<std::endl;
-                }
-            }
-
-            if(isGenDataGood)
-            {
-                endLoop = true;
-                // arma::vec simSessionVec = generated_PathData.col(4);
-                // arma::vec simUniqSessIdx = arma::unique(simSessionVec);
-                // std::cout << "simUniqSessIdx.size=" << simUniqSessIdx.size() << std::endl;
-
-
-            }else
-            {
-                generated_PathData.reset();
-                generated_TurnsData.reset();
-
-                randomPair.first->resetPathProbMat();
-                randomPair.first->resetCredits();
-
-                randomPair.second->resetPathProbMat();
-                randomPair.second->resetCredits();
-            }
-
-            loopCounter++;
-            if(loopCounter > 100)
-            {
-                std::cout << rat <<  ", loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
-                break;
-            }
-        }
-    }
-
-    std::cout << "Generated sim:" << randomPair.first->getName() << " and " << randomPair.second->getName() << std::endl;
-  
-    // R["genData"] = Rcpp::wrap(generated_PathData);
-
-    // // Save the matrix as RData using RInside
-    // std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat +".RData";
-    
-    // std::string rCode = "saveRDS(genData, file='" + filename + "')";
-    // R.parseEvalQ(rCode.c_str());
-    
-    RatData simRatdata(generated_PathData,generated_TurnsData,rat, true, trueGenStrategies);
-
-    arma::mat simAllpaths = simRatdata.getPaths();
-    arma::vec simSessionVec = simAllpaths.col(4);
-    arma::vec simUniqSessIdx = arma::unique(simSessionVec);
-    // std::cout << "simUniqSessIdx.size=" << simUniqSessIdx.size() << std::endl;
-
-    //testSimulation(simRatdata,*randomPair.first, R);
-    return simRatdata;  
-
-}
-
 
 RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, RInside &R, int selectStrat)
 {
@@ -729,22 +314,13 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
-    //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
+    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
-    //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
 
-    //strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
-
-    //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-
-    
-    //strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+    strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(drl_Optimal_Hybrid3, drl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Optimal_Hybrid3, arl_Optimal_Hybrid3));
 
 
 
@@ -858,18 +434,25 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             
             if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
             {
-                std::uniform_int_distribution<int> distribution(2,5);
+                std::uniform_int_distribution<int> distribution(4,8);
                 changepoint_ses = distribution(gen);
                 
             }else{
-                std::uniform_int_distribution<int> distribution(2,5);
+                std::uniform_int_distribution<int> distribution(4,8);
                 changepoint_ses = distribution(gen);
             }
         
              std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
 
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
-            std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            std::vector<double> initCreditsS0;
+            if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+            {
+                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            }else{
+                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            }
+            
             //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             randomPair.first->setStateS0Credits(initCreditsS0);
 
