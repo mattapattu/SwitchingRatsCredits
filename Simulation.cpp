@@ -139,12 +139,12 @@ bool check_path5(arma::mat data) {
   
       // Check if any element in ema0 is greater than 0.8
     bool anyGreaterThanPointEight_ema0 = std::any_of(ema0.begin(), ema0.end(), [](double element) {
-        return element > 0.85;
+        return element > 0.95;
     });
 
     // Check if any element in ema1 is greater than 0.8
     bool anyGreaterThanPointEight_ema1 = std::any_of(ema1.begin(), ema1.end(), [](double element) {
-        return element > 0.85;
+        return element > 0.95;
     });
 
     // If path5 prob goes above 0.8 for any state, return false (bad simulation)
@@ -544,23 +544,16 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
 
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
+
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
     
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-
-    //strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-    
-    //strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, arl_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-    //strategyPairVector.push_back(std::make_pair(arl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
     strategyPairVector.push_back(std::make_pair(drl_Optimal_Hybrid3, drl_Optimal_Hybrid3));
     //strategyPairVector.push_back(std::make_pair(arl_Optimal_Hybrid3, arl_Optimal_Hybrid3));
 
@@ -676,18 +669,25 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 
             if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
             {
-                std::uniform_int_distribution<int> distribution(2,5);
+                std::uniform_int_distribution<int> distribution(4,8);
                 changepoint_ses = distribution(gen);
 
             }else{
-                std::uniform_int_distribution<int> distribution(2,5);
+                std::uniform_int_distribution<int> distribution(4,8);
                 changepoint_ses = distribution(gen);
             }
             
             std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
    
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
-            std::vector<double> initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            std::vector<double> initCreditsS0;
+            if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+            {
+                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+            }else{
+                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+}
+            
             //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             randomPair.first->setStateS0Credits(initCreditsS0);
 
