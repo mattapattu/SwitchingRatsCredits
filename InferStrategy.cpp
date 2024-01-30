@@ -87,7 +87,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
         //double normalizer = sum;
         std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });
 
-if (sum==0) {
+        if (sum==0) {
                     
             std::cout << "Prior prob sum=0. Check" << std::endl;
             std::exit(EXIT_FAILURE);
