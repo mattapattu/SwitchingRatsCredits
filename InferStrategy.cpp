@@ -17,7 +17,6 @@
 #include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/algorithms/gaco.hpp>
-#include <pagmo/algorithms/nlopt.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
