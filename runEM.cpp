@@ -16,25 +16,25 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    std::vector<std::string> rats = {"rat103","rat113","rat114","rat112","rat106"};
+    // std::vector<std::string> rats = {"rat106","rat112"};
 
     //std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
 
-    //std::string rat = argv[1];
-    //std::vector<std::string> rats = {rat};
+    std::string rat = argv[1];
+    std::vector<std::string> rats = {rat};
 
     for(const std::string& ratName: rats)
     {
-        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
+        std::string cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/"+ ratName +".Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/Hybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
 
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/SubOptimalHybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
 
@@ -81,16 +81,16 @@ int main(int argc, char* argv[])
 
     for(const std::string& ratName: rats)
     {
-        std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
+        std::string cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/"+ ratName +".Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 ratdata = R.parseEval("get('ratdata')");
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/Hybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/Hybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Optimal_Hybrid3 = R.parseEval("get('Hybrid3')"); 
 
 
-        cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/TurnsNew/src/InverseRL/SubOptimalHybrid3.Rdata')";
+        cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/SubOptimalHybrid3.Rdata')";
         R.parseEvalQ(cmd);                  
         Rcpp::S4 Suboptimal_Hybrid3 = R.parseEval("get('SubOptimalHybrid3')"); 
 
@@ -103,9 +103,3 @@ int main(int argc, char* argv[])
         testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
 
     }
-
-        
-    
-   
-
-}
