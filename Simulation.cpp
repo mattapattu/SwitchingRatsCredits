@@ -1204,6 +1204,9 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     for(int i=0; i < 5; i++)
     {
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         try {
             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
@@ -1214,6 +1217,11 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         // Handle the out_of_range exception
          std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
         }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+
+
 
 
     }
