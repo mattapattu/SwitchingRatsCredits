@@ -1033,7 +1033,7 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string
 }
 
 
-void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug)
+void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug, int genStrategyId,int iteration)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -1201,30 +1201,35 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
     std::string rat = ratdata.getRat();
 
-    for(int i=0; i < 5; i++)
+    for(int k=0; k < 5; k++)
     {
-        //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+        for(int i=0; i < 5; i++)
+        {
+            //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
 
-        auto start_time = std::chrono::high_resolution_clock::now();
+            auto start_time = std::chrono::high_resolution_clock::now();
 
-        try {
-            RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
-            //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
+            try {
+                RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+                //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+                std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+                runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true, i, k);
 
-        }catch (const std::out_of_range& e) {
-        // Handle the out_of_range exception
-         std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
+            }catch (const std::out_of_range& e) {
+            // Handle the out_of_range exception
+              std::cerr << "rat=" <<rat <<  ", i=" << i <<  ": caught out_of_range exception: " << e.what() << std::endl;
+            }
+
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+            double duration_minutes = static_cast<double>(duration) / (1000000.0 * 60.0);
+            std::cout << "Execution time of strategy=" << i << ", iteration=" << k << " :" << duration_minutes << " minutes" << std::endl;
+
+
         }
-
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-
-
-
-
     }
+
+    
   
      
 
