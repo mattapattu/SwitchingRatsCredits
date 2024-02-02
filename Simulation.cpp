@@ -1032,6 +1032,117 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string
 
 }
 
+void writeResults(std::vector<RecordResults> allSesResults, std::string rat, int genStrategyId , int iteration)
+{
+    
+    std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3"};
+    std::vector<std::string> columns = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "None"};
+    //std::vector<std::vector<int>> matrix(6, std::vector<int>(7, 0));
+    std::vector<std::vector<int>> matrix = std::vector<std::vector<int>>(4, std::vector<int>(5, 0));
+
+    std::vector<std::string> rownames = {"acaSubopt", "drlSubopt", "acaOpt", "drlOpt"};
+    std::vector<std::string> colnames = {"acaSubopt", "drlSubopt", "acaOpt", "drlOpt", "None"};
+
+    std::map<std::string, int> rowLabelToIndex;
+    std::map<std::string, int> colLabelToIndex;
+
+    // Fill the maps with indices
+    for (int i = 0; i < rows.size(); ++i) {
+        rowLabelToIndex[rows[i]] = i;
+    }
+
+    for (int j = 0; j < columns.size(); ++j) {
+        colLabelToIndex[columns[j]] = j;
+    }
+
+
+    
+    for(size_t i=0; i<allSesResults.size();i++)
+    {
+        RecordResults recordResultsSes =  allSesResults[i];
+        std::string selectedStrategy = recordResultsSes.getSelectedStrategy();   //column label
+        std::string trueStrategy = recordResultsSes.getTrueGeneratingStrategy(); // rowLabel
+
+        std::cout << "trueStrategy=" << trueStrategy << ", idx=" << rowLabelToIndex[trueStrategy] << "; selectedStrategy=" << selectedStrategy << ", idx=" << colLabelToIndex[selectedStrategy] << std::endl;
+
+        matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] = matrix[rowLabelToIndex[trueStrategy]][colLabelToIndex[selectedStrategy]] +1  ;
+    }
+
+    //Print the matrix
+    std::cout << "Matrix print after update:" << std::endl;
+    for (size_t i = 0; i < matrix.size(); ++i) {
+        for (size_t j = 0; j < matrix[i].size(); ++j) {
+            std::cout << matrix[i][j] << ' ';
+        }
+        std::cout << '\n';
+    }
+
+
+    std::string mainDirPath = "/home/amoongat/Projects/SwitchingRatsCredits/Results/" + rat;
+    std::filesystem::path main_dir(mainDirPath);
+
+     // Create the main directory if it does not exist
+    if (!std::filesystem::exists(main_dir)) {
+        std::filesystem::create_directory(main_dir);
+    }
+
+    std::string subDir = "Strat_" + std::to_string(genStrategyId);
+    // Path to the subdirectory
+    std::filesystem::path sub_dir(main_dir / subDir);
+
+    std::string stringpath = sub_dir.generic_string();
+
+
+    std::cout << "genStrategyId=" << genStrategyId << "sub_dir=" << stringpath << std::endl;
+
+    if (!std::filesystem::exists(sub_dir)) {
+        std::filesystem::create_directory(sub_dir);
+    }
+
+    //std::string fullPath = mainDirPath + subDirPath;
+    std::string filename = "confusionMatrix_" + rat+ "_"+ std::to_string(iteration) +".txt";
+    // std::string filePath = fullPath + "/my_file.txt";
+
+    // if (!std::filesystem::exists(mainDirPath)) {
+    //     // Create the subdirectory
+    //     if (std::filesystem::create_directory(mainDirPath)) {
+    //         std::cout << "Subdirectory created: " << fullPath << std::endl;
+    //     } else {
+    //         std::cerr << "Failed to create the subdirectory." << std::endl;
+    //     }
+    // } else {
+    //     std::cout << "Subdirectory already exists: " << fullPath << std::endl;
+    // }
+
+
+
+
+    std::ofstream outfile(sub_dir / filename);
+
+    if (outfile.is_open()) {
+        // Write the column names to the first line, separated by spaces
+        outfile << std::setw(10) << " "; // Leave some space for the row names
+        for (const auto& colname : colnames) {
+            outfile << std::setw(10) << colname;
+        }
+        outfile << "\n"; // End the line
+
+        // Write the matrix elements and the row names, separated by spaces
+        for (size_t i = 0; i < matrix.size(); i++) {
+            outfile << std::setw(10) << rownames[i]; // Write the row name
+            for (size_t j = 0; j < matrix[i].size(); j++) {
+                outfile << std::setw(10) << matrix[i][j]; // Write the matrix element
+            }
+            outfile << "\n"; // End the line
+        }
+
+        outfile.close();
+        std::cout << "Matrix written to file.\n";
+    } else {
+        std::cout << "File could not be opened for writing.\n";
+    }
+}
+
 
 void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug, int genStrategyId,int iteration)
 {
@@ -1165,7 +1276,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
     probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
-    updateConfusionMatrix(allSesResults, rat);
+    writeResults(allSesResults, rat, genStrategyId, iteration);
 
 
     aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
