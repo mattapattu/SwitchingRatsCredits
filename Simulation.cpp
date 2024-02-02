@@ -435,13 +435,13 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         while(!endLoop)
         {
             
-            if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+            if(rat=="rat_113" || rat=="rat_114")
             {
-                std::uniform_int_distribution<int> distribution(4,8);
+                std::uniform_int_distribution<int> distribution(4,6);
                 changepoint_ses = distribution(gen);
                 
             }else{
-                std::uniform_int_distribution<int> distribution(4,8);
+                std::uniform_int_distribution<int> distribution(5,8);
                 changepoint_ses = distribution(gen);
             }
         
