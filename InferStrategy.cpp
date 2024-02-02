@@ -26,7 +26,6 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
-#include <Eigen/Dense>
 
 
 
