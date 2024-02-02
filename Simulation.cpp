@@ -683,16 +683,16 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             std::vector<double> initCreditsS0;
             if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
             {
-                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
+                initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
             }else{
-                initCreditsS0 = {0,0,0,1.5,0,0,1.5,0,0,0,0,1.5};
-}
+                initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+            }
             
             //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
             randomPair.first->setStateS0Credits(initCreditsS0);
 
-            std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
-            std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
+            std::vector<double> initCreditsOptS0 = {0,0,0,0.5,0,0,0,0.5,0};
+            std::vector<double> initCreditsOptS1 = {0,0,0,0.5,0,0,0,0,0.5};
             randomPair.second->setStateS0Credits(initCreditsOptS0);
             randomPair.second->setStateS1Credits(initCreditsOptS1);
 
@@ -742,8 +742,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                     arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
                     arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
 
-//simulateTrajectory(ratdata, ses, *randomPair.first);
-                    //simulateTrajectory(ratdata, ses, *randomPair.second);
+                    //simulateTrajectory(ratdata, ses, *randomPair.first);
+                    simulateTrajectory(ratdata, ses, *randomPair.second);
                 }else{  //Start Optimal portion of switching simulations
 
                     std::vector<double> initS0Credits_ses = randomPair.second->getS0Credits();
