@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    std::vector<std::string> rats = {"rat103","rat113","rat114","rat112","rat106"};
+    std::vector<std::string> rats = {"rat112","rat103","rat113","rat114","rat106"};
 
     //std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
 
