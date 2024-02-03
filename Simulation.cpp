@@ -78,7 +78,7 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
     });
 
     // Check if the count is greater than 50
-    if (countGreaterThan099 > 300) {
+    if (countGreaterThan099/ema0.size() > 0.9) {
         std::cout << "check_ema failed." <<std::endl;
         return false;
 
