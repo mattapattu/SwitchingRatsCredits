@@ -59,20 +59,33 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
   bool s0 = false;
   bool s1 = false;
 
-    auto middleIteratorS0 = ema0.begin() + ema0.size() / 2;
-
+    // CHECK1: S0 does not decay suddenly after learning in the second half of exp    
     // Count the values less than 0.5 in the second half
-    int countS0 = std::count_if(middleIteratorS0, ema0.end(), [](double value) {
-        return value < 0.6;
+    int countS0 = std::count_if(ema0.begin(), ema0.end(), [](double value) {
+        return value < 0.4;
     });
 
     // Check if the count is greater than 50
-    if (countS0 > 100) {
+    if (countS0 > 50) {
         std::cout << "check_ema failed." <<std::endl;
         return false;
 
     }
 
+    //CHECK 2: S0 is not equal to 1 for most of trials
+    int countGreaterThan099 = std::count_if(ema0.begin(), ema0.end(), [](double value) {
+        return value > 0.99;
+    });
+
+    // Check if the count is greater than 50
+    if (countGreaterThan099 > 300) {
+        std::cout << "check_ema failed." <<std::endl;
+        return false;
+
+    }
+
+    
+    //CHECK 3: S1 does not decay suddenly after learning in second half of exp
     auto middleIteratorS1 = ema1.begin() + ema1.size() / 2;
 
     // Count the values less than 0.5 in the second half
@@ -180,15 +193,15 @@ bool check_path5(arma::mat data) {
     }
 
 
-//   bool S0Path5 = false;
-//   // Loop over the EMA values
-//   for (int i = 0; i < ema0.n_elem; i++) {
-//     // If the EMA reaches 0.5 in either state
-//     if (ema0(i) >= 0.5) {
-//       // Return true
-//       S0Path5 = true;
-//     }
-//   }
+  bool S0Path5 = false;
+  // Loop over the EMA values
+  for (int i = 0; i < ema0.n_elem; i++) {
+    // If the EMA reaches 0.5 in either state
+    if (ema0(i) >= 0.5) {
+      // Return true
+      S0Path5 = true;
+    }
+  }
 
   bool S1Path5 = false;
   for (int i = 0; i < ema1.n_elem; i++) {
@@ -199,7 +212,7 @@ bool check_path5(arma::mat data) {
     }
   }
 
-  if(S1Path5)
+  if(!S0Path5 && S1Path5)
   {
     return true;
   }
