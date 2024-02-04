@@ -66,8 +66,8 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
     });
 
     // Check if the count is greater than 50
-    if (countS0 > 50) {
-        std::cout << "check_ema failed." <<std::endl;
+    if (countS0 > 200) {
+        std::cout << "check_ema failed. S0 prob less than 0.5 for more than 200 trials" <<std::endl;
         return false;
 
     }
@@ -79,7 +79,7 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
 
     // Check if the count is greater than 50
     if (countGreaterThan099/ema0.size() > 0.9) {
-        std::cout << "check_ema failed." <<std::endl;
+        std::cout << "check_ema failed.  S0 is close to 1 for most of trials" <<std::endl;
         return false;
 
     }
@@ -95,7 +95,7 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
 
     // Check if the count is greater than 50
     if (countS1 > 100) {
-        std::cout << "check_ema failed." <<std::endl;
+        std::cout << "check_ema failed.S0 prob less than 0.5 for more than 100 trials; countS1 = " << countS1 <<std::endl;
         return false;
 
     }
@@ -202,7 +202,7 @@ bool check_path5(arma::mat data) {
 
     // Check if count of S0 path5 prob above 0.3 is greater than 20
     if (countS0 > 20) {
-        std::cout << "check_ema failed." <<std::endl;
+        std::cout << "check_path5 failed." <<std::endl;
         return false;
 
     }
@@ -502,10 +502,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
         randomPair.second->setStateS0Credits(initCreditsOptS0);
         randomPair.second->setStateS1Credits(initCreditsOptS1);
-
-        arma::mat generated_PathData;
-        arma::mat generated_TurnsData;
-        
+       
         arma::mat generated_PathData_Suboptimal;
         arma::mat generated_TurnsData_Suboptimal;
 
@@ -552,12 +549,12 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
            if(check_path5(generated_PathData_Suboptimal))
             {
-                std::cout << "check_ema is successful after " << changepoint_ses << " sessions" <<std::endl;
+                std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
                 endLoopSuboptimal = true;
 
             }else{
                 endLoopSuboptimal = false;
-                std::cout << "check_ema failed. Re-generate Optimal trajectory: " << counterSuboptimal <<std::endl;
+                std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
                 generated_PathData_Suboptimal.reset();
                 generated_TurnsData_Suboptimal.reset();
 
@@ -612,6 +609,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
             generated_PathData = arma::join_cols(generated_PathData_Suboptimal, generated_PathData_Optimal);
             generated_TurnsData = arma::join_cols(generated_TurnsData_Suboptimal, generated_TurnsData_Optimal);
+
+            std::cout << "generated_PathData_Optimal size=" << generated_PathData_Optimal.n_rows << ", generated_PathData size =" << generated_PathData.n_rows << std::endl;
 
             if(check_ema(generated_PathData))
             {
@@ -927,8 +926,8 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     //     std::cout << i << ", ";
     // std::cout << "\n" ;
 
-    pagmo::population pop { unprob, 100 };
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    pagmo::population pop { unprob, 200 };
+    for ( auto evolution = 0; evolution < 10; evolution++ ) {
         pop = algo.evolve(pop);
     }
     std::vector<double> dec_vec_champion = pop.champion_x();

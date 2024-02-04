@@ -40,7 +40,7 @@ public:
 
   vector_double::size_type get_nec() const
   {
-    return 1;
+    return 2;
   }
   vector_double::size_type get_nic() const
   {

@@ -177,8 +177,22 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     //     addIndexedValues(std::make_pair(marginal_lik, params));
 
     // }
+
+    bool isSuboptimalFollowedByOptimal = true;
+    if(cluster_size == 2)
+    {
+        bool isFirstSuboptimal = cluster[0].find("Suboptimal") != std::string::npos;
+        //bool isSecondOptimal = cluster[1].find("Optimal") != std::string::npos;
+
+        if(!isFirstSuboptimal){
+            isSuboptimalFollowedByOptimal = false;
+        }
+
+    }
+
+    double equality2 = isSuboptimalFollowedByOptimal-1;
     
-    return{marginal_lik, optimalCount-1, suboptimalCount-1, 1-marginal_lik, 1-cluster_size};
+    return{marginal_lik, optimalCount-1, equality2, suboptimalCount-1, 1-marginal_lik, 1-cluster_size};
 
 }
 
