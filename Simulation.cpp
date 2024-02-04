@@ -69,8 +69,8 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
     });
 
     // Check if the count is greater than 50
-    if (countS0 > 50) {
-        std::cout << "check_ema failed." <<std::endl;
+    if (countS0 > 200) {
+        std::cout << "check_ema failed. S0 prob less than 0.5 for more than 200 trials" <<std::endl;
         return false;
 
     }
@@ -82,7 +82,7 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
 
     // Check if the count is greater than 50
     if (countGreaterThan099/ema0.size() > 0.9) {
-        std::cout << "check_ema failed." <<std::endl;
+        std::cout << "check_ema failed.  S0 is close to 1 for most of trials" <<std::endl;
         return false;
 
     }
@@ -98,7 +98,7 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
 
     // Check if the count is greater than 50
     if (countS1 > 100) {
-        std::cout << "check_ema failed." <<std::endl;
+        std::cout << "check_ema failed.S0 prob less than 0.5 for more than 100 trials; countS1 = " << countS1 <<std::endl;
         return false;
 
     }
@@ -195,37 +195,55 @@ bool check_path5(arma::mat data) {
         return false;
     }
 
+    //CHECK 3: S1 does not decay suddenly after learning in second half of exp
+    auto middleIteratorS0 = ema0.begin() + ema0.size() / 2;
 
-  bool S0Path5 = false;
-  // Loop over the EMA values
-  for (int i = 0; i < ema0.n_elem; i++) {
-    // If the EMA reaches 0.5 in either state
-    if (ema0(i) >= 0.5) {
-      // Return true
-      S0Path5 = true;
+    // Count the values less than 0.5 in the second half
+    int countS0 = std::count_if(ema0.begin(), middleIteratorS0, [](double value) {
+        return value > 0.3;
+    });
+
+    // Check if count of S0 path5 prob above 0.3 is greater than 20
+    if (countS0 > 20) {
+        std::cout << "check_path5 failed." <<std::endl;
+        return false;
+
     }
-  }
 
+
+//   bool S0Path5 = false;
+//   // Loop over the EMA values
+//   for (int i = 0; i < ema0.n_elem; i++) {
+//     // If the EMA reaches 0.5 in either state
+//     if (ema0(i) >= 0.5) {
+//       // Return true
+//       S0Path5 = true;
+//     }
+//   }
+
+  int count1 = 0;
   bool S1Path5 = false;
   for (int i = 0; i < ema1.n_elem; i++) {
-    // If the EMA reaches 0.5 in either state
     if (ema1(i) >= 0.5) {
-      // Return true
-      S1Path5  = true;
+      count1++;
+      if (count1 == 10) {
+        S1Path5 = true;
+        break;
+      }
+    } else {
+      count1 = 0;
     }
   }
 
-  if(!S0Path5 && S1Path5)
+  if(S1Path5)
   {
     return true;
   }
 
-    
-
+  
   // Return false
   return false;
 }
-
 
 
 bool checkConsecutiveThreshold(arma::mat data, double threshold, int consecutiveCount, int changepoint) {
@@ -683,6 +701,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 generated_TurnsData.reset();
                 strategy->resetPathProbMat();
                 strategy->resetCredits();
+                trueGenStrategies.clear();
             }
 
             loopCounter++;
@@ -703,10 +722,29 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         std::random_device rd;
         std::mt19937 gen(rd());
 
-
-        while(!endLoop)
+        std::vector<double> initCreditsS0;
+        if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
         {
-            
+            initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+        }else{
+            initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+        }
+        randomPair.first->setStateS0Credits(initCreditsS0);
+
+        std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
+        std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
+        randomPair.second->setStateS0Credits(initCreditsOptS0);
+        randomPair.second->setStateS1Credits(initCreditsOptS1);
+       
+        arma::mat generated_PathData_Suboptimal;
+        arma::mat generated_TurnsData_Suboptimal;
+
+        arma::mat generated_PathData_Optimal;
+        arma::mat generated_TurnsData_Optimal;
+        bool endLoopSuboptimal = false;
+        int counterSuboptimal = 0;
+        while(!endLoopSuboptimal)
+        {
             if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
             {
                 std::uniform_int_distribution<int> distribution(9,12);
@@ -720,173 +758,121 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
              std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
 
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
-            std::vector<double> initCreditsS0;
-            if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+           for(int ses=0; ses < changepoint_ses; ses++)
+           {
+                std::pair<arma::mat, arma::mat> simData;
+                arma::mat generated_PathData_sess;
+                arma::mat generated_TurnsData_sess;
+                strategy = randomPair.first;
+                simData = simulateTrajectory(ratdata, ses, *randomPair.first);
+                generated_PathData_sess = simData.first;
+                generated_TurnsData_sess = simData.second;
+
+                arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
+                arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
+
+                arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
+                arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
+                generated_PathData_Suboptimal = arma::join_cols(generated_PathData_Suboptimal, generated_PathData_sess);
+                generated_TurnsData_Suboptimal = arma::join_cols(generated_TurnsData_Suboptimal, generated_TurnsData_sess);
+
+                trueGenStrategies.push_back(strategy->getName());
+
+           } 
+
+           if(check_path5(generated_PathData_Suboptimal))
             {
-                initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+                std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
+                endLoopSuboptimal = true;
+
             }else{
-                initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+                endLoopSuboptimal = false;
+                std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
+                generated_PathData_Suboptimal.reset();
+                generated_TurnsData_Suboptimal.reset();
+
+                randomPair.first->resetPathProbMat();
+                randomPair.first->resetCredits();
+                trueGenStrategies.clear();
             }
+
+            counterSuboptimal++;
+
+            if(counterSuboptimal==100)
+            {
+                break;
+                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+
+            }
+
+        }
+
+        bool endLoopOptimal = false;
+        int counterOptimal = 0;
+        while(!endLoopOptimal)
+        {
             
-            //std::vector<double> initCreditsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
-            randomPair.first->setStateS0Credits(initCreditsS0);
-
-            std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
-            std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
-            randomPair.second->setStateS0Credits(initCreditsOptS0);
-            randomPair.second->setStateS1Credits(initCreditsOptS1);
-
-            std::vector<double> initS0Credits_ses = randomPair.second->getS0Credits();
-            std::vector<double> initS1Credits_ses = randomPair.second->getS1Credits();
-
-            // std::cout << "initS0Credits_ses:";
-            // for (const double& value : initS0Credits_ses) {
-            //     std::cout << value << " ";
-            // }
-            // std::cout << "\n" ;
-
-            // std::cout << "initS1Credits_ses:";
-            // for (const double& value : initS1Credits_ses) {
-            //     std::cout << value << " ";
-            // }
-            // std::cout << "\n" ;
-
-  
-           for(int ses=0; ses < sessions; ses++)
+           for(int ses=changepoint_ses; ses < sessions; ses++)
             {
                 std::pair<arma::mat, arma::mat> simData;
                 arma::mat generated_PathData_sess;
                 arma::mat generated_TurnsData_sess;
                 
-                // std::shared_ptr<Strategy> randomPair_first_bkp = std::make_shared<Strategy>(*randomPair.first);
-                // std::shared_ptr<Strategy> randomPair_second_bkp = std::make_shared<Strategy>(*randomPair.second);
-
-                bool path5Cond = false;
-                int counter = 0;
-
                 //Start suboptimal portion of switching simulations
-                if(ses < changepoint_ses)
-                {
-                    std::vector<double> initS0Credits_ses = randomPair.first->getS0Credits();
-
-                    // std::cout << std::endl;
-
-                    strategy = randomPair.first;
-                    simData = simulateTrajectory(ratdata, ses, *randomPair.first);
-                    generated_PathData_sess = simData.first;
-                    generated_TurnsData_sess = simData.second;
-
-                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
-
-                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-
-                    //simulateTrajectory(ratdata, ses, *randomPair.first);
-                    //simulateTrajectory(ratdata, ses, *randomPair.second);
-                }else{  //Start Optimal portion of switching simulations
-
-                    std::vector<double> initS0Credits_ses = randomPair.second->getS0Credits();
-                    std::vector<double> initS1Credits_ses = randomPair.second->getS1Credits();
-
-                    // std::cout << "S0 credits:";
-                    // for (const double& value : initS0Credits_ses) {
-                    //     std::cout << value << ", ";
-                    // }
-                    // std::cout << "\n" ;
-
-                    // std::cout << "S1 credits:";
-                    // for (const double& value : initS1Credits_ses) {
-                    //     std::cout << value << ", ";
-                    // }
-                    // std::cout << "\n" ;
-
-                    // randomPair.second->printEdgeProbs();
-
-                    strategy = randomPair.second;
-                    simData = simulateTrajectory(ratdata, ses, *randomPair.second);
-                    generated_PathData_sess = simData.first;
-                    generated_TurnsData_sess = simData.second;
+                strategy = randomPair.second;
+                simData = simulateTrajectory(ratdata, ses, *randomPair.second);
+                generated_PathData_sess = simData.first;
+                generated_TurnsData_sess = simData.second;
 
 
-                    arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
-                    arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
+                arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
+                arma::mat genDataS0 = generated_PathData_sess.rows(s0indices);
 
-                    arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
-                    arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-
-
-                } //End session of switching simulations
-
+                arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
+                arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
                 // std::cout << "ses=" << ses << ", strategy=" << strategy->getName() << std::endl;
 
                 trueGenStrategies.push_back(strategy->getName());
 
-                generated_PathData = arma::join_cols(generated_PathData, generated_PathData_sess);
-                generated_TurnsData = arma::join_cols(generated_TurnsData, generated_TurnsData_sess);
+                generated_PathData_Optimal = arma::join_cols(generated_PathData_Optimal, generated_PathData_sess);
+                generated_TurnsData_Optimal = arma::join_cols(generated_TurnsData_Optimal, generated_TurnsData_sess);
+
             
             }
 
+            generated_PathData = arma::join_cols(generated_PathData_Suboptimal, generated_PathData_Optimal);
+            generated_TurnsData = arma::join_cols(generated_TurnsData_Suboptimal, generated_TurnsData_Optimal);
 
-            bool isGenDataGood = true;
-            if(!randomPair.first->getOptimal())
+            std::cout << "generated_PathData_Optimal size=" << generated_PathData_Optimal.n_rows << ", generated_PathData size =" << generated_PathData.n_rows << std::endl;
+
+            if(check_ema(generated_PathData))
             {
-                arma::uvec indices = arma::find(generated_PathData.col(4) < changepoint_ses);
-                
-                arma::mat subMat = generated_PathData.rows(indices); //Update
-                //std::cout << "indices.size=" << indices.size() << ", subMat rows=" << subMat.n_rows << std::endl;
-                //First check of genData: If Path5 prob > 0.5 for any state, it is good    
-                if(check_path5(subMat))
-                {
-                    isGenDataGood = true;
-                    std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
-                }else{
-                    isGenDataGood = false;
-                    std::cout << "check_path5 failed after " << changepoint_ses << " sessions" <<std::endl;
-                }
-            }
+                std::cout << "check_ema is successful after " << changepoint_ses << " sessions" <<std::endl;
+                endLoopOptimal = true;
 
-
-            if(isGenDataGood)
-            {
-                //2nd test: check if simulation is learning
-                if(check_ema(generated_PathData))
-                {
-                    std::cout << "check_ema is successful after " << changepoint_ses << " sessions" <<std::endl;
-
-                }else{
-                    isGenDataGood = false;
-                    std::cout << "check_ema failed. Re-generate try: " << loopCounter <<std::endl;
-                }
-            }
-
-            if(isGenDataGood)
-            {
-                endLoop = true;
-                // arma::vec simSessionVec = generated_PathData.col(4);
-                // arma::vec simUniqSessIdx = arma::unique(simSessionVec);
-                // std::cout << "simUniqSessIdx.size=" << simUniqSessIdx.size() << std::endl;
-
-
-            }else
-            {
+            }else{
+                endLoopOptimal = false;
+                std::cout << "check_ema failed. Re-generate Optimal trajectory: " << counterOptimal <<std::endl;
                 generated_PathData.reset();
                 generated_TurnsData.reset();
 
-                randomPair.first->resetPathProbMat();
-                randomPair.first->resetCredits();
+                generated_PathData_Optimal.reset();
+                generated_TurnsData_Optimal.reset();
 
                 randomPair.second->resetPathProbMat();
                 randomPair.second->resetCredits();
             }
+            counterOptimal++;
 
-            loopCounter++;
-            if(loopCounter > 100)
+            if(counterOptimal==100)
             {
-                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
                 break;
+                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+
             }
+
         }
+     
     }
 
     std::cout << "Generated sim:" << randomPair.first->getName() << " and " << randomPair.second->getName() << std::endl;
@@ -910,7 +896,6 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     return simRatdata;
 
 }
-
 
 
 //Ignore- cannot run testSimulation as getTrajectoryLikelihood requires setting rewardsS0 & rewardsS1, which is not "possible" for suboptimal case
@@ -1097,12 +1082,12 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
 
     // Create a problem using Pagmo
     problem prob{pagmoprob};
-    
+
     unconstrain unprob{prob, "kuri"};
     // //2 - Instantiate a pagmo algorithm (self-adaptive differential
     // ////evolution, 100 generations).
     // pagmo::algorithm algo{de(10)};
-    //pagmo::algorithm algo{de(10)};
+    pagmo::algorithm algo{de(5)};
     // ////pagmo::algorithm algo{sade(20)};
 
     // // pagmo::cstrs_self_adaptive algo{10, sade()};
@@ -1143,10 +1128,10 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     // //     archi.push_back(algo, pop);
     // // }
 
-    // // archipelago archi{10u, algo, unprob, 20u};
+    //archipelago archi{5u, algo, unprob, 10u};
 
     // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    // archi.evolve(10);
+    // archi.evolve(5);
     // std::cout << "DONE1:"  << '\n';
 
     // ///5 - Wait for the evolutions to finish.
@@ -1155,10 +1140,10 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     // double champion_score = 1000000;
     // std::vector<double> dec_vec_champion;
     // for (const auto &isl : archi) {
-        //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        //     std::vector<double> dec_vec = isl.get_population().champion_x();
-        //     // for (auto const& i : dec_vec)
-//     //     std::cout << i << ", ";
+    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    //     // for (auto const& i : dec_vec)
+    //     //     std::cout << i << ", ";
     //     // std::cout << "\n" ;
 
     //     double champion_isl = isl.get_population().champion_f()[0];
@@ -1171,25 +1156,33 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
 
     // std::cout << "Final champion = " << champion_score << std::endl;
     // for (auto const& i : dec_vec_champion)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+    //     std::cout << i << ", ";
+    // std::cout << "\n" ;
 
-    //pagmo::thread_bfe thread_bfe;
-    pagmo::pso_gen method ( 10 );
-    //pagmo::gaco method(10);
-    //method.set_bfe ( pagmo::bfe { thread_bfe } );
-    pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { unprob, 100 };
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    pagmo::population pop { unprob, 200 };
+    for ( auto evolution = 0; evolution < 10; evolution++ ) {
         pop = algo.evolve(pop);
     }
-
     std::vector<double> dec_vec_champion = pop.champion_x();
     std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
-    
+
+
+    // pagmo::thread_bfe thread_bfe;
+    // //pagmo::pso_gen method ( 10 );
+    // pagmo::gaco method(10);
+    // method.set_bfe ( pagmo::bfe { thread_bfe } );
+    // pagmo::algorithm algo = pagmo::algorithm { method };
+    // pagmo::population pop { prob, thread_bfe, 100 };
+    // // Evolve the population for 100 generations
+    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    //     pop = algo.evolve(pop);
+    // }
+    // std::vector<double> dec_vec_champion = pop.champion_x();
+    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+
     return dec_vec_champion;
 }
+
 
 void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string rat)
 {

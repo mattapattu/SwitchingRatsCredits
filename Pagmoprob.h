@@ -43,7 +43,7 @@ PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,
 
 vector_double::size_type get_nec() const
   {
-    return 1;
+    return 2;
   }
   vector_double::size_type get_nic() const
   {
