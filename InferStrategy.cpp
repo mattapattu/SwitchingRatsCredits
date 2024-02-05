@@ -17,6 +17,7 @@
 #include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/algorithms/gaco.hpp>
+#include <pagmo/algorithms/simulated_annealing.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -455,42 +456,53 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
 
-    pagmo::algorithm algo{de(5)};
+    
 
-    archipelago archi{20u, algo, unprob, 25u};
+    // pagmo::algorithm algo{de(5)};
 
-    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(5);
-    std::cout << "DONE1:"  << '\n';
+    // archipelago archi{20u, algo, unprob, 25u};
 
-    ///5 - Wait for the evolutions to finish.
-    archi.wait_check();
+    // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    // archi.evolve(5);
+    // std::cout << "DONE1:"  << '\n';
 
-    ///6 - Print the fitness of the best solution in each island.
+    // ///5 - Wait for the evolutions to finish.
+    // archi.wait_check();
 
-    double champion_score = 1e8;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        std::vector<double> dec_vec = isl.get_population().champion_x();
+    // ///6 - Print the fitness of the best solution in each island.
+
+    // double champion_score = 1e8;
+    // std::vector<double> dec_vec_champion;
+    // for (const auto &isl : archi) {
+    //     std::vector<double> dec_vec = isl.get_population().champion_x();
         
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+    //     // for (auto const& i : dec_vec)
+    //     //     std::cout << i << ", ";
+    //     // std::cout << "\n" ;
 
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
+    //     double champion_isl = isl.get_population().champion_f()[0];
+    //     if(champion_isl < champion_score)
+    //     {
+    //         champion_score = champion_isl;
+    //         dec_vec_champion = dec_vec;
+    //     }
+    // }
+
+    // std::cout << "Final champion = " << champion_score << std::endl;
+    // for (auto const& i : dec_vec_champion)
+    //     std::cout << i << ", ";
+    // std::cout << "\n" ;
+
+    pagmo::simulated_annealing algo(10., 1e-5, 100u, 10u, 10u, 1.);
+    pagmo::population pop { prob, 100 };
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
     }
 
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
-
+    std::vector<double> dec_vec_champion = pop.champion_x();
+    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
     const auto fv = prob.fitness(dec_vec_champion);
     std::cout << "Value of the objfun in dec_vec_champion: " << fv[0] << '\n';
