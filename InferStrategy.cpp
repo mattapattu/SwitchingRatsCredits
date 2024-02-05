@@ -457,12 +457,12 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 
     pagmo::algorithm algo{de(5)};
 
-    pagmo::population pop { unprob, 200 };
+    pagmo::population pop { unprob, 500 };
     for ( auto evolution = 0; evolution < 10; evolution++ ) {
         pop = algo.evolve(pop);
     }
     std::vector<double> dec_vec_champion = pop.champion_x();
-    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    //std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
 
     std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
