@@ -495,7 +495,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // std::cout << "\n" ;
 
     pagmo::simulated_annealing algo(10., 1e-5, 100u, 10u, 10u, 1.);
-    pagmo::population pop { prob, 100 };
+    pagmo::population pop { unprob, 100 };
     // Evolve the population for 100 generations
     for ( auto evolution = 0; evolution < 5; evolution++ ) {
         pop = algo.evolve(pop);
