@@ -23,6 +23,9 @@ int main(int argc, char* argv[])
     //std::string rat = argv[1];
     //std::vector<std::string> rats = {rat};
 
+    //std::string run = argv[1];
+
+
     for(const std::string& ratName: rats)
     {
         std::string cmd = "load('/home/mattapattu/Projects/Rats-Credit/Sources/lib/InverseRL/"+ ratName +".Rdata')";
@@ -58,12 +61,12 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
+        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
         //read clusterParams.txt to get the parameters for rat
-        std::string filename_cluster = "clusterMLEParams.txt";
+        std::string filename_cluster = "clusterMLEParamsNew.txt";
         std::ifstream cluster_infile(filename_cluster);
         std::map<std::string, std::vector<double>> clusterParams;
         boost::archive::text_iarchive ia_cluster(cluster_infile);
@@ -100,7 +103,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R);
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
 
     }
 

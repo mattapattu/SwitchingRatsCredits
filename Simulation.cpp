@@ -297,7 +297,7 @@ bool checkConsecutiveThreshold(arma::mat data, double threshold, int consecutive
 
 
 
-RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, RInside &R, int selectStrat)
+RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, RInside &R, int selectStrat, std::string run)
 {
     std::string rat = ratdata.getRat();
     std::vector<double> v = clusterParams[rat];
@@ -647,7 +647,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     R["genData"] = Rcpp::wrap(generated_PathData);
 
     // Save the matrix as RData using RInside
-    std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat +".RData";
+    std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat + "_" + run +".RData";
     
     std::string rCode = "saveRDS(genData, file='" + filename + "')";
     R.parseEvalQ(rCode.c_str());
@@ -950,10 +950,10 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     return dec_vec_champion;
 }
 
-void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string rat)
+void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string rat, std::string run)
 {
 
-    std::string filename = "confusionMatrix_" + rat+".txt";
+    std::string filename = "Results/confusionMatrix_" + rat+ "_" +run+ ".txt";
     std::ifstream confMat_file(filename);
 
     std::vector<std::string> rows = {"aca2_Suboptimal_Hybrid3", "drl_Suboptimal_Hybrid3", "arl_Suboptimal_Hybrid3", "aca2_Optimal_Hybrid3", "drl_Optimal_Hybrid3", "arl_Optimal_Hybrid3"};
@@ -1068,7 +1068,7 @@ void updateConfusionMatrix(std::vector<RecordResults> allSesResults, std::string
 }
 
 
-void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug)
+void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug, std::string run)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -1200,7 +1200,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
 
     probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
-    updateConfusionMatrix(allSesResults, rat);
+    updateConfusionMatrix(allSesResults, rat, run);
 
 
     aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
@@ -1215,7 +1215,7 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 }
 
 
-void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R)
+void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R, std::string run)
 {
     // Read the params from from rat param file, e.g rat_103.txt
     // std::string rat = ratdata.getRat();
@@ -1240,10 +1240,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     {
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
-            RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
+            RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i, run);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
             std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true);
+            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true, run);
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception

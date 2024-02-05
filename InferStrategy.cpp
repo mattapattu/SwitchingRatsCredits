@@ -401,7 +401,7 @@ void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr
 void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3) {
 
     // Open the file for reading and appending
-    std::string filename_cluster = "clusterMLEParams.txt";
+    std::string filename_cluster = "clusterMLEParamsNew.txt";
     std::ifstream cluster_infile(filename_cluster);
     std::map<std::string, std::vector<double>> paramClusterMap;
     boost::archive::text_iarchive ia_cluster(cluster_infile);
@@ -535,16 +535,16 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // std::cout << "\n" ;
 
 
-    pagmo::thread_bfe thread_bfe;
-    pagmo::pso_gen method ( 10 );
-    //pagmo::gaco method(10);
-    method.set_bfe ( pagmo::bfe { thread_bfe } );
-    pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { unprob, thread_bfe, 100 };
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
-        pop = algo.evolve(pop);
-    }
+    // pagmo::thread_bfe thread_bfe;
+    // pagmo::pso_gen method ( 10 );
+    // //pagmo::gaco method(10);
+    // method.set_bfe ( pagmo::bfe { thread_bfe } );
+    // pagmo::algorithm algo = pagmo::algorithm { method };
+    // pagmo::population pop { unprob, thread_bfe, 100 };
+    // // Evolve the population for 100 generations
+    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    //     pop = algo.evolve(pop);
+    // }
 
     // pagmo::thread_bfe thread_bfe;
     // pagmo::pso_gen method ( 10 );
@@ -558,7 +558,12 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
 
-
+    pagmo::algorithm algo{de(5)};
+    pagmo::population pop { unprob, 200 };
+    for ( auto evolution = 0; evolution < 10; evolution++ ) {
+        pop = algo.evolve(pop);
+    }
+    
     std::vector<double> dec_vec_champion = pop.champion_x();
     std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
     std::cout << "dec_vec_champion: ";
