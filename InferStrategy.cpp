@@ -439,7 +439,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
     //pagmo::algorithm algo{sade(10,2,2)};
-    // pagmo::algorithm algo{de(10)};
+    pagmo::algorithm algo{de(5)};
     // ////pagmo::algorithm algo{sade(20)};
 
     // // pagmo::cstrs_self_adaptive algo{10, sade()};
@@ -500,39 +500,39 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // //     archi.push_back(algo, pop);
     // // }
 
-    // // archipelago archi{10u, algo, unprob, 20u};
+    archipelago archi{10u, algo, unprob, 50u};
 
     // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    // archi.evolve(10);
-    // std::cout << "DONE1:"  << '\n';
+    archi.evolve(5);
+    std::cout << "DONE1:"  << '\n';
 
-    // ///5 - Wait for the evolutions to finish.
-    // archi.wait_check();
+    ///5 - Wait for the evolutions to finish.
+    archi.wait_check();
 
-    // ///6 - Print the fitness of the best solution in each island.
+    ///6 - Print the fitness of the best solution in each island.
 
-    // double champion_score = 1e8;
-    // std::vector<double> dec_vec_champion;
-    // for (const auto &isl : archi) {
-    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    double champion_score = 1e8;
+    std::vector<double> dec_vec_champion;
+    for (const auto &isl : archi) {
+        std::vector<double> dec_vec = isl.get_population().champion_x();
         
-    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-    //     // for (auto const& i : dec_vec)
-    //     //     std::cout << i << ", ";
-    //     // std::cout << "\n" ;
+        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+        // for (auto const& i : dec_vec)
+        //     std::cout << i << ", ";
+        // std::cout << "\n" ;
 
-    //     double champion_isl = isl.get_population().champion_f()[0];
-    //     if(champion_isl < champion_score)
-    //     {
-    //         champion_score = champion_isl;
-    //         dec_vec_champion = dec_vec;
-    //     }
-    // }
+        double champion_isl = isl.get_population().champion_f()[0];
+        if(champion_isl < champion_score)
+        {
+            champion_score = champion_isl;
+            dec_vec_champion = dec_vec;
+        }
+    }
 
-    // std::cout << "Final champion = " << champion_score << std::endl;
-    // for (auto const& i : dec_vec_champion)
-    //     std::cout << i << ", ";
-    // std::cout << "\n" ;
+    std::cout << "Final champion = " << champion_score << std::endl;
+    for (auto const& i : dec_vec_champion)
+        std::cout << i << ", ";
+    std::cout << "\n" ;
 
 
     // pagmo::thread_bfe thread_bfe;
@@ -558,19 +558,19 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
 
-    pagmo::algorithm algo{de(5)};
-    pagmo::population pop { unprob, 200 };
-    for ( auto evolution = 0; evolution < 10; evolution++ ) {
-        pop = algo.evolve(pop);
-    }
+    // pagmo::algorithm algo{de(5)};
+    // pagmo::population pop { unprob, 500 };
+    // for ( auto evolution = 0; evolution < 10; evolution++ ) {
+    //     pop = algo.evolve(pop);
+    // }
     
-    std::vector<double> dec_vec_champion = pop.champion_x();
-    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
-    std::cout << "dec_vec_champion: ";
-    for (const auto &x : dec_vec_champion) {
-        std::cout << x << " ";
-    }
-    std::cout << "\n";
+    // std::vector<double> dec_vec_champion = pop.champion_x();
+    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    // std::cout << "dec_vec_champion: ";
+    // for (const auto &x : dec_vec_champion) {
+    //     std::cout << x << " ";
+    // }
+    // std::cout << "\n";
 
 
     const auto fv = prob.fitness(dec_vec_champion);
