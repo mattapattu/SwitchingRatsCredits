@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
+        runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
