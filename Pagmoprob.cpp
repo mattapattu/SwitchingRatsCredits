@@ -160,19 +160,25 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
     // }
 
-    bool isSuboptimalFollowedByOptimal = true;
-    if(cluster_size == 2)
+    // bool isSuboptimalFollowedByOptimal = true;
+    // if(cluster_size == 2)
+    // {
+    //     bool isFirstSuboptimal = cluster[0].find("Suboptimal") != std::string::npos;
+    //     //bool isSecondOptimal = cluster[1].find("Optimal") != std::string::npos;
+
+    //     if(!isFirstSuboptimal){
+    //         isSuboptimalFollowedByOptimal = false;
+    //     }
+
+    // }
+
+    // double equality2 = isSuboptimalFollowedByOptimal-1;
+
+    if(cluster_size == 0)
     {
-        bool isFirstSuboptimal = cluster[0].find("Suboptimal") != std::string::npos;
-        //bool isSecondOptimal = cluster[1].find("Optimal") != std::string::npos;
-
-        if(!isFirstSuboptimal){
-            isSuboptimalFollowedByOptimal = false;
-        }
-
+        marginal_lik = 100000; // Penalize to prevent zero likelihoods
     }
 
-    double equality2 = isSuboptimalFollowedByOptimal-1;
     
     return{marginal_lik};
 
