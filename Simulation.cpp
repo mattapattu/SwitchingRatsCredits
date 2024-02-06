@@ -1159,40 +1159,13 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     //     std::cout << i << ", ";
     // std::cout << "\n" ;
     pagmo::algorithm algo{sade(10,2,2)};
-    archipelago archi{5u, algo, prob, 10u};
-
-    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(5);
-    std::cout << "DONE1:"  << '\n';
-
-    ///5 - Wait for the evolutions to finish.
-    archi.wait_check();
-
-    ///6 - Print the fitness of the best solution in each island.
-
-    double champion_score = 1e8;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        std::vector<double> dec_vec = isl.get_population().champion_x();
-        
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
-
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
+    pagmo::population pop { prob, 100 };
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
     }
-
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
-
+    std::vector<double> dec_vec_champion = pop.champion_x();
+    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
 
     // pagmo::thread_bfe thread_bfe;
