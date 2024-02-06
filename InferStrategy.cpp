@@ -37,6 +37,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
 {
     int strategies_size = strategies.size();
     std::vector<double> priors(strategies_size, 0);
+    std::vector<std::string> strategy_names;
     double crpAlpha = strategies[0]->getCrpAlpha();
     double eta = strategies[0]->getEta();
     
@@ -44,7 +45,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
     if(ses == 0)
     {
         double p = 1.0/(double)strategies_size;
-        //std::cout << "ses=0" << ", p=" << p << std::endl;
+        // std::cout << "ses=0" << ", p=" << p << std::endl;
         std::fill(priors.begin(), priors.end(), p);
 
     }
@@ -55,6 +56,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
             // Access the strategy at index i using strategies[i]
             std::shared_ptr<Strategy> strategyPtr = strategies[i];
             std::string name = strategyPtr->getName();
+            strategy_names.push_back(name);
             //If strategy is in cluster, prior is average over past posteriors
             if (std::find(cluster.begin(), cluster.end(), name) != cluster.end())
             {
@@ -76,10 +78,50 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
             }
 
         }
-        //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
-        double alpha_i = crpAlpha/(strategies_size - cluster.size());
-        std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
 
+    //    std::cout << "Session=" << ses <<  ", priors: " ;
+    //     for (const double& p : priors) {
+    //         std::cout << p << " ";
+    //     }
+    //     std::cout << std::endl;
+
+        
+        if(cluster.empty())
+        {
+            //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
+            double alpha_i = 1.0/(double)strategies_size;
+            std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+
+        }else if(cluster.size()==1 && cluster[0].find("Suboptimal") != std::string::npos)
+        {
+            
+            double alpha_i = crpAlpha/2;
+            // std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (strategy_names[i].find("Optimal") != std::string::npos) {
+                    priors[i] = alpha_i;
+                }else if(strategy_names[i].find("Suboptimal") != std::string::npos && priors[i] == -1)
+                {
+                    priors[i] = 0;
+                }
+            }
+        }else if(cluster.size()==1 && cluster[0].find("Optimal") != std::string::npos)
+        {
+            //set alpha_i t zero for all strategies
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (priors[i] == -1) {
+                    priors[i] = 0;
+                }
+            }
+        }else if(cluster.size()==2)
+        {
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (priors[i] == -1) {
+                    priors[i] = 0;
+                }
+            }
+        }
         // std::cout << "Priors before transform: " ;
         // for (const double& p : priors) {
         //     std::cout << p << " ";
@@ -87,15 +129,16 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
         // std::cout << std::endl;
         
         double sum = std::accumulate(priors.begin(), priors.end(), 0.0);
-        //double normalizer = sum;
-        std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });
-
         if (sum==0) {
                     
             std::cout << "Prior prob sum=0. Check" << std::endl;
             std::exit(EXIT_FAILURE);
         } 
 
+        //double normalizer = sum;
+        std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });
+
+        
                 
     }
 
@@ -401,7 +444,7 @@ void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr
 void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3) {
 
     // Open the file for reading and appending
-    std::string filename_cluster = "clusterMLEParamsNew.txt";
+    std::string filename_cluster = "clusterMLEParams.txt";
     std::ifstream cluster_infile(filename_cluster);
     std::map<std::string, std::vector<double>> paramClusterMap;
     boost::archive::text_iarchive ia_cluster(cluster_infile);
@@ -438,10 +481,10 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //unconstrain unprob{prob, "kuri"};
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
-    //pagmo::algorithm algo{sade(10,2,2)};
+    pagmo::algorithm algo{sade(10,2,2)};
     //pagmo::algorithm algo{de(5)};
-    pagmo::cstrs_self_adaptive algo{5, de(1)};
-    algo.set_verbosity(1);
+    //pagmo::cstrs_self_adaptive algo{5, de(1)};
+    //algo.set_verbosity(1);
     // ////pagmo::algorithm algo{sade(20)};
 
     // // pagmo::cstrs_self_adaptive algo{10, sade()};
@@ -455,23 +498,6 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // pagmo::vector_double x;
 
     // std::string rat = ratdata.getRat();
-
-    // if(rat=="rat_103")
-    // {
-    //     x = {0.0512163,0.604501,0.0174739,0.997324,0.0643306,0.0749193,0.267144,0.287502,0.17852,0.208163,0.208163};
-    // }else if(rat=="rat_106")
-    // {
-    //     x = {0.11001,0.814603,0.77613,0.678799,0.982517,0.416417,0.116914,0.109011,0.51933,3.26825,2.71595};
-    // }else if(rat=="rat_112")
-    // {
-    //     x = {0.471254,0.870826,0.536322,0.772659,0.834925,0.124491,0.0937769,0.724525,4.47328e-05,3.68155,2.07546};
-    // }else if(rat=="rat_113")
-    // {
-    //     x = {0.0886012,0.809331,0.229893,0.583015,0.608807,0.452799,0.0425939,0.435701,0.887568,1.33651,1.9136};   
-    // }else if(rat=="rat_114")
-    // {
-    //     x = {0.485305,0.869402,0.86441,0.644401,0.903296,0.157035,0.0535516,0.521759,0.870354,0.508055,0.1315};  
-    // }
 
     // pagmo::population pop = archi[0].get_population();
     // pop.set_x(0,x);
@@ -502,7 +528,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // //     archi.push_back(algo, pop);
     // // }
 
-    archipelago archi{15u, algo, prob, 60u};
+    archipelago archi{5u, algo, prob, 10u};
 
     // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
     archi.evolve(5);
