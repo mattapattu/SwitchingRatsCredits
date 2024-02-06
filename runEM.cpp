@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
         //read clusterParams.txt to get the parameters for rat
-        std::string filename_cluster = "clusterMLEParamsNew.txt";
+        std::string filename_cluster = "clusterMLEParams.txt";
         std::ifstream cluster_infile(filename_cluster);
         std::map<std::string, std::vector<double>> clusterParams;
         boost::archive::text_iarchive ia_cluster(cluster_infile);
