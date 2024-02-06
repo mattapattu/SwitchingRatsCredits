@@ -41,14 +41,14 @@ PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,
   // Bounds function
   std::pair<vector_double, vector_double> get_bounds() const;
 
-vector_double::size_type get_nec() const
-  {
-    return 2;
-  }
-  vector_double::size_type get_nic() const
-  {
-    return 3;
-  }
+  // vector_double::size_type get_nec() const
+  // {
+  //   return 2;
+  // }
+  // vector_double::size_type get_nic() const
+  // {
+  //   return 3;
+  // }
 
 
   // std::vector<std::atomic<std::pair<double, std::vector<double>>>> getIndexedValues()

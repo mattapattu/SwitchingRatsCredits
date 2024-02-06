@@ -17,7 +17,6 @@
 #include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/algorithms/gaco.hpp>
-#include <pagmo/algorithms/simulated_annealing.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -35,6 +34,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
 {
     int strategies_size = strategies.size();
     std::vector<double> priors(strategies_size, 0);
+    std::vector<std::string> strategy_names;
     double crpAlpha = strategies[0]->getCrpAlpha();
     double eta = strategies[0]->getEta();
     
@@ -42,7 +42,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
     if(ses == 0)
     {
         double p = 1.0/(double)strategies_size;
-        //std::cout << "ses=0" << ", p=" << p << std::endl;
+        // std::cout << "ses=0" << ", p=" << p << std::endl;
         std::fill(priors.begin(), priors.end(), p);
 
     }
@@ -53,6 +53,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
             // Access the strategy at index i using strategies[i]
             std::shared_ptr<Strategy> strategyPtr = strategies[i];
             std::string name = strategyPtr->getName();
+            strategy_names.push_back(name);
             //If strategy is in cluster, prior is average over past posteriors
             if (std::find(cluster.begin(), cluster.end(), name) != cluster.end())
             {
@@ -74,10 +75,50 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
             }
 
         }
-        //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
-        double alpha_i = crpAlpha/(strategies_size - cluster.size());
-        std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
 
+    //    std::cout << "Session=" << ses <<  ", priors: " ;
+    //     for (const double& p : priors) {
+    //         std::cout << p << " ";
+    //     }
+    //     std::cout << std::endl;
+
+        
+        if(cluster.empty())
+        {
+            //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
+            double alpha_i = 1.0/(double)strategies_size;
+            std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+
+        }else if(cluster.size()==1 && cluster[0].find("Suboptimal") != std::string::npos)
+        {
+            
+            double alpha_i = crpAlpha/2;
+            // std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (strategy_names[i].find("Optimal") != std::string::npos) {
+                    priors[i] = alpha_i;
+                }else if(strategy_names[i].find("Suboptimal") != std::string::npos && priors[i] == -1)
+                {
+                    priors[i] = 0;
+                }
+            }
+        }else if(cluster.size()==1 && cluster[0].find("Optimal") != std::string::npos)
+        {
+            //set alpha_i t zero for all strategies
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (priors[i] == -1) {
+                    priors[i] = 0;
+                }
+            }
+        }else if(cluster.size()==2)
+        {
+            for (size_t i = 0; i < strategy_names.size(); ++i) {
+                if (priors[i] == -1) {
+                    priors[i] = 0;
+                }
+            }
+        }
         // std::cout << "Priors before transform: " ;
         // for (const double& p : priors) {
         //     std::cout << p << " ";
@@ -85,25 +126,22 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
         // std::cout << std::endl;
         
         double sum = std::accumulate(priors.begin(), priors.end(), 0.0);
-        //double normalizer = sum;
-        std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });
-
         if (sum==0) {
                     
             std::cout << "Prior prob sum=0. Check" << std::endl;
             std::exit(EXIT_FAILURE);
         } 
-        
-        
+
+        //double normalizer = sum;
+        std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });  
+                
     }
 
     for (size_t i = 0; i < strategies.size(); ++i) {
         std::shared_ptr<Strategy> strategyPtr = strategies[i];
         strategyPtr->setCrpPriorInEachTrial(priors[i]);
     }
-
-    
-
+   
     // std::cout << "Priors: " ;
     // for (const double& p : priors) {
     //     std::cout << p << " ";
@@ -113,6 +151,7 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
     return(priors);
 
 }
+
 
 arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger, RecordResults& sessionResults)
 {
@@ -431,7 +470,6 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // Create a problem using Pagmo
     problem prob{pagmoprob};
     
-    unconstrain unprob{prob, "kuri"};
 
     // pagmo::thread_bfe thread_bfe;
     // pagmo::pso_gen method ( 10 );
@@ -456,60 +494,43 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
 
-    
+    pagmo::algorithm algo{sade(10,2,2)};
+    archipelago archi{5u, algo, prob, 10u};
 
-    // pagmo::algorithm algo{de(5)};
+    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    archi.evolve(5);
+    std::cout << "DONE1:"  << '\n';
 
-    // archipelago archi{20u, algo, unprob, 25u};
+    ///5 - Wait for the evolutions to finish.
+    archi.wait_check();
 
-    // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    // archi.evolve(5);
-    // std::cout << "DONE1:"  << '\n';
+    ///6 - Print the fitness of the best solution in each island.
 
-    // ///5 - Wait for the evolutions to finish.
-    // archi.wait_check();
-
-    // ///6 - Print the fitness of the best solution in each island.
-
-    // double champion_score = 1e8;
-    // std::vector<double> dec_vec_champion;
-    // for (const auto &isl : archi) {
-    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    double champion_score = 1e8;
+    std::vector<double> dec_vec_champion;
+    for (const auto &isl : archi) {
+        std::vector<double> dec_vec = isl.get_population().champion_x();
         
-    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-    //     // for (auto const& i : dec_vec)
-    //     //     std::cout << i << ", ";
-    //     // std::cout << "\n" ;
+        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+        // for (auto const& i : dec_vec)
+        //     std::cout << i << ", ";
+        // std::cout << "\n" ;
 
-    //     double champion_isl = isl.get_population().champion_f()[0];
-    //     if(champion_isl < champion_score)
-    //     {
-    //         champion_score = champion_isl;
-    //         dec_vec_champion = dec_vec;
-    //     }
-    // }
-
-    // std::cout << "Final champion = " << champion_score << std::endl;
-    // for (auto const& i : dec_vec_champion)
-    //     std::cout << i << ", ";
-    // std::cout << "\n" ;
-
-    pagmo::simulated_annealing algo(10., 1e-5, 100u, 10u, 10u, 1.);
-    pagmo::population pop { unprob, 100 };
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
-        pop = algo.evolve(pop);
+        double champion_isl = isl.get_population().champion_f()[0];
+        if(champion_isl < champion_score)
+        {
+            champion_score = champion_isl;
+            dec_vec_champion = dec_vec;
+        }
     }
 
-    std::vector<double> dec_vec_champion = pop.champion_x();
-    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    std::cout << "Final champion = " << champion_score << std::endl;
+    for (auto const& i : dec_vec_champion)
+        std::cout << i << ", ";
+    std::cout << "\n" ;
 
     const auto fv = prob.fitness(dec_vec_champion);
     std::cout << "Value of the objfun in dec_vec_champion: " << fv[0] << '\n';
-    std::cout << "Value of the eq. constraint in dec_vec_champion: " << fv[1] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[2] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[3] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[4] << '\n';
 
     // std::vector<std::pair<double, std::vector<double>>> indexedValues = pagmoprob.getIndexedValues();
     // std::cout << "indexedValues.size=" << indexedValues.size() << std::endl;
