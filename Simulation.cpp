@@ -59,14 +59,17 @@ bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 1
   bool s0 = false;
   bool s1 = false;
 
+      auto middleIteratorS0 = ema0.begin() + ema0.size() / 2;
+
+
     // CHECK1: S0 does not decay suddenly after learning in the second half of exp    
     // Count the values less than 0.5 in the second half
-    int countS0 = std::count_if(ema0.begin(), ema0.end(), [](double value) {
+    int countS0 = std::count_if(middleIteratorS0, ema0.end(), [](double value) {
         return value < 0.4;
     });
 
     // Check if the count is greater than 50
-    if (countS0 > 200) {
+    if (countS0 > 100) {
         std::cout << "check_ema failed. S0 prob less than 0.5 for more than 200 trials" <<std::endl;
         return false;
 
@@ -301,11 +304,11 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 {
     std::string rat = ratdata.getRat();
     std::vector<double> v = clusterParams[rat];
-    double alpha_aca_subOptimal = v[0];
+      double alpha_aca_subOptimal = v[0];
     double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = v[2];
-    double gamma_aca_optimal = v[3];
+    double alpha_aca_optimal = v[0];
+    double gamma_aca_optimal = v[1];
 
     //ARL params
     // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
@@ -317,18 +320,18 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
  
     //DRL params
-    double alpha_drl_subOptimal = v[4];
+    double alpha_drl_subOptimal = v[2];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[5];
+    double lambda_drl_subOptimal = v[3];
     
-    double alpha_drl_optimal = v[6];
+    double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double lambda_drl_optimal = v[3];
 
     
-    double phi = v[8];
-    double crpAlpha = v[9];
-    double eta = v[10];
+    double phi = v[4];
+    double crpAlpha = v[5];
+    double eta = v[6];
 
     // Create instances of Strategy
     auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
@@ -490,18 +493,18 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         std::mt19937 gen(rd());
 
         std::vector<double> initCreditsS0;
-        if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
-        {
-            initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
-        }else{
-            initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
-        }
-        randomPair.first->setStateS0Credits(initCreditsS0);
+        // if(randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+        // {
+        //     initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+        // }else{
+        //     initCreditsS0 = {0,0,0,0.5,0,0,0.5,0,0,0,0,0.5};
+        // }
+        // randomPair.first->setStateS0Credits(initCreditsS0);
 
-        std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
-        std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
-        randomPair.second->setStateS0Credits(initCreditsOptS0);
-        randomPair.second->setStateS1Credits(initCreditsOptS1);
+        // std::vector<double> initCreditsOptS0 = {0,0,0,1.5,0,0,0,1.5,0};
+        // std::vector<double> initCreditsOptS1 = {0,0,0,1.5,0,0,0,0,1.5};
+        // randomPair.second->setStateS0Credits(initCreditsOptS0);
+        // randomPair.second->setStateS1Credits(initCreditsOptS1);
        
         arma::mat generated_PathData_Suboptimal;
         arma::mat generated_TurnsData_Suboptimal;
@@ -512,13 +515,13 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         int counterSuboptimal = 0;
         while(!endLoopSuboptimal)
         {
-            if(rat=="rat_103" && randomPair.first->getName()=="aca2_Suboptimal_Hybrid3")
+            if(rat=="rat_103")
             {
-                std::uniform_int_distribution<int> distribution(9,12);
+                std::uniform_int_distribution<int> distribution(5,7);
                 changepoint_ses = distribution(gen);
                 
             }else{
-                std::uniform_int_distribution<int> distribution(4,8);
+                std::uniform_int_distribution<int> distribution(3,5);
                 changepoint_ses = distribution(gen);
             }
         
@@ -547,31 +550,32 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
            } 
 
-           if(check_path5(generated_PathData_Suboptimal))
-            {
-                std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
-                endLoopSuboptimal = true;
+        //    if(check_path5(generated_PathData_Suboptimal))
+        //     {
+        //         std::cout << "check_path5 is successful after " << changepoint_ses << " sessions" <<std::endl;
+        //         endLoopSuboptimal = true;
 
-            }else{
-                endLoopSuboptimal = false;
-                std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
-                generated_PathData_Suboptimal.reset();
-                generated_TurnsData_Suboptimal.reset();
+        //     }else{
+        //         endLoopSuboptimal = false;
+        //         std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
+        //         generated_PathData_Suboptimal.reset();
+        //         generated_TurnsData_Suboptimal.reset();
 
-                randomPair.first->resetPathProbMat();
-                randomPair.first->resetCredits();
-                trueGenStrategies.clear();
-            }
+        //         randomPair.first->resetPathProbMat();
+        //         randomPair.first->resetCredits();
+        //         trueGenStrategies.clear();
+        //     }
 
-            counterSuboptimal++;
+        //     counterSuboptimal++;
 
-            if(counterSuboptimal==100)
-            {
-                break;
-                std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
+        //     if(counterSuboptimal==100)
+        //     {
+        //         break;
+        //         std::cout << "Loop counter reached 100 for simulation:" << randomPair.first->getName() << " and " << randomPair.second->getName() << ". Exiting" << std::endl;
 
-            }
+        //     }
 
+            endLoopSuboptimal = true;
         }
 
         bool endLoopOptimal = false;
@@ -611,7 +615,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             generated_TurnsData = arma::join_cols(generated_TurnsData_Suboptimal, generated_TurnsData_Optimal);
 
             std::cout << "generated_PathData_Optimal size=" << generated_PathData_Optimal.n_rows << ", generated_PathData size =" << generated_PathData.n_rows << std::endl;
-
+            endLoopOptimal = true;
             if(check_ema(generated_PathData))
             {
                 std::cout << "check_ema is successful after " << changepoint_ses << " sessions" <<std::endl;
@@ -926,55 +930,56 @@ std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Su
     //     std::cout << i << ", ";
     // std::cout << "\n" ;
 
-   pagmo::algorithm algo{sade(10,2,2)};
-   archipelago archi{5u, algo, prob, 10u};
+   //pagmo::algorithm algo{sade(10,2,2)};
+//    pagmo::algorithm algo{de(5)};
+//    archipelago archi{5u, algo, prob, 10u};
 
-    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(5);
-    std::cout << "DONE1:"  << '\n';
+//     // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+//     archi.evolve(5);
+//     std::cout << "DONE1:"  << '\n';
 
-    ///5 - Wait for the evolutions to finish.
-    archi.wait_check();
+//     ///5 - Wait for the evolutions to finish.
+//     archi.wait_check();
 
-    ///6 - Print the fitness of the best solution in each island.
+//     ///6 - Print the fitness of the best solution in each island.
 
-    double champion_score = 1e8;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        std::vector<double> dec_vec = isl.get_population().champion_x();
+//     double champion_score = 1e8;
+//     std::vector<double> dec_vec_champion;
+//     for (const auto &isl : archi) {
+//         std::vector<double> dec_vec = isl.get_population().champion_x();
         
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+//         // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+//         // for (auto const& i : dec_vec)
+//         //     std::cout << i << ", ";
+//         // std::cout << "\n" ;
 
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
+//         double champion_isl = isl.get_population().champion_f()[0];
+//         if(champion_isl < champion_score)
+//         {
+//             champion_score = champion_isl;
+//             dec_vec_champion = dec_vec;
+//         }
+//     }
+
+//     std::cout << "Final champion = " << champion_score << std::endl;
+//     for (auto const& i : dec_vec_champion)
+//         std::cout << i << ", ";
+//     std::cout << "\n" ;
+
+
+
+    pagmo::thread_bfe thread_bfe;
+    pagmo::pso_gen method ( 10 );
+    //pagmo::gaco method(10);
+    method.set_bfe ( pagmo::bfe { thread_bfe } );
+    pagmo::algorithm algo = pagmo::algorithm { method };
+    pagmo::population pop { prob, thread_bfe, 100 };
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
     }
-
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
-
-
-
-    // pagmo::thread_bfe thread_bfe;
-    // //pagmo::pso_gen method ( 10 );
-    // pagmo::gaco method(10);
-    // method.set_bfe ( pagmo::bfe { thread_bfe } );
-    // pagmo::algorithm algo = pagmo::algorithm { method };
-    // pagmo::population pop { prob, thread_bfe, 100 };
-    // // Evolve the population for 100 generations
-    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
-    //     pop = algo.evolve(pop);
-    // }
-    // std::vector<double> dec_vec_champion = pop.champion_x();
-    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    std::vector<double> dec_vec_champion = pop.champion_x();
+    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
 
     return dec_vec_champion;
 }
@@ -1109,11 +1114,11 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 
     std::string rat = ratdata.getRat();
 
-    double alpha_aca_subOptimal = v[0];
+  double alpha_aca_subOptimal = v[0];
     double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = v[2];
-    double gamma_aca_optimal = v[3];
+    double alpha_aca_optimal = v[0];
+    double gamma_aca_optimal = v[1];
 
     //ARL params
     // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
@@ -1125,19 +1130,18 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
  
     //DRL params
-    double alpha_drl_subOptimal = v[4];
+    double alpha_drl_subOptimal = v[2];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[5];
+    double lambda_drl_subOptimal = v[3];
     
-    double alpha_drl_optimal = v[6];
+    double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double lambda_drl_optimal = v[3];
 
     
-    double phi = v[8];
-    double crpAlpha = v[9];
-    double eta = v[10];
-
+    double phi = v[4];
+    double crpAlpha = v[5];
+    double eta = v[6];
 
 
 

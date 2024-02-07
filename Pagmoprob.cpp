@@ -6,34 +6,34 @@
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
-    double alpha_aca_subOptimal = v[0];
+      double alpha_aca_subOptimal = v[0];
     double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = v[2];
-    double gamma_aca_optimal = v[3];
+    double alpha_aca_optimal = v[0];
+    double gamma_aca_optimal = v[1];
 
-    // //ARL params
-    // double alpha_arl_subOptimal = v[4];
+    //ARL params
+    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
     // double beta_arl_subOptimal = 1e-7;
-    // double lambda_arl_subOptimal = v[5];
+    // double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
     
-    // double alpha_arl_optimal = v[6];
+    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
     // double beta_arl_optimal = 1e-7;
-    // double lambda_arl_optimal = v[7];
+    // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
  
-    // //DRL params
-    double alpha_drl_subOptimal = v[4];
+    //DRL params
+    double alpha_drl_subOptimal = v[2];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[5];
+    double lambda_drl_subOptimal = v[3];
     
-    double alpha_drl_optimal = v[6];
+    double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double lambda_drl_optimal = v[3];
 
     
-    double phi = v[8];
-    double crpAlpha = v[9];
-    double eta = v[10];
+    double phi = v[4];
+    double crpAlpha = v[5];
+    double eta = v[6];
     
     
        
@@ -190,6 +190,11 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 
     }
 
+    if(cluster_size==0)
+    {
+        marginal_lik = 100000;
+    }
+
     double equality2 = isSuboptimalFollowedByOptimal-1;
     
     return{marginal_lik};
@@ -202,8 +207,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
 
     //bounds.first={1e-2,0.5,1e-2,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
     //bounds.first={1e-2,0.5,1e-2,0.8,1e-2,1e-2,1e-2,1e-2,0.1,1e-8,1e-8};
-    bounds.first={1e-8,0.5,1e-8,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
-    bounds.second={1,1,1,1,1,1,1,1,1,5,5};
+    bounds.first={1e-1,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
+    bounds.second={1,1,1,1,1,5,5};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};
     //bounds.second={1,1,1,1,1,1,1,1,1e-3,1,10};

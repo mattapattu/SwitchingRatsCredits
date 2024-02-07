@@ -611,7 +611,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
       int hybridNodeId = graph->getNodeId(v);
 
-      //score_episode = score_episode + rewardVec[hybridNodeId];
+      score_episode = score_episode + rewardVec[hybridNodeId];
 
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
@@ -652,7 +652,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     {
       //std::cout << "turnNb=" << generated_TurnsData_sess((turnIdx - 1), 0) << ", receives reward"<< std::endl;
       generated_TurnsData_sess((turnIdx - 1), 2) = 5;
-      score_episode = score_episode + 5;
+      //score_episode = score_episode + 5;
     }
 
     //std::cout << "S=" << S << ", A=" << A << ", i=" << i << ", pathProb=" << pathProb <<std::endl;

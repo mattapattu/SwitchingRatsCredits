@@ -481,8 +481,8 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //unconstrain unprob{prob, "kuri"};
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
-    pagmo::algorithm algo{sade(10,2,2)};
-    //pagmo::algorithm algo{de(5)};
+    //pagmo::algorithm algo{sade(10,2,2)};
+    // pagmo::algorithm algo{de(5)};
     //pagmo::cstrs_self_adaptive algo{5, de(1)};
     //algo.set_verbosity(1);
     // ////pagmo::algorithm algo{sade(20)};
@@ -528,51 +528,51 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // //     archi.push_back(algo, pop);
     // // }
 
-    archipelago archi{5u, algo, prob, 10u};
+    // archipelago archi{5u, algo, prob, 10u};
 
-    // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    archi.evolve(5);
-    std::cout << "DONE1:"  << '\n';
+    // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+    // archi.evolve(5);
+    // std::cout << "DONE1:"  << '\n';
 
-    ///5 - Wait for the evolutions to finish.
-    archi.wait_check();
+    // ///5 - Wait for the evolutions to finish.
+    // archi.wait_check();
 
-    ///6 - Print the fitness of the best solution in each island.
+    // ///6 - Print the fitness of the best solution in each island.
 
-    double champion_score = 1e8;
-    std::vector<double> dec_vec_champion;
-    for (const auto &isl : archi) {
-        std::vector<double> dec_vec = isl.get_population().champion_x();
+    // double champion_score = 1e8;
+    // std::vector<double> dec_vec_champion;
+    // for (const auto &isl : archi) {
+    //     std::vector<double> dec_vec = isl.get_population().champion_x();
         
-        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-        // for (auto const& i : dec_vec)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+    //     // for (auto const& i : dec_vec)
+    //     //     std::cout << i << ", ";
+    //     // std::cout << "\n" ;
 
-        double champion_isl = isl.get_population().champion_f()[0];
-        if(champion_isl < champion_score)
-        {
-            champion_score = champion_isl;
-            dec_vec_champion = dec_vec;
-        }
-    }
-
-    std::cout << "Final champion = " << champion_score << std::endl;
-    for (auto const& i : dec_vec_champion)
-        std::cout << i << ", ";
-    std::cout << "\n" ;
-
-
-    // pagmo::thread_bfe thread_bfe;
-    // pagmo::pso_gen method ( 10 );
-    // //pagmo::gaco method(10);
-    // method.set_bfe ( pagmo::bfe { thread_bfe } );
-    // pagmo::algorithm algo = pagmo::algorithm { method };
-    // pagmo::population pop { unprob, thread_bfe, 100 };
-    // // Evolve the population for 100 generations
-    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
-    //     pop = algo.evolve(pop);
+    //     double champion_isl = isl.get_population().champion_f()[0];
+    //     if(champion_isl < champion_score)
+    //     {
+    //         champion_score = champion_isl;
+    //         dec_vec_champion = dec_vec;
+    //     }
     // }
+
+    // std::cout << "Final champion = " << champion_score << std::endl;
+    // for (auto const& i : dec_vec_champion)
+    //     std::cout << i << ", ";
+    // std::cout << "\n" ;
+
+
+    pagmo::thread_bfe thread_bfe;
+    pagmo::pso_gen method ( 10 );
+    //pagmo::gaco method(10);
+    method.set_bfe ( pagmo::bfe { thread_bfe } );
+    pagmo::algorithm algo = pagmo::algorithm { method };
+    pagmo::population pop {prob, thread_bfe, 100 };
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
+    }
 
     // pagmo::thread_bfe thread_bfe;
     // pagmo::pso_gen method ( 10 );
@@ -592,21 +592,21 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
     
-    // std::vector<double> dec_vec_champion = pop.champion_x();
-    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
-    // std::cout << "dec_vec_champion: ";
-    // for (const auto &x : dec_vec_champion) {
-    //     std::cout << x << " ";
-    // }
-    // std::cout << "\n";
+    std::vector<double> dec_vec_champion = pop.champion_x();
+    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    std::cout << "dec_vec_champion: ";
+    for (const auto &x : dec_vec_champion) {
+        std::cout << x << " ";
+    }
+    std::cout << "\n";
 
 
     const auto fv = prob.fitness(dec_vec_champion);
     std::cout << "Value of the objfun in dec_vec_champion: " << fv[0] << '\n';
-    std::cout << "Value of the eq. constraint in dec_vec_champion: " << fv[1] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[2] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[3] << '\n';
-    std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[4] << '\n';
+    // std::cout << "Value of the eq. constraint in dec_vec_champion: " << fv[1] << '\n';
+    // std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[2] << '\n';
+    // std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[3] << '\n';
+    // std::cout << "Value of the ineq. constraint in dec_vec_champion: " << fv[4] << '\n';
 
     // std::vector<std::pair<double, std::vector<double>>> indexedValues = pagmoprob.getIndexedValues();
     // std::cout << "indexedValues.size=" << indexedValues.size() << std::endl;
@@ -913,8 +913,8 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     double alpha_aca_subOptimal = v[0];
     double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = v[2];
-    double gamma_aca_optimal = v[3];
+    double alpha_aca_optimal = v[0];
+    double gamma_aca_optimal = v[1];
 
     //ARL params
     // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
@@ -926,18 +926,18 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
  
     //DRL params
-    double alpha_drl_subOptimal = v[4];
+    double alpha_drl_subOptimal = v[2];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[5];
+    double lambda_drl_subOptimal = v[3];
     
-    double alpha_drl_optimal = v[6];
+    double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double lambda_drl_optimal = v[3];
 
     
-    double phi = v[8];
-    double crpAlpha = v[9];
-    double eta = v[10];
+    double phi = v[4];
+    double crpAlpha = v[5];
+    double eta = v[6];
 
     if(debug)
     {

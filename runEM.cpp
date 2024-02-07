@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    std::vector<std::string> rats = {"rat112","rat103","rat113","rat114","rat106"};
+    std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
 
     //std::vector<std::string> rats = {"rat113","rat114","rat112","rat106","rat103"};
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
+        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3, params);
 
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
 
     }
 
