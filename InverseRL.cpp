@@ -193,14 +193,14 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
       std::string currTurn = turns[j]; 
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
-      std::vector<double> crpPosterior = strategy.getCrpPosteriors();
+      double crpPosterior = strategy.getCrpPosterior(session);
       if (j == (nbOfTurns - 1))
       {
-        rewardVec[nodeId] += strategy.getPhi() * crpPosterior.back() *(R-rewardVec[nodeId]);
+        rewardVec[nodeId] += strategy.getPhi() * crpPosterior *(R-rewardVec[nodeId]);
       }
       else
       {
-        rewardVec[nodeId] +=  strategy.getPhi() * crpPosterior.back() *(-rewardVec[nodeId]);;
+        rewardVec[nodeId] +=  strategy.getPhi() * crpPosterior *(-rewardVec[nodeId]);;
       }
       //std::cout << "strategy=" << strategy_name << ", currNode=" << ", rewardVec=" << rewardVec[nodeId] << std::endl;
 
@@ -407,7 +407,7 @@ void initializeRewards(const RatData& ratdata, int session, Strategy& strategy)
       }
       else
       {
-        rewardVec[nodeId] +=  phi * (-rewardVec[nodeId]);;
+        rewardVec[nodeId] +=  phi * (-rewardVec[nodeId]);
       }
 
       //std::cout <<"currTurn="<< currTurn << ", R=" <<R << ", rewardVec[nodeId]=" <<rewardVec[nodeId] <<std::endl;

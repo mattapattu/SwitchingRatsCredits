@@ -207,7 +207,7 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
 
     //bounds.first={1e-2,0.5,1e-2,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
     //bounds.first={1e-2,0.5,1e-2,0.8,1e-2,1e-2,1e-2,1e-2,0.1,1e-8,1e-8};
-    bounds.first={1e-1,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
+    bounds.first={1e-1,0.8,1e-8,1e-8,1e-8,1e-8,1e-8};
     bounds.second={1,1,1,1,1,5,5};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};

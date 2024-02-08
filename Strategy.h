@@ -240,19 +240,9 @@ public:
     
 
 
-    void setCrpPosterior(double crp, int t)
+    void setCrpPosterior(double crp)
     {
-        if (crpPosteriors.size() < (t + 1))
-        {
-            // std::cout << "crpPrior.size()= " << crpPrior.size() << "adding element = " << t-1  << " to" << crp << std::endl;
-            crpPosteriors.push_back(crp);
-        }
-        else
-        {
-            // std::cout << "crpPrior.size()= " << crpPrior.size() << "setting element = " << t-1  << " to" << crp << std::endl;
-            crpPosteriors[t] = crp;
-        }
-
+        crpPosteriors.push_back(crp);
         return;
     }
 
@@ -270,10 +260,10 @@ public:
 
     void setCrpPriorInEachTrial(double v)
     {
-        crpPriorInEachTrial.push_back(v);
+        crpPriorInEachTrial = v;
     }
 
-    std::vector<double> getCrpPriorInEachTrial()
+    double getCrpPriorInEachTrial()
     {
         return crpPriorInEachTrial;
     }
@@ -350,7 +340,7 @@ private:
     std::vector<double> rewardsS0;
     std::vector<double> rewardsS1;
     std::vector<double> marginalLikelihood;
-    std::vector<double> crpPriorInEachTrial;
+    double crpPriorInEachTrial;
     bool optimal;
     double alpha;
     double gamma;

@@ -86,47 +86,51 @@ std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strateg
     //     std::cout << std::endl;
 
         
-        if(cluster.empty())
-        {
-            //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
-            double alpha_i = 1.0/(double)strategies_size;
-            std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+        // if(cluster.empty())
+        // {
+        //     //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
+        //     double alpha_i = 1.0/(double)strategies_size;
+        //     std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
 
-        }else if(cluster.size()==1 && cluster[0].find("Suboptimal") != std::string::npos)
-        {
+        // }else if(cluster.size()==1 && cluster[0].find("Suboptimal") != std::string::npos)
+        // {
             
-            double alpha_i = crpAlpha/2;
-            // std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+        //     double alpha_i = crpAlpha/2;
+        //     // std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
 
-            for (size_t i = 0; i < strategy_names.size(); ++i) {
-                if (strategy_names[i].find("Optimal") != std::string::npos) {
-                    priors[i] = alpha_i;
-                }else if(strategy_names[i].find("Suboptimal") != std::string::npos && priors[i] == -1)
-                {
-                    priors[i] = 0;
-                }
-            }
-        }else if(cluster.size()==1 && cluster[0].find("Optimal") != std::string::npos)
-        {
-            //set alpha_i t zero for all strategies
-            for (size_t i = 0; i < strategy_names.size(); ++i) {
-                if (priors[i] == -1) {
-                    priors[i] = 0;
-                }
-            }
-        }else if(cluster.size()==2)
-        {
-            for (size_t i = 0; i < strategy_names.size(); ++i) {
-                if (priors[i] == -1) {
-                    priors[i] = 0;
-                }
-            }
-        }
+        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
+        //         if (strategy_names[i].find("Optimal") != std::string::npos) {
+        //             priors[i] = alpha_i;
+        //         }else if(strategy_names[i].find("Suboptimal") != std::string::npos && priors[i] == -1)
+        //         {
+        //             priors[i] = 0;
+        //         }
+        //     }
+        // }else if(cluster.size()==1 && cluster[0].find("Optimal") != std::string::npos)
+        // {
+        //     //set alpha_i t zero for all strategies
+        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
+        //         if (priors[i] == -1) {
+        //             priors[i] = 0;
+        //         }
+        //     }
+        // }else if(cluster.size()==2)
+        // {
+        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
+        //         if (priors[i] == -1) {
+        //             priors[i] = 0;
+        //         }
+        //     }
+        // }
         // std::cout << "Priors before transform: " ;
         // for (const double& p : priors) {
         //     std::cout << p << " ";
         // }
         // std::cout << std::endl;
+
+        double alpha_i = crpAlpha/(strategies_size - cluster.size());
+        std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
+
         
         double sum = std::accumulate(priors.begin(), priors.end(), 0.0);
         if (sum==0) {
@@ -168,6 +172,10 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
 
     int strategies_size = strategies.size();
     std::vector<double> posteriors(strategies_size, 0);
+    std::vector<std::vector<double>> S0CreditsBkp;
+    std::vector<std::vector<double>> S1CreditsBkp;
+
+
 
     //E-step: 1. Compute priors for all strategies
     std::vector<double> priors_ses = computePrior(strategies, cluster, ses, last_choice, logger);
@@ -179,6 +187,8 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
     {
         std::shared_ptr<Strategy> strategyPtr = strategies[i];
         double crp_posterior = 0.0;
+        S0CreditsBkp.push_back(strategyPtr->getS0Credits());
+        S1CreditsBkp.push_back(strategyPtr->getS1Credits());
         
         //E-step: 2. Compute likelihoods
         double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
@@ -186,9 +196,7 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
         if(logger)
         {
             std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", prior=" << priors_ses[i] << ", log_likelihood=" << log_likelihood << std::endl;  
-        }
-
-                
+        }           
         crp_posterior = exp(log_likelihood) * priors_ses[i];
         
        //std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", posterior=" << crp_posterior << std::endl; 
@@ -306,17 +314,21 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
         strategyPtr->setMarginalLikelihood(marginalLik);
 
         
-        if (std::find(cluster.begin(), cluster.end(), last_choice) == cluster.end()) {
-            strategyPtr->setCrpPosterior(0,ses);
-            strategyPtr->resetCredits();
-        }else{
-            strategyPtr->setCrpPosterior(posteriors[i],ses);
-        }
+        // if (std::find(cluster.begin(), cluster.end(), last_choice) == cluster.end()) {
+        //     strategyPtr->setCrpPosterior(0,ses);
+        //     //strategyPtr->resetCredits();
+        // }else{
+        //     strategyPtr->setCrpPosterior(posteriors[i],ses);
+        // }
+        strategyPtr->setCrpPosterior(posteriors[i]);
         
         if(logger)
         {
             std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", posterior=" << posteriors[i]  << std::endl;   
         }
+
+
+
 
     }
 
@@ -364,6 +376,99 @@ arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std:
     }
 
 
+    // for(size_t i = 0; i < strategies.size(); ++i)
+    // {
+    //     std::shared_ptr<Strategy> strategyPtr = strategies[i];
+    //     std::string name = strategyPtr->getName();
+    //     std::vector<double> S0credits = strategyPtr->getS0Credits();
+    //     std::vector<double> S1credits = strategyPtr->getS1Credits();
+    //     std::vector<double> S0BackUpCredits = S0CreditsBkp[i];
+    //     std::vector<double> S1BackUpCredits = S1CreditsBkp[i];
+        
+    //     for(size_t k=0; k < S0BackUpCredits.size(); k++ )
+    //     {
+    //         S0BackUpCredits[k] += (S0credits[k]-S0BackUpCredits[k])*posteriors[i];
+    //     }
+
+    //     for(size_t k=0; k < S1BackUpCredits.size(); k++ )
+    //     {
+    //         S1BackUpCredits[k] += (S1credits[k]-S1BackUpCredits[k])*posteriors[i];
+    //     }
+
+    //     strategyPtr->setStateS0Credits(S0BackUpCredits);
+    //     if(strategyPtr->getOptimal())
+    //     {
+    //         strategyPtr->setStateS1Credits(S1BackUpCredits);
+    //     }
+
+    //     std::cout << name << ", posterior: " << posteriors[i] <<std::endl;
+    //     std::cout << name << " bkpCreditsS0: " ;
+    //     for (const double& crS0 : S0CreditsBkp[i]) {
+    //         std::cout << crS0 << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << name << " creditsS0: " ;
+    //     for (const double& crS0 : S0credits) {
+    //         std::cout << crS0 << " ";
+    //     }
+    //     std::cout << std::endl;
+        
+    //     std::cout << name << " New CreditsS0: " ;
+    //     for (const double& crS0 : S0BackUpCredits) {
+    //         std::cout << crS0 << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     if(strategyPtr->getOptimal())
+    //     {
+    //         std::cout << name << " bkpCreditsS1: " ;
+    //         for (const double& crS1 : S1CreditsBkp[i]) {
+    //             std::cout << crS1 << " ";
+    //         }
+    //         std::cout << std::endl;
+    //         std::cout << name << " creditsS1: " ;
+    //         for (const double& crS1 : S1credits) {
+    //             std::cout << crS1 << " ";
+    //         }
+    //         std::cout << std::endl;
+
+    //         std::cout << name << " New CreditsS1: " ;
+    //         for (const double& crS0 : S1BackUpCredits) {
+    //             std::cout << crS0 << " ";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+        
+    // }
+
+    for(size_t i = 0; i < strategies.size(); ++i)
+    {
+        std::shared_ptr<Strategy> strategyPtr = strategies[i];
+        std::string name = strategyPtr->getName();
+        sessionResults.setPosteriors(name, posteriors[i]);
+        std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
+        std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
+        if(logger)
+        {
+            
+            std::cout << name << ", rewardsS0: " ;
+            for (const double& reward : rewardsS0) {
+                std::cout << reward << " ";
+            }
+            std::cout << std::endl;
+
+            std::cout << name << ", rewardsS1: " ;
+            for (const double& reward : rewardsS1) {
+                std::cout << reward << " ";
+            }
+            std::cout << std::endl;
+        }
+
+
+    }
+
+    
     return winningProbMat;
 }
 
@@ -380,15 +485,30 @@ void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy
         std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
         std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
 
+        std::vector<double> creditsS0 = strategyPtr->getS0Credits();
+        std::vector<double> creditsS1 = strategyPtr->getS1Credits();
+
         if(logger)
         {
-            std::cout << strategy << " rewardsS0: " ;
+            // std::cout << strategy << " creditsS0: " ;
+            // for (const double& crS0 : creditsS0) {
+            //     std::cout << crS0 << " ";
+            // }
+            // std::cout << std::endl;
+
+            // std::cout << strategy << " creditsS1: " ;
+            // for (const double& crS1 : creditsS1) {
+            //     std::cout << crS1 << " ";
+            // }
+            // std::cout << std::endl;
+            
+            std::cout << strategy << ", updated rewardsS0: " ;
             for (const double& reward : rewardsS0) {
                 std::cout << reward << " ";
             }
             std::cout << std::endl;
 
-            std::cout << strategy << " rewardsS1: " ;
+            std::cout << strategy << ", updated rewardsS1: " ;
             for (const double& reward : rewardsS1) {
                 std::cout << reward << " ";
             }
