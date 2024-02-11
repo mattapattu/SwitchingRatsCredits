@@ -1,7 +1,5 @@
 #include "InferStrategy.h"
 #include "Pagmoprob.h"
-#include "PagmoMle.h"
-#include "PagmoMultiObjCluster.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
@@ -17,7 +15,7 @@
 #include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/algorithms/gaco.hpp>
-#include <pagmo/algorithms/nlopt.hpp>
+#include <pagmo/algorithms/sga.hpp>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -32,533 +30,6 @@
 
 
 
-
-std::vector<double> computePrior(std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, int ses, std::string& last_choice, bool logger=false)
-{
-    int strategies_size = strategies.size();
-    std::vector<double> priors(strategies_size, 0);
-    std::vector<std::string> strategy_names;
-    double crpAlpha = strategies[0]->getCrpAlpha();
-    double eta = strategies[0]->getEta();
-    
-    
-    if(ses == 0)
-    {
-        double p = 1.0/(double)strategies_size;
-        // std::cout << "ses=0" << ", p=" << p << std::endl;
-        std::fill(priors.begin(), priors.end(), p);
-
-    }
-    else
-    {
-
-        for (size_t i = 0; i < strategies.size(); ++i) {
-            // Access the strategy at index i using strategies[i]
-            std::shared_ptr<Strategy> strategyPtr = strategies[i];
-            std::string name = strategyPtr->getName();
-            strategy_names.push_back(name);
-            //If strategy is in cluster, prior is average over past posteriors
-            if (std::find(cluster.begin(), cluster.end(), name) != cluster.end())
-            {
-                std::vector<double> strategy_priors = strategyPtr->getCrpPosteriors();
-                double crp_prior = std::accumulate(strategy_priors.begin(), strategy_priors.end(), 0.0);
-                
-                if (last_choice == name ) {
-                    priors[i] = crp_prior + eta;
-                    if(logger)
-                    {
-                        std::cout << "Adding eta=" <<eta << " to prior for strategy=" << name << std::endl;
-                    }
-                    
-                }else{
-                    priors[i] = crp_prior;
-                }
-            }else{ //Else,  strategy is in not cluster, set it to -1 and replace all -1 alpha/N golbally
-                priors[i] = -1;
-            }
-
-        }
-
-    //    std::cout << "Session=" << ses <<  ", priors: " ;
-    //     for (const double& p : priors) {
-    //         std::cout << p << " ";
-    //     }
-    //     std::cout << std::endl;
-
-        
-        // if(cluster.empty())
-        // {
-        //     //Replace all -1's globally by alpha/N, where N is the nb of strategies not in cluster
-        //     double alpha_i = 1.0/(double)strategies_size;
-        //     std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
-
-        // }else if(cluster.size()==1 && cluster[0].find("Suboptimal") != std::string::npos)
-        // {
-            
-        //     double alpha_i = crpAlpha/2;
-        //     // std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
-
-        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
-        //         if (strategy_names[i].find("Optimal") != std::string::npos) {
-        //             priors[i] = alpha_i;
-        //         }else if(strategy_names[i].find("Suboptimal") != std::string::npos && priors[i] == -1)
-        //         {
-        //             priors[i] = 0;
-        //         }
-        //     }
-        // }else if(cluster.size()==1 && cluster[0].find("Optimal") != std::string::npos)
-        // {
-        //     //set alpha_i t zero for all strategies
-        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
-        //         if (priors[i] == -1) {
-        //             priors[i] = 0;
-        //         }
-        //     }
-        // }else if(cluster.size()==2)
-        // {
-        //     for (size_t i = 0; i < strategy_names.size(); ++i) {
-        //         if (priors[i] == -1) {
-        //             priors[i] = 0;
-        //         }
-        //     }
-        // }
-        // std::cout << "Priors before transform: " ;
-        // for (const double& p : priors) {
-        //     std::cout << p << " ";
-        // }
-        // std::cout << std::endl;
-
-        double alpha_i = crpAlpha/(strategies_size - cluster.size());
-        std::replace_if(priors.begin(), priors.end(), [](int x) { return x == -1; }, alpha_i);
-
-        
-        double sum = std::accumulate(priors.begin(), priors.end(), 0.0);
-        if (sum==0) {
-                    
-            std::cout << "Prior prob sum=0. Check" << std::endl;
-            std::exit(EXIT_FAILURE);
-        } 
-
-        //double normalizer = sum;
-        std::transform(priors.begin(), priors.end(), priors.begin(), [sum](double x) { return x / sum; });
-
-        
-                
-    }
-
-    for (size_t i = 0; i < strategies.size(); ++i) {
-        std::shared_ptr<Strategy> strategyPtr = strategies[i];
-        strategyPtr->setCrpPriorInEachTrial(priors[i]);
-    }
-
-    
-
-    // std::cout << "Priors: " ;
-    // for (const double& p : priors) {
-    //     std::cout << p << " ";
-    // }
-    // std::cout << std::endl;
-
-    return(priors);
-
-}
-
-arma::mat estep_cluster_update(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>>  strategies, std::vector<std::string>& cluster, std::string& last_choice ,bool logger, RecordResults& sessionResults)
-{
-    std::vector<double> loglikelihoods;
-    double max_posterior = 0.0;
-    std::vector<std::shared_ptr<Strategy>> most_lik_strategies;
-
-
-    int strategies_size = strategies.size();
-    std::vector<double> posteriors(strategies_size, 0);
-    std::vector<std::vector<double>> S0CreditsBkp;
-    std::vector<std::vector<double>> S1CreditsBkp;
-
-
-
-    //E-step: 1. Compute priors for all strategies
-    std::vector<double> priors_ses = computePrior(strategies, cluster, ses, last_choice, logger);
-    sessionResults.addCrpPriorSes(priors_ses);
-
-    arma::mat winningProbMat;
-        
-    for (size_t i = 0; i < strategies.size(); ++i) 
-    {
-        std::shared_ptr<Strategy> strategyPtr = strategies[i];
-        double crp_posterior = 0.0;
-        S0CreditsBkp.push_back(strategyPtr->getS0Credits());
-        S1CreditsBkp.push_back(strategyPtr->getS1Credits());
-        
-        //E-step: 2. Compute likelihoods
-        double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
-        loglikelihoods.push_back(log_likelihood);
-        if(logger)
-        {
-            std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", prior=" << priors_ses[i] << ", log_likelihood=" << log_likelihood << std::endl;  
-        }           
-        crp_posterior = exp(log_likelihood) * priors_ses[i];
-        
-       //std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", posterior=" << crp_posterior << std::endl; 
-
-        posteriors[i] = crp_posterior;
-
-        if (std::isnan(exp(log_likelihood))) {
-                    
-            std::cout << "exp(log_likelihood) is nan. Check" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }else if(crp_posterior == 0){
-            //std::cout << "Zero posterior prob. Check" << std::endl;
-        }
-        
-    }
-
-    double sum = std::accumulate(posteriors.begin(), posteriors.end(), 0.0);
-    if(sum==0)
-    {
-        sum = 0.1; // To prevent NaN error
-    }
-    std::transform(posteriors.begin(), posteriors.end(), posteriors.begin(), [sum](double x) { return x / sum; });
-    //std::cout << "estep_cluster_update " << ", ses=" << ses  << ", sumPosterior=" << sumPosterior << std::endl; 
-
-
-    size_t maxIndex = 0;  // Index of the maximum element
-    size_t secondMaxIndex = 0;  // Index of the second maximum element
-    double maxElement = 0;  // Maximum element value
-    double secondMaxElement = 0;  // Second maximum element value
-
-    // Iterate through the vector to find the maximum and second maximum elements
-    for (size_t i = 0; i < posteriors.size(); ++i) {
-        if (posteriors[i] > maxElement) {
-            secondMaxElement = maxElement;
-            secondMaxIndex = maxIndex;
-
-            maxElement = posteriors[i];
-            maxIndex = i;
-        } else if (posteriors[i] > secondMaxElement) {
-            secondMaxElement = posteriors[i];
-            secondMaxIndex = i;
-        }
-    }
-
-    // Check if the difference between the maximum and second maximum is greater than 0.1
-    if (maxElement - secondMaxElement > 0.05) {
-        std::shared_ptr<Strategy> strategyPtr = strategies[maxIndex];
-        std::string name = strategyPtr->getName();
-        most_lik_strategies.push_back(strategyPtr);
-    } else {
-        std::shared_ptr<Strategy> strategyPtrMax = strategies[maxIndex];
-        std::string maxName = strategyPtrMax->getName();
-        most_lik_strategies.push_back(strategyPtrMax);
-
-        std::shared_ptr<Strategy> strategyPtrSecondMax = strategies[secondMaxIndex];
-        std::string secondMaxName = strategyPtrSecondMax->getName();
-        most_lik_strategies.push_back(strategyPtrSecondMax);
-        //std::cout << "The difference between the maximum and second maximum is less than 0.1." << std::endl;
-    }
-
-    if(logger)
-    {
-        std::cout << "Most likely strategies: " ;
-        for (auto strategy : most_lik_strategies) {
-            std::cout << strategy->getName() << " ";
-        }
-        std::cout << std::endl;
-
-    }
-
-    if(most_lik_strategies.size() == 1)
-    {
-        std::shared_ptr<Strategy> strategyPtrMax = most_lik_strategies[0];
-        last_choice = strategyPtrMax->getName();
-        winningProbMat = strategyPtrMax->getPathProbMat();
-        // Find the indices where the condition is true
-        arma::uvec indices = find(winningProbMat.col(13) == ses);
-
-        // Extract the desired columns (1:12) for the rows that satisfy the condition
-        winningProbMat = winningProbMat.rows(indices);
-        winningProbMat = winningProbMat.cols(arma::span(0, 11));
-
-        // If most_lik_strategy is not in cluster, expand cluster
-        if (std::find(cluster.begin(), cluster.end(), last_choice) == cluster.end()) {
-            // most_lik_strategy is not present, include it
-            cluster.push_back(last_choice);
-            // std::cout <<"ses=" << ses << ", Adding " << most_lik_strategy <<" to cluster." << std::endl; 
-            if(logger)
-            {
-                std::cout <<"ses=" << ses << ", Adding " << last_choice <<" to cluster." << std::endl;   
-            }
-        }  
-
-    }else
-    {
-        last_choice = "None";
-        if(logger)
-        {
-            std::cout <<"Not adding any strategies to cluster as multiple strategies have same posterior" << std::endl; 
-        }
-    }
-
-    for(size_t i = 0; i < strategies.size(); ++i)
-    {
-        std::shared_ptr<Strategy> strategyPtr = strategies[i];
-        std::string name = strategyPtr->getName();
-        if (std::isnan(posteriors[i])) {
-                    
-            std::cout << "Crp posteriors is nan. Check" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        //double log_likelihood = strategyPtr->getTrajectoryLikelihood(ratdata, ses); 
-        double marginalLik = loglikelihoods[i] * posteriors[i];
-        strategyPtr->setMarginalLikelihood(marginalLik);
-
-        
-        // if (std::find(cluster.begin(), cluster.end(), last_choice) == cluster.end()) {
-        //     strategyPtr->setCrpPosterior(0,ses);
-        //     //strategyPtr->resetCredits();
-        // }else{
-        //     strategyPtr->setCrpPosterior(posteriors[i],ses);
-        // }
-        strategyPtr->setCrpPosterior(posteriors[i]);
-        
-        if(logger)
-        {
-            std::cout << "estep_cluster_update for " << strategyPtr->getName()  << ", ses=" << ses  << ", posterior=" << posteriors[i]  << std::endl;   
-        }
-
-
-
-
-    }
-
-    // for(const auto& strategyPtr : strategies)
-    // {
-    //     auto it = std::find(cluster.begin(), cluster.end(), strategyPtr->getName());
-    //     if (it == cluster.end()) {
-    //         strategyPtr->resetCredits();
-    //         //strategyPtr->initRewards(ratdata);
-    //         //strategyPtr->setCrpPosterior(0,ses);
-    //     }  
-    // }
-
-    // std::cout <<"ses=" << ses << ", most_lik_strategy in estep_cluster_update = " << most_lik_strategy << std::endl; 
-    // if(logger)
-    // {
-    //     std::cout <<"ses=" << ses << ", most_lik_strategy in estep_cluster_update = " << most_lik_strategy << std::endl;    
-    // }
-
-    if(logger)
-    {
-        std::cout << "Cluster: " ;
-        for (const std::string& name : cluster) {
-            std::cout << name << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    if(most_lik_strategies.size() == 1)
-    {
-        sessionResults.setSelectedStrategy(last_choice);
-        sessionResults.setProbabilityMatrix(winningProbMat);
-        
-    }
-    else
-    {
-        sessionResults.setSelectedStrategy("None");
-    }
-
-    for(size_t i = 0; i < strategies.size(); ++i)
-    {
-        std::shared_ptr<Strategy> strategyPtr = strategies[i];
-        std::string name = strategyPtr->getName();
-        sessionResults.setPosteriors(name, posteriors[i]);
-    }
-
-
-    // for(size_t i = 0; i < strategies.size(); ++i)
-    // {
-    //     std::shared_ptr<Strategy> strategyPtr = strategies[i];
-    //     std::string name = strategyPtr->getName();
-    //     std::vector<double> S0credits = strategyPtr->getS0Credits();
-    //     std::vector<double> S1credits = strategyPtr->getS1Credits();
-    //     std::vector<double> S0BackUpCredits = S0CreditsBkp[i];
-    //     std::vector<double> S1BackUpCredits = S1CreditsBkp[i];
-        
-    //     for(size_t k=0; k < S0BackUpCredits.size(); k++ )
-    //     {
-    //         S0BackUpCredits[k] += (S0credits[k]-S0BackUpCredits[k])*posteriors[i];
-    //     }
-
-    //     for(size_t k=0; k < S1BackUpCredits.size(); k++ )
-    //     {
-    //         S1BackUpCredits[k] += (S1credits[k]-S1BackUpCredits[k])*posteriors[i];
-    //     }
-
-    //     strategyPtr->setStateS0Credits(S0BackUpCredits);
-    //     if(strategyPtr->getOptimal())
-    //     {
-    //         strategyPtr->setStateS1Credits(S1BackUpCredits);
-    //     }
-
-    //     std::cout << name << ", posterior: " << posteriors[i] <<std::endl;
-    //     std::cout << name << " bkpCreditsS0: " ;
-    //     for (const double& crS0 : S0CreditsBkp[i]) {
-    //         std::cout << crS0 << " ";
-    //     }
-    //     std::cout << std::endl;
-
-    //     std::cout << name << " creditsS0: " ;
-    //     for (const double& crS0 : S0credits) {
-    //         std::cout << crS0 << " ";
-    //     }
-    //     std::cout << std::endl;
-        
-    //     std::cout << name << " New CreditsS0: " ;
-    //     for (const double& crS0 : S0BackUpCredits) {
-    //         std::cout << crS0 << " ";
-    //     }
-    //     std::cout << std::endl;
-
-    //     if(strategyPtr->getOptimal())
-    //     {
-    //         std::cout << name << " bkpCreditsS1: " ;
-    //         for (const double& crS1 : S1CreditsBkp[i]) {
-    //             std::cout << crS1 << " ";
-    //         }
-    //         std::cout << std::endl;
-    //         std::cout << name << " creditsS1: " ;
-    //         for (const double& crS1 : S1credits) {
-    //             std::cout << crS1 << " ";
-    //         }
-    //         std::cout << std::endl;
-
-    //         std::cout << name << " New CreditsS1: " ;
-    //         for (const double& crS0 : S1BackUpCredits) {
-    //             std::cout << crS0 << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-        
-    // }
-
-    for(size_t i = 0; i < strategies.size(); ++i)
-    {
-        std::shared_ptr<Strategy> strategyPtr = strategies[i];
-        std::string name = strategyPtr->getName();
-        sessionResults.setPosteriors(name, posteriors[i]);
-        std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
-        std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
-        if(logger)
-        {
-            
-            std::cout << name << ", rewardsS0: " ;
-            for (const double& reward : rewardsS0) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-
-            std::cout << name << ", rewardsS1: " ;
-            for (const double& reward : rewardsS1) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-        }
-
-
-    }
-
-    
-    return winningProbMat;
-}
-
-void mstep(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, std::vector<std::string>& cluster, bool logger, RecordResults& sessionResults)
-{
-    for (const auto& strategyPtr : strategies) {
-
-        //std::cout << "m-step for " << strategyPtr->getName()  << ", ses=" << ses << std::endl; 
-        //M-step
-        //std::pair<std::vector<double>, std::vector<double>> rewardUpdates = getRewardUpdates(ratdata, ses);
-        
-        std::string strategy = strategyPtr->getName();
-        strategyPtr->updateRewards(ratdata, ses); 
-        std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
-        std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
-
-        std::vector<double> creditsS0 = strategyPtr->getS0Credits();
-        std::vector<double> creditsS1 = strategyPtr->getS1Credits();
-
-        if(logger)
-        {
-            // std::cout << strategy << " creditsS0: " ;
-            // for (const double& crS0 : creditsS0) {
-            //     std::cout << crS0 << " ";
-            // }
-            // std::cout << std::endl;
-
-            // std::cout << strategy << " creditsS1: " ;
-            // for (const double& crS1 : creditsS1) {
-            //     std::cout << crS1 << " ";
-            // }
-            // std::cout << std::endl;
-            
-            std::cout << strategy << ", updated rewardsS0: " ;
-            for (const double& reward : rewardsS0) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-
-            std::cout << strategy << ", updated rewardsS1: " ;
-            for (const double& reward : rewardsS1) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        // //Reset posteriors
-        // if (std::find(cluster.begin(), cluster.end(), strategy) == cluster.end()) {
-        //     //std::cout << "Setting crpPosterior to 0 for strategy=" << strategyPtr->getName()  << ", ses=" << ses << std::endl; 
-        //     strategyPtr->setCrpPosterior(0,ses);
-        // }   
-
-        sessionResults.setRewardVectorS0(strategy, rewardsS0);
-        sessionResults.setRewardVectorS1(strategy, rewardsS1);
-    }
-
-    return;
-}
-
-
-void initRewardVals(const RatData& ratdata, int ses, std::vector<std::shared_ptr<Strategy>> strategies, bool logger)
-{
-    for (const auto& strategyPtr : strategies) {
-
-       //std::cout << "initRewardVals for " << strategyPtr->getName()  << ", ses=" << ses << std::endl; 
-        //M-step
-        //std::pair<std::vector<double>, std::vector<double>> rewardUpdates = getRewardUpdates(ratdata, ses);
-        strategyPtr->initRewards(ratdata); 
-        std::string strategy = strategyPtr->getName();
-        std::vector<double> rewardsS0 = strategyPtr->getRewardsS0();
-        std::vector<double> rewardsS1 = strategyPtr->getRewardsS1();
-
-        if(logger)
-        {
-            std::cout << strategy << " rewardsS0: " ;
-            for (const double& reward : rewardsS0) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-
-            std::cout << strategy << " rewardsS1: " ;
-            for (const double& reward : rewardsS1) {
-                std::cout << reward << " ";
-            }
-            std::cout << std::endl;
-        }
-    }
-    
-    return;
-}
 
 
 void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3) {
@@ -602,7 +73,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
     //pagmo::algorithm algo{sade(10,2,2)};
-    // pagmo::algorithm algo{de(5)};
+    pagmo::algorithm algo{de(5)};
     //pagmo::cstrs_self_adaptive algo{5, de(1)};
     //algo.set_verbosity(1);
     // ////pagmo::algorithm algo{sade(20)};
@@ -648,51 +119,51 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // //     archi.push_back(algo, pop);
     // // }
 
-    // archipelago archi{5u, algo, prob, 10u};
+    archipelago archi{5u, algo, prob, 10u};
 
     // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
-    // archi.evolve(5);
+    archi.evolve(5);
     // std::cout << "DONE1:"  << '\n';
 
     // ///5 - Wait for the evolutions to finish.
-    // archi.wait_check();
+    archi.wait_check();
 
     // ///6 - Print the fitness of the best solution in each island.
 
-    // double champion_score = 1e8;
-    // std::vector<double> dec_vec_champion;
-    // for (const auto &isl : archi) {
-    //     std::vector<double> dec_vec = isl.get_population().champion_x();
+    double champion_score = 1e8;
+    std::vector<double> dec_vec_champion;
+    for (const auto &isl : archi) {
+        std::vector<double> dec_vec = isl.get_population().champion_x();
         
-    //     // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-    //     // for (auto const& i : dec_vec)
-    //     //     std::cout << i << ", ";
-    //     // std::cout << "\n" ;
+        // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+        // for (auto const& i : dec_vec)
+        //     std::cout << i << ", ";
+        // std::cout << "\n" ;
 
-    //     double champion_isl = isl.get_population().champion_f()[0];
-    //     if(champion_isl < champion_score)
-    //     {
-    //         champion_score = champion_isl;
-    //         dec_vec_champion = dec_vec;
-    //     }
-    // }
-
-    // std::cout << "Final champion = " << champion_score << std::endl;
-    // for (auto const& i : dec_vec_champion)
-    //     std::cout << i << ", ";
-    // std::cout << "\n" ;
-
-
-    pagmo::thread_bfe thread_bfe;
-    pagmo::pso_gen method ( 10 );
-    //pagmo::gaco method(10);
-    method.set_bfe ( pagmo::bfe { thread_bfe } );
-    pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop {prob, thread_bfe, 100 };
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
-        pop = algo.evolve(pop);
+        double champion_isl = isl.get_population().champion_f()[0];
+        if(champion_isl < champion_score)
+        {
+            champion_score = champion_isl;
+            dec_vec_champion = dec_vec;
+        }
     }
+
+    std::cout << "Final champion = " << champion_score << std::endl;
+    for (auto const& i : dec_vec_champion)
+        std::cout << i << ", ";
+    std::cout << "\n" ;
+
+
+    // pagmo::thread_bfe thread_bfe;
+    // pagmo::sga method ( 10 );
+    // //pagmo::gaco method(10);
+    // // method.set_bfe ( pagmo::bfe { thread_bfe } );
+    // pagmo::algorithm algo = pagmo::algorithm { method };
+    // pagmo::population pop {prob, 100 };
+    // // Evolve the population for 100 generations
+    // for ( auto evolution = 0; evolution < 5; evolution++ ) {
+    //     pop = algo.evolve(pop);
+    // }
 
     // pagmo::thread_bfe thread_bfe;
     // pagmo::pso_gen method ( 10 );
@@ -712,8 +183,9 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //     pop = algo.evolve(pop);
     // }
     
-    std::vector<double> dec_vec_champion = pop.champion_x();
-    std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+    // std::vector<double> dec_vec_champion = pop.champion_x();
+    // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+
     std::cout << "dec_vec_champion: ";
     for (const auto &x : dec_vec_champion) {
         std::cout << x << " ";
@@ -778,251 +250,8 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     return;
 }
 
-void findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, const std::map<std::pair<std::string, bool>, std::vector<double>>& params) {
-
-    // Open the file for reading and appending
-    std::string filename_cluster = "clusterParams.txt";
-    std::ifstream cluster_infile(filename_cluster);
-    std::map<std::string, std::vector<double>> paramClusterMap;
-    boost::archive::text_iarchive ia_cluster(cluster_infile);
-    ia_cluster >> paramClusterMap;
-    cluster_infile.close();
-
-    std::cout << "paramClusterMap: ";
-    for (const auto& entry : paramClusterMap) {
-        const std::string& key = entry.first;
-        const std::vector<double>& values = entry.second;
-
-        // Print key
-        std::cout << "Key: " << key << ", Values: ";
-
-        // Print values in the vector
-        for (double value : values) {
-            std::cout << value << " ";
-        }
-
-        std::cout << std::endl;
-    }
 
 
-    std::cout << "Initializing problem class" <<std::endl;
-    // Create a function to optimize
-    PagmoMultiObjCluster pagmoMultiObjProb(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3, params);
-    //PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
-    std::cout << "Initialized problem class" <<std::endl;
-
-    // Create a problem using Pagmo
-    problem prob{pagmoMultiObjProb};
-    //problem prob{schwefel(30)};
-    
-    std::cout << "created problem" <<std::endl;
-    // 2 - Instantiate a pagmo algorithm (self-adaptive differential
-    // evolution, 100 generations).
-
-    pagmo::thread_bfe thread_bfe;
-    pagmo::moead_gen method (10);
-    method.set_bfe(pagmo::bfe { thread_bfe } );
-    pagmo::algorithm algo = pagmo::algorithm { method };
-    pagmo::population pop { prob, thread_bfe, 50};
-   
-
-    // Evolve the population for 100 generations
-    for ( auto evolution = 0; evolution < 5; evolution++ ) {
-        pop = algo.evolve(pop);
-    }
-    
-
-    std::cout << "DONE1:"  << '\n';
-    //system("pause"); 
-
-    // auto best = pagmo::select_best_N_mo(pop.get_f(), 10);
-
-    // // Print the objective vectors of the best individuals
-    //  std::cout << "Best " << 10 << " Individuals on Pareto Front:\n";
-    // for (const auto& ind : best) {
-    //     std::cout << ind << std::endl;
-    // }
-
-
-    auto f = pop.get_f();
-    auto x = pop.get_x();
-
-    // Sort the individuals by non-domination rank and crowding distance
-    pagmo::vector_double::size_type n = pop.size();
-    std::vector<pagmo::vector_double::size_type> idx = pagmo::sort_population_mo(f);
-
-    //std::vector<double> cd = pagmo::crowding_distance(f);
-
-    double min_lik = 100000;
-    std::vector<double> dec_vec_champion;
-    // Select the first 10 individuals as the best ones
-    for (int i = 0; i < 10; i++) {
-        std::cout << "Individual " << i + 1 << ":" << std::endl;
-        double lik = std::accumulate(f[idx[i]].begin(), f[idx[i]].end(), 0.0);
-        std::cout << "Fitness: [" << f[idx[i]][0] << ", " << f[idx[i]][1] <<  ", " << f[idx[i]][2] << ", " << f[idx[i]][3] << ", " << f[idx[i]][4] << ", " << f[idx[i]][5] << "]" << ", lik=" << lik << std::endl;
-        //std::cout << "Decision vector: [" << x[idx[i]][0] << "]" << std::endl;
-        //std::cout << "Crowding distance: " << cd[idx[i]] << std::endl;
-
-        std::vector<double> dec_vec = x[idx[i]];
-
-        std::cout << "dec_vec: ";
-        for (const auto& val : dec_vec) {
-            std::cout << ", " << val ;
-        }
-
-        std::cout << std::endl;
-
-        if(lik < min_lik)
-        {
-            min_lik = lik;
-            dec_vec_champion = dec_vec;
-        }
-
-    }
-
-    // // Perform the fast non-dominated sorting
-    // auto result = pagmo::fast_non_dominated_sorting(f);
-
-    // std::vector<std::vector<pagmo::population::size_type>> fronts = std::get<0>(result);
-    // //auto crowding = std::get<1>(result);
-
-    // // Print the results
-    // for (int i = 0; i < fronts.size(); i++) {
-    //     std::cout << "Front " << i + 1 << ":" << std::endl;
-    //     for (int j = 0; j < fronts[i].size(); j++) {
-    //         std::cout << "\tIndividual " << fronts[i][j] + 1 << ":" << std::endl;
-    //         double lik = std::accumulate(f[fronts[i][j]].begin(), f[fronts[i][j]].end(), 0.0);
-    //         std::cout << "\tFitness: [" << f[fronts[i][j]][0] << ", " << f[fronts[i][j]][1] <<  ", " << f[fronts[i][j]][2] << ", " << f[fronts[i][j]][3] << ", " << f[fronts[i][j]][4] << ", " << f[fronts[i][j]][5] << "]" << ", lik=" << lik << std::endl;
-
-    //         //std::cout << "\t\tCrowding distance: " << crowding[fronts[i][j]] << std::endl;
-    //     }
-    // }
-
-
-    std::string rat = ratdata.getRat();
-     paramClusterMap[rat] = dec_vec_champion;
-
-    std::cout << "Updated paramClusterMap: ";
-    for (const auto& entry : paramClusterMap) {
-        const std::string& key = entry.first;
-        const std::vector<double>& values = entry.second;
-
-        // Print key
-        std::cout << "Key: " << key << ", Values: ";
-
-        // Print values in the vector
-        for (double value : values) {
-            std::cout << value << " ";
-        }
-
-        std::cout << std::endl;
-    }
-
-    std::ofstream file(filename_cluster);
-    boost::archive::text_oarchive oa(file);
-    oa << paramClusterMap;
-    file.close();
-    
-
-    return;
-}
-
-
-void findParams(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
-{
-    
-    //std::vector<std::string> learningRules = {"aca2","arl", "drl" };
-    std::vector<std::string> learningRules = {"aca2","drl"};
-    std::vector<bool> mazeModels = {true, false };
-
-    std::map<std::pair<std::string, bool>, std::vector<double>> paramStrategies;
-
-
-    for (const auto &lr : learningRules) 
-    {
-        for (const auto &optimal : mazeModels) 
-        {
-            std::string learningRule =  lr;   
-            MazeGraph* maze;
-            if(optimal)
-            {
-                maze = &optimalHybrid3;
-            }else
-            {
-                maze = &suboptimalHybrid3;
-            }
-
-            std::cout << "learningRule=" << lr << ", optimal=" << optimal << std::endl;
-            
-            PagmoMle pagmoMle(ratdata, *maze, learningRule, optimal);
-            //std::cout << "strategy=" << strategy.getName() <<std::endl;
-
-            // Create a problem using Pagmo
-            problem prob{pagmoMle};
-            //problem prob{schwefel(30)};
-            
-            std::cout << "created problem" <<std::endl;
-            // 2 - Instantiate a pagmo algorithm (self-adaptive differential
-            // evolution, 100 generations).
-            pagmo::algorithm algo{sade(10,2,2)};
-            //algo.set_verbosity(10);
-
-            //pagmo::algorithm algo{de(10)};
-
-            std::cout << "creating archipelago" <<std::endl;
-            // 3 - Instantiate an archipelago with 5 islands having each 5 individuals.
-            archipelago archi{5u, algo, prob, 7u};
-
-            // 4 - Run the evolution in parallel on the 5 separate islands 5 times.
-            archi.evolve(5);
-            //std::cout << "DONE1:"  << '\n';
-            //system("pause"); 
-
-            // 5 - Wait for the evolutions to finish.
-            archi.wait_check();
-
-            // 6 - Print the fitness of the best solution in each island.
-            
-
-            //system("pause"); 
-
-            double champion_score = 1000000;
-            std::vector<double> dec_vec_champion;
-            for (const auto &isl : archi) {
-                // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
-                std::vector<double> dec_vec = isl.get_population().champion_x();
-                // for (auto const& i : dec_vec)
-                //     std::cout << i << ", ";
-                // std::cout << "\n" ;
-
-                double champion_isl = isl.get_population().champion_f()[0];
-                if(champion_isl < champion_score)
-                {
-                    champion_score = champion_isl;
-                    dec_vec_champion = dec_vec;
-                }
-            }
-
-            std::cout << "Final champion = " << champion_score << std::endl;
-            for (auto const& i : dec_vec_champion)
-                std::cout << i << ", ";
-            std::cout << "\n" ;
-
-            std::pair<std::string, bool> key(lr, optimal);
-            paramStrategies[key] = dec_vec_champion;
-
-        }
-    }
-    
-    std::string rat = ratdata.getRat();
-    std::string filename = rat + ".txt"; 
-    std::ofstream file(filename);
-    boost::archive::text_oarchive oa(file);
-    oa << paramStrategies;
-    file.close();
-
-    return;
-}
 
 
 std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, bool debug)
@@ -1030,11 +259,11 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     
     std::string rat = ratdata.getRat();
     std::vector<double> v = clusterParams[rat]; 
-    double alpha_aca_subOptimal = v[0];
-    double gamma_aca_subOptimal = v[1];
+        double alpha_aca_subOptimal = v[4];
+    double gamma_aca_subOptimal = v[5];
 
-    double alpha_aca_optimal = v[0];
-    double gamma_aca_optimal = v[1];
+    double alpha_aca_optimal = v[4];
+    double gamma_aca_optimal = v[5];
 
     //ARL params
     // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
@@ -1046,45 +275,35 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
  
     //DRL params
-    double alpha_drl_subOptimal = v[2];
+    double alpha_drl_subOptimal = v[6];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[3];
+    double lambda_drl_subOptimal = v[7];
     
-    double alpha_drl_optimal = v[2];
+    double alpha_drl_optimal = v[6];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[3];
+    double lambda_drl_optimal = v[7];
 
     
-    double phi = v[4];
-    double crpAlpha = v[5];
-    double eta = v[6];
+    int n1 = static_cast<int>(std::floor(v[0]));
+    int n2 = static_cast<int>(std::floor(v[1]));
+    int n3 = static_cast<int>(std::floor(v[2]));
+    int n4 = static_cast<int>(std::floor(v[3]));
 
     if(debug)
     {
         std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
-        std::cout << "rat=" << rat << ", crpAlpha=" << crpAlpha << ", phi=" << phi << ", eta=" <<eta << std::endl;
     }
     
     // Create instances of Strategy
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, crpAlpha, phi, eta, true);
+    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
+    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
     
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
+    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
+    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
 
     // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
     // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
-
-    std::vector<std::shared_ptr<Strategy>> strategies;
-    strategies.push_back(aca2_Suboptimal_Hybrid3);
-    strategies.push_back(aca2_Optimal_Hybrid3);
-
-    strategies.push_back(drl_Suboptimal_Hybrid3);
-    strategies.push_back(drl_Optimal_Hybrid3);
-
-    // strategies.push_back(arl_Suboptimal_Hybrid3);
-    // strategies.push_back(arl_Optimal_Hybrid3);
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -1097,261 +316,123 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     arma::mat probMat;
     
     std::vector<RecordResults> allRecordRes;
+double ll1 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
-        
-        if(ses==0)
+        double ll_ses = 0;
+        if(ses < n1)
         {
-            initRewardVals(ratdata, ses, strategies, debug);
+           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }else{
+           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
         }
-        RecordResults recordRes;    
-        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, debug,recordRes);
-        mstep(ratdata, ses, strategies, cluster, debug, recordRes);
-
-        allRecordRes.push_back(recordRes);
-
-        probMat = arma::join_cols(probMat, probMat_sess);
-
+        
+        ll_ses = ll_ses*(-1);
+        ll1 = ll1 + ll_ses;
     }
+    double bic_score1 = 5*log(allpaths.n_rows)+ 2*ll1;
 
-    if(debug)
+    double ll2 = 0;
+    for(int ses=0; ses < sessions; ses++)
     {
-        for(int ses=0; ses < sessions; ses++)
+        double ll_ses = 0;
+        if(ses < n2)
         {
-            RecordResults res = allRecordRes[ses];
-            std::string selectedStrat = res.getSelectedStrategy();
-            std::cout << "rat=" << rat << ", ses=" << ses << " most_likely_strat=" << selectedStrat << std::endl;
+           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }else{
+           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }
+        
+        ll_ses = ll_ses*(-1);
+        ll2 = ll2 + ll_ses;
+    }
+    double bic_score2 = 5*log(allpaths.n_rows)+ 2*ll2;
+
+    double ll3 = 0;
+    for(int ses=0; ses < sessions; ses++)
+    {
+        double ll_ses = 0;
+        if(ses < n3)
+        {
+           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }else{
+           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }
+        
+        ll_ses = ll_ses*(-1);
+        ll3 = ll3 + ll_ses;
+    }
+    double bic_score3 = 5*log(allpaths.n_rows)+ 2*ll3;
+
+
+    double ll4 = 0;
+    for(int ses=0; ses < sessions; ses++)
+    {
+        double ll_ses = 0;
+        if(ses < n4)
+        {
+           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }else{
+           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        }
+        
+        ll_ses = ll_ses*(-1);
+        ll4 = ll4 + ll_ses;
+    }
+    double bic_score4 = 5*log(allpaths.n_rows)+ 2*ll4;
+
+
+    double ll5 = 0;
+    for(int ses=0; ses < sessions; ses++)
+    {
+        double ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        
+        ll_ses = ll_ses*(-1);
+        ll5 = ll5 + ll_ses;
+    }
+    double bic_score5 = 2*log(allpaths.n_rows)+ 2*ll5;
+
+    double ll6 = 0;
+    for(int ses=0; ses < sessions; ses++)
+    {
+        double ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        
+        ll_ses = ll_ses*(-1);
+        ll6 = ll6 + ll_ses;
+    }
+    double bic_score6 = 2*log(allpaths.n_rows)+ 2*ll6;
+
+    std::cout << "acaSubOpt + aca2Opt, n=" << n1  << ", lik=" << ll1 << ", bic=" << bic_score1 << std::endl;
+    std::cout << "acaSubOpt + drlOpt, n=" << n2  << ", lik=" << ll2 << ", bic=" << bic_score2 << std::endl;
+    std::cout << "drlSubOpt + aca2Opt, n=" << n3  << ", lik=" << ll3 << ", bic=" << bic_score3 << std::endl;
+    std::cout << "drlSubOpt + drlOpt, n=" << n4  << ", lik=" << ll4 << ", bic=" << bic_score4 << std::endl;
+    std::cout << "aca2Opt"  << ", lik=" << ll5 << ", bic=" << bic_score5 << std::endl;
+    std::cout << "drlOpt"  << ", lik=" << ll6 << ", bic=" << bic_score6 << std::endl; 
+
+    std::vector<double> bic_scores = {bic_score1, bic_score2, bic_score3, bic_score4, bic_score5, bic_score6};
+    std::vector<int> n = {n1,n2,n3,n4,-1,-1};
+    std::vector<double> sortedVector = bic_scores;
+    std::sort(sortedVector.begin(), sortedVector.end());
+
+    // Get the largest and second-largest elements
+    double smallest = sortedVector[0];
+    double secondSmallest = sortedVector[1];
+
+    int smallestIdx = -1;
+    // Check if the largest element is greater than the second largest by at least 5
+    if ((secondSmallest - smallest) > 2.0) {
+        // Find the index of the largest element in the original vector
+        auto it = std::find(bic_scores.begin(), bic_scores.end(), smallest);
+        if (it != bic_scores.end()) {
+            // Calculate the index using std::distance
+            smallestIdx = std::distance(bic_scores.begin(), it);
+            std::cout << "Index of the largest element: " << smallestIdx << std::endl;
+        } else {
+            std::cout << "Error: Couldn't find the index of the largest element." << std::endl;
         }
     }
     
-
     return allRecordRes;
 }
 
 
-void runEM2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, bool debug)
-{
-    //// rat_103
-    //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
-    
-    ////rat_114
-    //std::vector<double> v = {0.0334664, 0.351993, 0.00478871, 1.99929e-07, 0.687998, 0.380462, 9.68234e-07, 0.136651, 8.71086e-06, 0.292224, 3.95355};
-
-    //std::vector<double> v = {0.727389, 0.866576, 0.843969, 0.037089, 0.987229, 0.996802, 0.0137021, 0.815637, 0.996112, 0.0413516, 0.0373898, 0.876589, 4.63767, 4.87372};
-
-    std::string rat = ratdata.getRat();
-    std::vector<double>& v = clusterParams[rat];
-
-    double crpAlpha = v[0];
-    double phi = v[1];
-    double eta = 0;
-
-    double alpha_aca_subOptimal = v[2];
-    double gamma_aca_subOptimal = v[3];
-
-    double alpha_aca_optimal = v[4];
-    double gamma_aca_optimal = v[5];
-
-    // COMMENTING OUT ARL
-    //ARL params
-    // double alpha_arl_subOptimal = v[6];
-    // double beta_arl_subOptimal = v[7];
-    // double lambda_arl_subOptimal = 0;
-    
-    // double alpha_arl_optimal = v[8];
-    // double beta_arl_optimal = v[9];
-    // double lambda_arl_optimal = 0;
- 
-    //DRL params
-    double alpha_drl_subOptimal = v[10];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[11];
-    
-    double alpha_drl_optimal = v[12];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[13];
-       
-    // std::vector<double> rewardsS0_aca = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_aca = {0,0,0,0,0,0,0,0,rS1_opt};
-
-    // std::vector<double> rewardsS0_arl = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_arl = {0,0,0,0,0,0,0,0,rS1_opt};
-    
-    // std::vector<double> rewardsS0_drl = {0,0,0,0,0,0,0,rS0_opt,0};
-    // std::vector<double> rewardsS1_drl = {0,0,0,0,0,0,0,0,rS1_opt};
-  
-    // std::vector<double> rewardsS0_subopt_aca = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
-    // std::vector<double> rewardsS0_subopt_arl = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
-    // std::vector<double> rewardsS0_subopt_drl = {0,0,0,0,0,0,rS0_subopt,rS1_subopt,0,0,0,0};
-
-
-    //std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
-    
-    // Create instances of Strategy
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, crpAlpha, phi, eta, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, crpAlpha, phi, eta, true);
-    
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, crpAlpha, phi, eta, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, crpAlpha, phi, eta, true);
-
-    // COMMENTING OUT ARL
-    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
-
-    // aca2_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_aca);
-    // drl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_drl);
-    // arl_Suboptimal_Hybrid3->setRewardsS0(rewardsS0_subopt_arl);
-    
-    // aca2_Optimal_Hybrid3->setRewardsS0(rewardsS0_aca); 
-    // aca2_Optimal_Hybrid3->setRewardsS1(rewardsS1_aca);
-
-    // drl_Optimal_Hybrid3->setRewardsS0(rewardsS0_drl); 
-    // drl_Optimal_Hybrid3->setRewardsS1(rewardsS1_drl);
-
-    // arl_Optimal_Hybrid3->setRewardsS0(rewardsS0_arl); 
-    // arl_Optimal_Hybrid3->setRewardsS1(rewardsS1_arl);   
-
-    // aca2_Suboptimal_Hybrid3->setPhi(phi_acasub);
-    // arl_Suboptimal_Hybrid3->setPhi(phi_arlsub);
-    // drl_Suboptimal_Hybrid3->setPhi(phi_drlsub);
-    // aca2_Optimal_Hybrid3->setPhi(phi_acaopt);
-    // arl_Optimal_Hybrid3->setPhi(phi_arlopt);
-    // drl_Optimal_Hybrid3->setPhi(phi_drlopt);
-
-    
-    std::vector<std::shared_ptr<Strategy>> strategies;
-
-    strategies.push_back(aca2_Suboptimal_Hybrid3);
-    strategies.push_back(aca2_Optimal_Hybrid3);
-
-    strategies.push_back(drl_Suboptimal_Hybrid3);
-    strategies.push_back(drl_Optimal_Hybrid3);
-
-    // COMMENTING OUT ARL
-    // strategies.push_back(arl_Suboptimal_Hybrid3);
-    // strategies.push_back(arl_Optimal_Hybrid3);
-
-    arma::mat allpaths = ratdata.getPaths();
-    arma::vec sessionVec = allpaths.col(4);
-    arma::vec uniqSessIdx = arma::unique(sessionVec);
-    int sessions = uniqSessIdx.n_elem;
-
-    std::vector<std::string> cluster;
-    std::vector<std::string> most_likely;
-    std::string last_choice;
-    
-    arma::mat probMat;
-
-    RecordResults allResults("None", {}, {}, {}, {}, {});
-
-    for(int ses=0; ses < sessions; ses++)
-    {
-        
-        if(ses==0)
-        {
-            initRewardVals(ratdata, ses, strategies, debug);
-        }
-
-        arma::mat probMat_sess = estep_cluster_update(ratdata, ses, strategies, cluster, last_choice, true, allResults);
-        mstep(ratdata, ses, strategies, cluster, debug, allResults);
-
-        probMat = arma::join_cols(probMat, probMat_sess);
-        most_likely.push_back(last_choice);
-    }
-
-    for(int ses=0; ses < sessions; ses++)
-    {
-        std::cout << "session " << ses << ", most_likely=" << most_likely[ses] << std::endl;
-    }
-
-    
-
-    arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
-    arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
-    
-    // COMMENTING OUT ARL
-    // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
-    // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
-
-    probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
-
-    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-
-}
-
-
-void testLogLik(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3)
-{
-    std::vector<double> v = {4.43e-2, 4.71e-6};
-    double alpha = v[0];
-    double gamma = v[1];
-    double lambda = 0;
-
-    double crpAlpha = 0;
-    double phi = 0;
-    double eta = 0;
-    Strategy strategy(optimalHybrid3,"arl",alpha, gamma, lambda, crpAlpha, phi, eta, true);
-    std::cout << "strategy=" << strategy.getName() <<std::endl;    
-
-    
-    // if(strategy.getName() == "aca2_Suboptimal_Hybrid3" || strategy.getName() == "aca2_Optimal_Hybrid3")
-    // {
-    //     gamma = v[1];
-    //     lambda = 0;
-
-    // }else
-    // {
-    //     // gamma = 1e-7;
-    //     // lambda = v[1];
-    //     gamma = v[1];
-    // }
-
-    std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
-    std::vector<double> s1rewards = {0,0,0,0,0,0,0,0,5};
-    strategy.setRewardsS0(s0rewards);
-    strategy.setRewardsS1(s1rewards);
-
-    strategy.setAlpha(alpha);
-    strategy.setGamma(gamma);
-    strategy.setLambda(lambda);
-
-
-    arma::mat allpaths = ratdata.getPaths();
-    arma::vec sessionVec = allpaths.col(4);
-    arma::vec uniqSessIdx = arma::unique(sessionVec);
-    int sessions = uniqSessIdx.n_elem;
-
-    double loglikelihood = 0;
-
-    for(int ses=0; ses < sessions; ses++)
-    {
-        
-        double log_likelihood_ses = strategy.getTrajectoryLikelihood(ratdata, ses); 
-        loglikelihood = loglikelihood + log_likelihood_ses;
-        std::cout << "alpha=" <<alpha << ", gamma=" << gamma << ", lambda=" << lambda << ", ses=" << ses << ", loglikelihood=" << loglikelihood << std::endl;
-
-    }
-
-    loglikelihood = loglikelihood * (-1);
-
-    std::cout << "Using fitness function" << std::endl;
-    
-    strategy.resetCredits();
-      
-    // PagmoMle pagmoMle(ratdata,optimalHybrid3, "aca2", true);
-
-    // std::vector<double> ret =  pagmoMle.fitness(v);
-
- 
-    std::cout << "alpha=" <<alpha << ", gamma=" << gamma << ", lambda=" << lambda <<  ", loglikelihood=" << loglikelihood  << std::endl;
-    
-    //return{loglikelihood};
-    return;
-}

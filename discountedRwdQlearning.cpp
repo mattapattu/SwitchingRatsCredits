@@ -154,6 +154,12 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
     }
     
     A = actions_sess(i);
+
+    double R = rewards_sess(i);
+    if(R > 0)
+    {
+      R = 5;
+    }
     
     int S_prime = 0;
     if(i < (nrow-1))
@@ -201,7 +207,12 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
       std::string currTurn = turns[j]; 
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
-      currTurnReward = rewardVec[nodeId];
+      
+      //currTurnReward = rewardVec[nodeId];
+      if(j==nbOfTurns-1 && R > 0)
+      {
+        currTurnReward = R;
+      }
 
       double turntime = turn_times_session(session_turn_count);
 

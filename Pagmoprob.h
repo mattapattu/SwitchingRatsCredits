@@ -38,6 +38,12 @@ public:
   // Bounds function
   std::pair<vector_double, vector_double> get_bounds() const;
 
+  // vector_double::size_type get_nix() const
+  // {
+  //   return 4;
+  // }
+
+
   // vector_double::size_type get_nec() const
   // {
   //   return 2;
