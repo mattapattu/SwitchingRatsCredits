@@ -20,8 +20,8 @@ public:
   PagmoMultiObjCluster();
   // Constructor
   PagmoMultiObjCluster(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
-  const MazeGraph& Optimal_Hybrid3_, const std::map<std::pair<std::string, bool>, std::vector<double>>& params_ ):
-  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), params(params_){}
+  const MazeGraph& Optimal_Hybrid3_):
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_){}
 
 
   // Destructor

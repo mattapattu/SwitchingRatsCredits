@@ -618,12 +618,19 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       double nodeCredits = graph->getNodeCredits(v);
 
       int hybridNodeId = graph->getNodeId(v);
-      score_episode = score_episode + rewardVec[hybridNodeId];
+      //score_episode = score_episode + rewardVec[hybridNodeId];
 
-      // if(j==nbOfTurns-1 && R > 0)
-      // {
-      //   score_episode = score_episode + R;
-      // }
+      if(k==nbOfTurns-1 && R(S,A) > 0)
+      {
+        score_episode = score_episode + R(S,A);
+        // if(!strategy.getOptimal() && S == 1)
+        // {
+        //   score_episode = score_episode + 0;
+        // }else
+        // {
+        //   score_episode = score_episode + 5;
+        // }
+      }
 
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);

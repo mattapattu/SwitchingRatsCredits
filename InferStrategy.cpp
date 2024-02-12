@@ -1,5 +1,6 @@
 #include "InferStrategy.h"
 #include "Pagmoprob.h"
+#include "PagmoMultiObjCluster.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
@@ -72,8 +73,8 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     //unconstrain unprob{prob, "kuri"};
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
-    //pagmo::algorithm algo{sade(10,2,2)};
-    pagmo::algorithm algo{de(5)};
+    pagmo::algorithm algo{sade(10,2,2)};
+    //pagmo::algorithm algo{de(5)};
     //pagmo::cstrs_self_adaptive algo{5, de(1)};
     //algo.set_verbosity(1);
     // ////pagmo::algorithm algo{sade(20)};
@@ -251,6 +252,114 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
 }
 
 
+std::vector<double> findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3) {
+
+   std::cout << "Initializing problem class" <<std::endl;
+    // Create a function to optimize
+    PagmoMultiObjCluster pagmoMultiObjProb(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
+    //PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
+    std::cout << "Initialized problem class" <<std::endl;
+
+    // Create a problem using Pagmo
+    problem prob{pagmoMultiObjProb};
+    //problem prob{schwefel(30)};
+    
+    std::cout << "created problem" <<std::endl;
+    // 2 - Instantiate a pagmo algorithm (self-adaptive differential
+    // evolution, 100 generations).
+
+    pagmo::thread_bfe thread_bfe;
+    pagmo::moead_gen method (10);
+    method.set_bfe(pagmo::bfe { thread_bfe } );
+    pagmo::algorithm algo = pagmo::algorithm { method };
+    pagmo::population pop { prob, thread_bfe, 56};
+   
+
+    // Evolve the population for 100 generations
+    for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        pop = algo.evolve(pop);
+    }
+    
+
+    std::cout << "DONE1:"  << '\n';
+    //system("pause"); 
+
+    // auto best = pagmo::select_best_N_mo(pop.get_f(), 10);
+
+    // // Print the objective vectors of the best individuals
+    //  std::cout << "Best " << 10 << " Individuals on Pareto Front:\n";
+    // for (const auto& ind : best) {
+    //     std::cout << ind << std::endl;
+    // }
+
+
+    auto f = pop.get_f();
+    auto x = pop.get_x();
+
+    // Sort the individuals by non-domination rank and crowding distance
+    pagmo::vector_double::size_type n = pop.size();
+    std::vector<pagmo::vector_double::size_type> idx = pagmo::sort_population_mo(f);
+
+    //std::vector<double> cd = pagmo::crowding_distance(f);
+
+    double min_lik = 100000;
+    std::vector<double> dec_vec_champion;
+    // Select the first 10 individuals as the best ones
+    for (int i = 0; i < 10; i++) {
+        std::cout << "Individual " << i + 1 << ":" << std::endl;
+        double lik = std::accumulate(f[idx[i]].begin(), f[idx[i]].end(), 0.0);
+        //std::cout << "Fitness: [" << f[idx[i]][0] << ", " << f[idx[i]][1] <<  ", " << f[idx[i]][2] << ", " << f[idx[i]][3] << ", " << f[idx[i]][4] << ", " << f[idx[i]][5] << "]" << ", lik=" << lik << std::endl;
+        //std::cout << "Decision vector: [" << x[idx[i]][0] << "]" << std::endl;
+        //std::cout << "Crowding distance: " << cd[idx[i]] << std::endl;
+
+        std::vector<double> dec_vec = x[idx[i]];
+
+        // std::cout << "dec_vec: ";
+        // for (const auto& val : dec_vec) {
+        //     std::cout << ", " << val ;
+        // }
+
+        std::cout << std::endl;
+
+        if(lik < min_lik)
+        {
+            min_lik = lik;
+            dec_vec_champion = dec_vec;
+        }
+
+    }
+
+    // // Perform the fast non-dominated sorting
+    // auto result = pagmo::fast_non_dominated_sorting(f);
+
+    // std::vector<std::vector<pagmo::population::size_type>> fronts = std::get<0>(result);
+    // //auto crowding = std::get<1>(result);
+
+    // // Print the results
+    // for (int i = 0; i < fronts.size(); i++) {
+    //     std::cout << "Front " << i + 1 << ":" << std::endl;
+    //     for (int j = 0; j < fronts[i].size(); j++) {
+    //         std::cout << "\tIndividual " << fronts[i][j] + 1 << ":" << std::endl;
+    //         double lik = std::accumulate(f[fronts[i][j]].begin(), f[fronts[i][j]].end(), 0.0);
+    //         std::cout << "\tFitness: [" << f[fronts[i][j]][0] << ", " << f[fronts[i][j]][1] <<  ", " << f[fronts[i][j]][2] << ", " << f[fronts[i][j]][3] << ", " << f[fronts[i][j]][4] << ", " << f[fronts[i][j]][5] << "]" << ", lik=" << lik << std::endl;
+
+    //         //std::cout << "\t\tCrowding distance: " << crowding[fronts[i][j]] << std::endl;
+    //     }
+    // }
+
+
+    std::cout << "dec_vec_champion: ";
+    for (const auto& val : dec_vec_champion) {
+        std::cout << ", " << val ;
+    }
+
+       
+
+    return dec_vec_champion;
+}
+
+
+
 
 
 
@@ -316,7 +425,7 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     arma::mat probMat;
     
     std::vector<RecordResults> allRecordRes;
-double ll1 = 0;
+    double ll1 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
         double ll_ses = 0;
