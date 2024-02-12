@@ -558,23 +558,58 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
 
     
-
     for(int ses=0; ses < sessions; ses++)
     {
         if(rat=="rat_103")
         {
-            probMat = 
+            arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+            arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+
+            arma::uvec optIndices = find(drl_optimal_probs.col(13) >= n2);
+            arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+
+            probMat = arma::join_rows(subOptProbMat,optProbMat);
+            
+
         }else  if(rat=="rat_106")
         {
-            
+            arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+            arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+
+            arma::uvec optIndices = find(drl_optimal_probs.col(13) >= n2);
+            arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+
+            probMat = arma::join_rows(subOptProbMat,optProbMat);
+
         }else  if(rat=="rat_112")
         {
+            arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+            arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+
+            arma::uvec optIndices = find(drl_optimal_probs.col(13) >= n2);
+            arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+
+            probMat = arma::join_rows(subOptProbMat,optProbMat);
             
         }else  if(rat=="rat_113")
         {
+            arma::uvec subOptIndices = arma::find(drl_Suboptimal_Hybrid3.col(13) < n4);
+            arma::mat subOptProbMat = drl_Suboptimal_Hybrid3.rows(subOptIndices);
+
+            arma::uvec optIndices = find(drl_optimal_probs.col(13) >= n2);
+            arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+
+            probMat = arma::join_rows(subOptProbMat,optProbMat);
             
         }else  if(rat=="rat_114")
         {
+            arma::uvec subOptIndices = arma::find(drl_Suboptimal_Hybrid3.col(13) < n4);
+            arma::mat subOptProbMat = drl_Suboptimal_Hybrid3.rows(subOptIndices);
+
+            arma::uvec optIndices = find(drl_optimal_probs.col(13) >= n2);
+            arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+
+            probMat = arma::join_rows(subOptProbMat,optProbMat);
             
         }
     }
