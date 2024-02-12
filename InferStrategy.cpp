@@ -535,9 +535,47 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         if (it != bic_scores.end()) {
             // Calculate the index using std::distance
             smallestIdx = std::distance(bic_scores.begin(), it);
-            std::cout << "Index of the largest element: " << smallestIdx << std::endl;
+            std::cout << "Index of the smallest element: " << smallestIdx << std::endl;
         } else {
             std::cout << "Error: Couldn't find the index of the largest element." << std::endl;
+        }
+    }
+
+    arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
+    
+    // COMMENTING OUT ARL
+    // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
+    // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
+
+    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
+    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+
+    
+
+    for(int ses=0; ses < sessions; ses++)
+    {
+        if(rat=="rat_103")
+        {
+            probMat = 
+        }else  if(rat=="rat_106")
+        {
+            
+        }else  if(rat=="rat_112")
+        {
+            
+        }else  if(rat=="rat_113")
+        {
+            
+        }else  if(rat=="rat_114")
+        {
+            
         }
     }
     
