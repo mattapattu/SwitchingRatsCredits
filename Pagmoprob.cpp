@@ -23,12 +23,12 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
  
     //DRL params
     double alpha_drl_subOptimal = v[6];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[7];
+    double beta_drl_subOptimal = v[7];
+    double lambda_drl_subOptimal = v[8];
     
     double alpha_drl_optimal = v[6];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double beta_drl_optimal = v[7];
+    double lambda_drl_optimal = v[8];
 
     
     int n1 = static_cast<int>(std::floor(v[0]));
@@ -84,6 +84,20 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll1 = ll1 + ll_ses;
     }
+    double bic_score1 = 3*log(allpaths.n_rows)+ 2*ll1;
+
+    arma::mat& aca2_suboptimal_probs_m1 =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs_m1 =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs_m1 =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs_m1 =  drl_Optimal_Hybrid3->getPathProbMat();
+
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
+
+
 
     double ll2 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -99,6 +113,17 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll2 = ll2 + ll_ses;
     }
+    double bic_score2 = 6*log(allpaths.n_rows)+ 2*ll2;
+
+    arma::mat& aca2_suboptimal_probs_m2 =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs_m2 =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs_m2 =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs_m2 =  drl_Optimal_Hybrid3->getPathProbMat();
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
     double ll3 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -114,6 +139,17 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll3 = ll3 + ll_ses;
     }
+    double bic_score3 = 6*log(allpaths.n_rows)+ 2*ll3;
+
+    arma::mat& aca2_suboptimal_probs_m3 =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs_m3 =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs_m3 =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs_m3 =  drl_Optimal_Hybrid3->getPathProbMat();
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
 
     double ll4 = 0;
@@ -130,6 +166,17 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll4 = ll4 + ll_ses;
     }
+    double bic_score4 = 4*log(allpaths.n_rows)+ 2*ll4;
+
+    arma::mat& aca2_suboptimal_probs_m4 =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs_m4 =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs_m4 =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs_m4 =  drl_Optimal_Hybrid3->getPathProbMat();
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
 
     double ll5 = 0;
@@ -140,6 +187,17 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll5 = ll5 + ll_ses;
     }
+    double bic_score5 = 2*log(allpaths.n_rows)+ 2*ll5;
+
+    arma::mat& aca2_suboptimal_probs_m5 =  aca2_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& aca2_optimal_probs_m5 =  aca2_Optimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_suboptimal_probs_m5 =  drl_Suboptimal_Hybrid3->getPathProbMat();
+    arma::mat& drl_optimal_probs_m5 =  drl_Optimal_Hybrid3->getPathProbMat();
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
     double ll6 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -149,6 +207,7 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
         ll_ses = ll_ses*(-1);
         ll6 = ll6 + ll_ses;
     }
+    double bic_score6 = 3*log(allpaths.n_rows)+ 2*ll6;
 
     double min = std::min({ll1, ll2, ll3, ll4, ll5, ll6});
     

@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
+        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
 
     }
 

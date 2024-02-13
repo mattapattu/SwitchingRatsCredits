@@ -422,6 +422,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
    int loopCounter = 0;
 
     std::shared_ptr<Strategy> strategy;
+    arma::mat genProbMat;
 
     if(randomPair.first->getName() == randomPair.second->getName())
     {
@@ -429,7 +430,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
         {
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-            std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
+            //std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
 
 
             std::vector<double> s0rewards = {0,0,0,0,0,0,0,5,0};
@@ -496,6 +497,8 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 break;
             }
         }
+
+        genProbMat = strategy->getPathProbMat(); 
     
     }else //Generate switching simulations
     {
@@ -554,7 +557,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
                 changepoint_ses = 2;
             }
         
-             std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
+             //std::cout << "Generating sim data with " << randomPair.first->getName() << " and "<< randomPair.second->getName()  << " changepoint at ses " <<  changepoint_ses << std::endl;
 
             //std::srand(static_cast<unsigned>(std::time(nullptr)));
            for(int ses=0; ses < changepoint_ses; ses++)
@@ -591,7 +594,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             }
             else{
                 endLoopSuboptimal = false;
-                std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
+                //std::cout << "check_path5 failed. Re-generate Suboptimal trajectory: " << counterSuboptimal <<std::endl;
                 generated_PathData_Suboptimal.reset();
                 generated_TurnsData_Suboptimal.reset();
 
@@ -645,7 +648,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
                 }
 
-            
+                genProbMat = arma::join_cols(randomPair.first->getPathProbMat(), randomPair.second->getPathProbMat());             
             }
 
             generated_PathData = arma::join_cols(generated_PathData_Suboptimal, generated_PathData_Optimal);
@@ -664,7 +667,7 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
             }
             else{
                 endLoopOptimal = false;
-                std::cout << "check_ema failed. Re-generate Optimal trajectory: " << counterOptimal <<std::endl;
+                //std::cout << "check_ema failed. Re-generate Optimal trajectory: " << counterOptimal <<std::endl;
                 generated_PathData.reset();
                 generated_TurnsData.reset();
 
@@ -688,15 +691,20 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
      
     }
 
-    std::cout << "Generated sim:" << randomPair.first->getName() << " and " << randomPair.second->getName() << std::endl;
-  
-    R["genData"] = Rcpp::wrap(generated_PathData);
+    std::cout << "Generated sim:" << randomPair.first->getName() << " and " << randomPair.second->getName() <<  " with changepoint = " << changepoint_ses  << std::endl;
+    
+    Rcpp::List l = Rcpp::List::create(Rcpp::Named("genData") = Rcpp::wrap(generated_PathData),
+                                      Rcpp::Named("probMat") = genProbMat );
 
+    R["l"] = l;
     // Save the matrix as RData using RInside
     std::string filename = "generatedData_" + std::to_string(selectStrat) + "_" + rat + "_" + run +".RData";
     
-    std::string rCode = "saveRDS(genData, file='" + filename + "')";
+    std::string rCode = "save(l, file='" + filename + "')";
     R.parseEvalQ(rCode.c_str());
+
+    // arma::mat trueProbMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
+    // trueProbMat.save("genTrueProbMat_" + rat+ ".csv", arma::csv_ascii);
     
     RatData simRatdata(generated_PathData,generated_TurnsData,rat, true, trueGenStrategies);
 
@@ -834,9 +842,9 @@ std::vector<double> findMultiObjClusterParamsWithSim(const RatData& ratdata, con
     std::vector<double> dec_vec_champion;
     // Select the first 10 individuals as the best ones
     for (int i = 0; i < 10; i++) {
-        std::cout << "Individual " << i + 1 << ":" << std::endl;
+        // std::cout << "Individual " << i + 1 << ":" << std::endl;
         double lik = std::accumulate(f[idx[i]].begin(), f[idx[i]].end(), 0.0);
-        std::cout << "Fitness: [" << f[idx[i]][0] << ", " << f[idx[i]][1] <<  ", " << f[idx[i]][2] << ", " << f[idx[i]][3] << ", " << f[idx[i]][4] << ", " << f[idx[i]][5] << "]" << ", lik=" << lik << std::endl;
+        // std::cout << "Fitness: [" << f[idx[i]][0] << ", " << f[idx[i]][1] <<  ", " << f[idx[i]][2] << ", " << f[idx[i]][3] << ", " << f[idx[i]][4] << ", " << f[idx[i]][5] << "]" << ", lik=" << lik << std::endl;
         //std::cout << "Decision vector: [" << x[idx[i]][0] << "]" << std::endl;
         //std::cout << "Crowding distance: " << cd[idx[i]] << std::endl;
 
@@ -881,6 +889,63 @@ std::vector<double> findMultiObjClusterParamsWithSim(const RatData& ratdata, con
     return dec_vec_champion;
 }
 
+std::vector<std::vector<double>> findParamsSim(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3)
+{
+    std::vector<std::string> models = {"m1","m2","m3","m4","m5","m6"};
+    std::vector<std::vector<double>> modelParams;
+    for(int i=0; i<6; i++)
+    {
+        PagmoMle pagmomle(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3,models[i]);
+        std::cout << "Initialized problem class" <<std::endl;
+
+        // Create a problem using Pagmo
+        problem prob{pagmomle};
+
+        //pagmo::algorithm algo{de(5)};
+        pagmo::algorithm algo{sade(10,2,2)};
+
+
+        archipelago archi{5u, algo, prob, 10u};
+
+        // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+        archi.evolve(5);
+        // std::cout << "DONE1:"  << '\n';
+
+        // ///5 - Wait for the evolutions to finish.
+        archi.wait_check();
+
+        // ///6 - Print the fitness of the best solution in each island.
+
+        double champion_score = 1e8;
+        std::vector<double> dec_vec_champion;
+        for (const auto &isl : archi) {
+            std::vector<double> dec_vec = isl.get_population().champion_x();
+            
+            // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+            // for (auto const& i : dec_vec)
+            //     std::cout << i << ", ";
+            // std::cout << "\n" ;
+
+            double champion_isl = isl.get_population().champion_f()[0];
+            if(champion_isl < champion_score)
+            {
+                champion_score = champion_isl;
+                dec_vec_champion = dec_vec;
+            }
+        }
+
+        std::cout << "Final champion = " << champion_score << std::endl;
+        for (auto const& i : dec_vec_champion)
+            std::cout << i << ", ";
+        std::cout << "\n" ;
+
+
+        modelParams.push_back(dec_vec_champion);
+
+    }
+
+    return modelParams;
+}
 
 
 std::vector<double> findClusterParamsWithSimData(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3)
@@ -1052,7 +1117,7 @@ void updateConfusionMatrix(std::vector<std::string> trueGenStrategies,std::vecto
 }
 
 
-void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, bool debug, std::string run)
+void runEMOnSimData(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3, std::vector<std::vector<double>> modelParams, bool debug, std::string run, int selectStrat, RInside& R)
 {
     //// rat_103
     //std::vector<double> v = {0.11776, 0.163443, 0.0486187, 1e-7,0.475538, 0.272467, 1e-7 , 0.0639478, 1.9239e-06, 0.993274, 4.3431};
@@ -1064,83 +1129,110 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 
     std::string rat = ratdata.getRat();
 
-    double alpha_aca_subOptimal = v[4];
-    double gamma_aca_subOptimal = v[5];
+    //m1 params
+    std::vector<double> v1 = modelParams[0];
 
-    double alpha_aca_optimal = v[4];
-    double gamma_aca_optimal = v[5];
+    double alpha_aca_subOptimal_m1 = v1[0];
+    double gamma_aca_subOptimal_m1 = v1[1];
+    double alpha_aca_optimal_m1 = v1[0];
+    double gamma_aca_optimal_m1 = v1[1];
 
-    //ARL params
-    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    // double beta_arl_subOptimal = 1e-7;
-    // double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    
-    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    // double beta_arl_optimal = 1e-7;
-    // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    int n1 = static_cast<int>(std::floor(v1[2]));
  
-    //DRL params
-    double alpha_drl_subOptimal = v[6];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[7];
+    //m2 params
+    std::vector<double> v2 = modelParams[1];
     
-    double alpha_drl_optimal = v[6];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double alpha_aca_subOptimal_m2 = v2[0];
+    double gamma_aca_subOptimal_m2 = v2[1];
 
-    
-    int n1 = static_cast<int>(std::floor(v[0]));
-    int n2 = static_cast<int>(std::floor(v[1]));
-    int n3 = static_cast<int>(std::floor(v[2]));
-    int n4 = static_cast<int>(std::floor(v[3]));
+    double alpha_drl_optimal_m2 = v2[2];
+    double beta_drl_optimal_m2 = v2[3];
+    double lambda_drl_optimal_m2 = v2[4];
 
+    int n2 = static_cast<int>(std::floor(v2[5]));
 
 
+    //m3 params
+    std::vector<double> v3 = modelParams[2];
 
-    if(debug)
-    {
-        std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
-    }
-    
+    double alpha_drl_subOptimal_m3 = v3[0];
+    double beta_drl_subOptimal_m3 = v3[1];
+    double lambda_drl_subOptimal_m3 = v3[2];
+
+    double alpha_aca_optimal_m3 = v3[3];
+    double gamma_aca_optimal_m3 = v3[4];
+    int n3 = static_cast<int>(std::floor(v3[5]));   
+
+    //m4
+    std::vector<double> v4 = modelParams[3];
+
+    double alpha_drl_subOptimal_m4 = v4[0];
+    double beta_drl_subOptimal_m4 = v4[1];
+    double lambda_drl_subOptimal_m4 = v4[2];
+
+    double alpha_drl_optimal_m4 = v4[0];
+    double beta_drl_optimal_m4 = v4[1];
+    double lambda_drl_optimal_m4 = v4[2];
+
+    int n4 = static_cast<int>(std::floor(v4[3]));
+
+    //m5
+    std::vector<double> v5 = modelParams[4];
+    double alpha_aca_optimal_m5 = v5[0];
+    double gamma_aca_optimal_m5 = v5[1];
+
+    //m6
+    std::vector<double> v6 = modelParams[5];
+    double alpha_drl_optimal_m6 = v6[0];
+    double beta_drl_optimal_m6 = v6[1];
+    double lambda_drl_optimal_m6 = v6[2];
+
+      
     // Create instances of Strategy
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
+    auto aca2_Suboptimal_Hybrid3_m1 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal_m1, gamma_aca_subOptimal_m1, 0, 0, 0, 0, false);
+    auto aca2_Optimal_Hybrid3_m1 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m1, gamma_aca_optimal_m1, 0, 0, 0, 0, true);
+
+    auto aca2_Suboptimal_Hybrid3_m2 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal_m2, gamma_aca_subOptimal_m2, 0, 0, 0, 0, false);
+    auto drl_Optimal_Hybrid3_m2 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m2, beta_drl_optimal_m2, lambda_drl_optimal_m2, 0, 0, 0, true);
+
     
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
+    auto drl_Suboptimal_Hybrid3_m3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal_m3, beta_drl_subOptimal_m3, lambda_drl_subOptimal_m3, 0, 0, 0, false);
+    auto aca2_Optimal_Hybrid3_m3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m3, gamma_aca_optimal_m3, 0, 0, 0, 0, true);
 
 
-    // COMMENTING OUT ARL
-    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
+    auto drl_Suboptimal_Hybrid3_m4 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal_m4, beta_drl_subOptimal_m4, lambda_drl_subOptimal_m4, 0, 0, 0, false);
+    auto drl_Optimal_Hybrid3_m4 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m4, beta_drl_optimal_m4, lambda_drl_optimal_m4, 0, 0, 0, true);
 
+    auto aca2_Optimal_Hybrid3_m5 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m5, gamma_aca_optimal_m5, 0, 0, 0, 0, true);
+
+    auto drl_Optimal_Hybrid3_m6 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m6, beta_drl_optimal_m6, lambda_drl_optimal_m6, 0, 0, 0, true);
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-
+    
     std::vector<std::string> cluster;
     std::string last_choice;
-    
-    arma::mat probMat;
-    
-    std::vector<RecordResults> allRecordRes;
+
+    RecordResults allResults("None", {}, {}, {}, {}, {});
+
     double ll1 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
         double ll_ses = 0;
         if(ses < n1)
         {
-           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Suboptimal_Hybrid3_m1->getTrajectoryLikelihood(ratdata, ses);
         }else{
-           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Optimal_Hybrid3_m1->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll1 = ll1 + ll_ses;
     }
-    double bic_score1 = 5*log(allpaths.n_rows)+ 2*ll1;
+    arma::mat m1_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3_m1->getPathProbMat(),aca2_Optimal_Hybrid3_m1->getPathProbMat());
+    double bic_score1 = 3*log(allpaths.n_rows)+ 2*ll1;
 
     double ll2 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -1148,15 +1240,16 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
         double ll_ses = 0;
         if(ses < n2)
         {
-           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Suboptimal_Hybrid3_m2->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Optimal_Hybrid3_m2->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll2 = ll2 + ll_ses;
     }
-    double bic_score2 = 5*log(allpaths.n_rows)+ 2*ll2;
+    arma::mat m2_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3_m2->getPathProbMat(),drl_Optimal_Hybrid3_m2->getPathProbMat());
+    double bic_score2 = 6*log(allpaths.n_rows)+ 2*ll2;
 
     double ll3 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -1164,16 +1257,16 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
         double ll_ses = 0;
         if(ses < n3)
         {
-           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Suboptimal_Hybrid3_m3->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Optimal_Hybrid3_m3->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll3 = ll3 + ll_ses;
     }
-    double bic_score3 = 5*log(allpaths.n_rows)+ 2*ll3;
-
+    arma::mat m3_probMat = arma::join_cols(drl_Suboptimal_Hybrid3_m3->getPathProbMat(),aca2_Optimal_Hybrid3_m3->getPathProbMat());
+    double bic_score3 = 6*log(allpaths.n_rows)+ 2*ll3;
 
     double ll4 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -1181,36 +1274,38 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
         double ll_ses = 0;
         if(ses < n4)
         {
-           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Suboptimal_Hybrid3_m4->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Optimal_Hybrid3_m4->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll4 = ll4 + ll_ses;
     }
-    double bic_score4 = 5*log(allpaths.n_rows)+ 2*ll4;
-
+    arma::mat m4_probMat = arma::join_cols(drl_Suboptimal_Hybrid3_m4->getPathProbMat(),drl_Optimal_Hybrid3_m4->getPathProbMat());
+    double bic_score4 = 4*log(allpaths.n_rows)+ 2*ll4;
 
     double ll5 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
-        double ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        double ll_ses  = aca2_Optimal_Hybrid3_m5->getTrajectoryLikelihood(ratdata, ses); 
         
         ll_ses = ll_ses*(-1);
         ll5 = ll5 + ll_ses;
     }
+    arma::mat m5_probMat = aca2_Optimal_Hybrid3_m5->getPathProbMat();
     double bic_score5 = 2*log(allpaths.n_rows)+ 2*ll5;
 
     double ll6 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
-        double ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        double ll_ses  = drl_Optimal_Hybrid3_m6->getTrajectoryLikelihood(ratdata, ses); 
         
         ll_ses = ll_ses*(-1);
         ll6 = ll6 + ll_ses;
     }
-    double bic_score6 = 2*log(allpaths.n_rows)+ 2*ll6;
+    arma::mat m6_probMat = drl_Optimal_Hybrid3_m6->getPathProbMat();
+    double bic_score6 = 3*log(allpaths.n_rows)+ 2*ll6;
 
     std::cout << "acaSubOpt + aca2Opt, n=" << n1  << ", lik=" << ll1 << ", bic=" << bic_score1 << std::endl;
     std::cout << "acaSubOpt + drlOpt, n=" << n2  << ", lik=" << ll2 << ", bic=" << bic_score2 << std::endl;
@@ -1280,15 +1375,38 @@ void runEMOnSimData(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
     {
         std::vector<std::string> v(sessions, "drl_Optimal_Hybrid3"); 
         selectedStrategies = v;
+    }else if(smallestIdx == 5)
+    {
+        std::cout << "No bic score sufficiently small";
+        std::vector<std::string> v(sessions, "None"); 
+        selectedStrategies = v;
     }
 
     // probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
     updateConfusionMatrix(trueGenStrategies,selectedStrategies,  rat, run);
 
-    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
+    
+
+    // m1_probMat.save("m1_probMat_" + rat+ ".csv", arma::csv_ascii);
+    // m2_probMat.save("m2_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m3_probMat.save("m3_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m4_probMat.save("m4_probMat_" + rat+ ".csv", arma::csv_ascii);
+    // m5_probMat.save("m5_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m6_probMat.save("m6_probMat_" + rat+ ".csv", arma::csv_ascii);
+
+    Rcpp::List l = Rcpp::List::create(Rcpp::Named("m1_probMat") = Rcpp::wrap(m1_probMat),
+                                      Rcpp::Named("m2_probMat") = Rcpp::wrap(m2_probMat),
+                                      Rcpp::Named("m3_probMat") = Rcpp::wrap(m3_probMat),
+                                      Rcpp::Named("m4_probMat") = Rcpp::wrap(m4_probMat),
+                                      Rcpp::Named("m5_probMat") = Rcpp::wrap(m5_probMat),
+                                      Rcpp::Named("m6_probMat") = Rcpp::wrap(m6_probMat));
+
+    std::string filename = "modelProbs_" + std::to_string(selectStrat) + "_" + rat + "_" + run +".RData";
+    R["l"] = l;
+    std::string rCode = "save(l, file='" + filename + "')";
+    R.parseEvalQ(rCode.c_str());
+                                  
+
     // COMMENTING OUT ARL
     // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
@@ -1318,8 +1436,8 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
     std::string rat = ratdata.getRat();
 
-    std::vector<std::string> trueGenStrategies = {"drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3"};
-    std::vector<std::string> selectedStrategies = {"aca2_Suboptimal_Hybrid3","drl_Optimal_Hybrid3","drl_Optimal_Hybrid3"};
+    // std::vector<std::string> trueGenStrategies = {"drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3"};
+    // std::vector<std::string> selectedStrategies = {"aca2_Suboptimal_Hybrid3","drl_Optimal_Hybrid3","drl_Optimal_Hybrid3"};
     //updateConfusionMatrix(trueGenStrategies,selectedStrategies,  rat, run);
 
 
@@ -1329,9 +1447,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         try {
             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i, run);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
+            //std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
             //std::vector<double> simClusterParams = findMultiObjClusterParamsWithSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams, true, run);
+            std::vector<std::vector<double>> modelParams = findParamsSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
+            runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, modelParams, true, run,i, R);
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception

@@ -3,80 +3,188 @@
 
 vector_double PagmoMle::fitness(const vector_double& v) const
 {
-    double alpha = v[0];
+    double alpha = 0;
     double gamma = 0;
     double lambda = 0;
     double crpAlpha = 0;
     double phi = 0;
     double eta = 0;
-    
-    Strategy strategy(mazeGraph,learningRule,alpha, gamma, lambda, crpAlpha, phi, eta, optimal);
-    
-    if(strategy.getName() == "aca2_Suboptimal_Hybrid3" || strategy.getName() == "aca2_Optimal_Hybrid3")
-    {
-        gamma = v[1];
-        lambda = 0;
-
-    }else if(strategy.getName() == "arl_Suboptimal_Hybrid3" || strategy.getName() == "arl_Optimal_Hybrid3")
-    {
-        gamma = v[1];
-        lambda = 0;
-    }else if (strategy.getName() == "drl_Suboptimal_Hybrid3" || strategy.getName() == "drl_Optimal_Hybrid3")
-    {
-        gamma = 1e-4;
-        lambda = v[1];
-    }
-    
-
-    std::vector<double> s0rewards;
-    std::vector<double> s1rewards;
-    if(optimal)
-    {
-        s0rewards = {0,0,0,0,0,0,0,5,0};
-        s1rewards = {0,0,0,0,0,0,0,0,5};
-
-        strategy.setRewardsS0(s0rewards);
-        strategy.setRewardsS1(s1rewards);
-
-    }else{
-        s0rewards = {0,0,0,0,0,0,5,5,0,0,0,0};
-        strategy.setRewardsS0(s0rewards);
-    }
-    
-    strategy.setAlpha(alpha);
-    strategy.setGamma(gamma);
-    strategy.setLambda(lambda);
-
-    strategy.resetCredits();
+    int n = 0;
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
 
-    double loglikelihood = 0;
-
-    if(!optimal)
-    {
-        sessions = 12; // For suboptimal strategies, use only first 11 sessions to learn the parameters to avoid underiftting
-    }
-
-    for(int ses=0; ses < sessions; ses++)
-    {
-        
-        double log_likelihood_ses = strategy.getTrajectoryLikelihood(ratdata, ses); 
-        loglikelihood = loglikelihood + log_likelihood_ses;
-        //std::cout << "strategy=" << strategy.getName() << ", alpha=" <<strategy.getAlpha() << ", gamma=" << strategy.getGamma() << ", lambda=" << strategy.getLambda() << ", ses=" << ses << ", loglikelihood=" << loglikelihood << std::endl;
-    }
-
-    loglikelihood = loglikelihood * (-1);
- 
-    // if(strategy.getName() == "arl_Optimal_Hybrid3")
-    // {
-    //     std::cout << "strategy=" << strategy.getName() << ", alpha=" <<strategy.getAlpha() << ", gamma=" << strategy.getGamma() << ", lambda=" << strategy.getLambda() << ", loglikelihood=" << loglikelihood << std::endl;
-    // }
+    double negloglikelihood = 0;
     
-    return{loglikelihood};
+    
+    
+    if(model == "m1")
+    {
+        double alpha_aca_subOptimal = v[0];
+        double gamma_aca_subOptimal = v[1];
+
+        double alpha_aca_optimal = v[0];
+        double gamma_aca_optimal = v[1];
+
+        n = static_cast<int>(std::floor(v[2]));
+
+        auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
+        auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
+
+        double ll1 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses = 0;
+            if(ses < n)
+            {
+            ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }else{
+            ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }
+            
+            ll_ses = ll_ses*(-1);
+            ll1 = ll1 + ll_ses;
+        }
+
+        negloglikelihood = ll1;
+
+    }else if (model=="m2")
+    {
+        double alpha_aca_subOptimal = v[0];
+        double gamma_aca_subOptimal = v[1];
+
+
+        double alpha_drl_optimal = v[2];
+        double beta_drl_optimal = v[3];
+        double lambda_drl_optimal = v[4];
+
+        n = static_cast<int>(std::floor(v[5]));
+
+        auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
+        auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
+
+        double ll2 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses = 0;
+            if(ses < n)
+            {
+            ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }else{
+            ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }
+            
+            ll_ses = ll_ses*(-1);
+            ll2 = ll2 + ll_ses;
+        }
+
+        negloglikelihood = ll2;
+
+    }else if (model=="m3")
+    {
+        double alpha_drl_subOptimal = v[0];
+        double beta_drl_subOptimal = v[1];
+        double lambda_drl_subOptimal = v[2];
+
+        double alpha_aca_optimal = v[3];
+        double gamma_aca_optimal = v[4];
+
+        n = static_cast<int>(std::floor(v[5]));
+
+   
+        auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
+        auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
+
+        double ll3 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses = 0;
+            if(ses < n)
+            {
+            ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }else{
+            ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }
+            
+            ll_ses = ll_ses*(-1);
+            ll3 = ll3 + ll_ses;
+        }
+
+        negloglikelihood = ll3;
+
+    
+    }else if (model=="m4")
+    {
+        double alpha_drl_subOptimal = v[0];
+        double beta_drl_subOptimal = v[1];
+        double lambda_drl_subOptimal = v[2];
+
+        double alpha_drl_optimal = v[0];
+        double beta_drl_optimal = v[1];
+        double lambda_drl_optimal = v[2];
+
+        n = static_cast<int>(std::floor(v[3]));
+
+        auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
+        auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
+
+        double ll4 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses = 0;
+            if(ses < n)
+            {
+                ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }else{
+                ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            }
+            
+            ll_ses = ll_ses*(-1);
+            ll4 = ll4 + ll_ses;
+        }
+
+        negloglikelihood = ll4;
+
+    }else if (model=="m5")
+    {
+        double alpha_aca_optimal = v[0];
+        double gamma_aca_optimal = v[1];
+
+        auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
+
+        double ll5 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            
+            ll_ses = ll_ses*(-1);
+            ll5 = ll5 + ll_ses;
+        }
+
+        negloglikelihood = ll5;
+    }else if (model=="m6")
+    {
+        double alpha_drl_optimal = v[0];
+        double beta_drl_optimal = v[1];
+        double lambda_drl_optimal = v[2];
+
+        auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
+
+        double ll6 = 0;
+        for(int ses=0; ses < sessions; ses++)
+        {
+            double ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+            
+            ll_ses = ll_ses*(-1);
+            ll6 = ll6 + ll_ses;
+        }
+        negloglikelihood = ll6;
+
+    }
+    
+    return{negloglikelihood};
 
 }
 
@@ -84,14 +192,30 @@ std::pair<vector_double, vector_double> PagmoMle::get_bounds() const
 {
     std::pair<vector_double, vector_double> bounds;
 
-    if(learningRule == "arl")
+    if(model == "m1")
     {
-        bounds.first={0,1e-8};
-        bounds.second={1,1e-6};
-    }else
+        bounds.first={0,0,1};
+        bounds.second={1,1,10};
+    }else if(model == "m2")
+    {
+        bounds.first={0,0,0,0,0,1};
+        bounds.second={1,1,1,1,1,10};
+    }else if (model=="m3")
+    {
+        bounds.first={0,0,0,0,0,1};
+        bounds.second={1,1,1,1,1,10};
+    }else if(model == "m4")
+    {
+        bounds.first={0,0,0,1};
+        bounds.second={1,1,1,10};
+    }else if(model == "m5")
     {
         bounds.first={0,0};
         bounds.second={1,1};
+    }else if(model == "m6")
+    {
+        bounds.first={0,0,0};
+        bounds.second={1,1,1};
     }
     
     // std::cout << "bounds.first:\n";

@@ -1,6 +1,7 @@
 #include "InferStrategy.h"
 #include "Pagmoprob.h"
 #include "PagmoMultiObjCluster.h"
+#include "PagmoMle.h"
 #include <RInside.h>
 #include <limits>
 #include <pagmo/algorithm.hpp>
@@ -251,6 +252,90 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     return;
 }
 
+std::vector<std::vector<double>> findParams(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3)
+{
+    std::vector<std::string> models = {"m1","m2","m3","m4","m5","m6"};
+    std::vector<std::vector<double>> modelParams;
+
+    std::string filename_cluster = "clusterMLE.txt";
+    std::ifstream cluster_infile(filename_cluster);
+    std::map<std::string, std::vector<double>> paramClusterMap;
+    boost::archive::text_iarchive ia_cluster(cluster_infile);
+    ia_cluster >> paramClusterMap;
+    cluster_infile.close();
+
+    std::cout << "paramClusterMap: ";
+    for (const auto& entry : paramClusterMap) {
+        const std::string& key = entry.first;
+        const std::vector<double>& values = entry.second;
+
+        // Print key
+        std::cout << "Key: " << key << ", Values: ";
+
+        // Print values in the vector
+        for (double value : values) {
+            std::cout << value << " ";
+        }
+
+        std::cout << std::endl;
+    }
+
+
+    for(int i=0; i<6; i++)
+    {
+        PagmoMle pagmomle(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3,models[i]);
+        std::cout << "Initialized problem class" <<std::endl;
+
+        // Create a problem using Pagmo
+        problem prob{pagmomle};
+
+        //pagmo::algorithm algo{de(5)};
+        pagmo::algorithm algo{sade(10,2,2)};
+
+
+        archipelago archi{5u, algo, prob, 10u};
+
+        // // ///4 - Run the evolution in parallel on the 5 separate islands 5 times.
+        archi.evolve(5);
+        // std::cout << "DONE1:"  << '\n';
+
+        // ///5 - Wait for the evolutions to finish.
+        archi.wait_check();
+
+        // ///6 - Print the fitness of the best solution in each island.
+
+        double champion_score = 1e8;
+        std::vector<double> dec_vec_champion;
+        for (const auto &isl : archi) {
+            std::vector<double> dec_vec = isl.get_population().champion_x();
+            
+            // std::cout << "champion:" <<isl.get_population().champion_f()[0] << '\n';
+            // for (auto const& i : dec_vec)
+            //     std::cout << i << ", ";
+            // std::cout << "\n" ;
+
+            double champion_isl = isl.get_population().champion_f()[0];
+            if(champion_isl < champion_score)
+            {
+                champion_score = champion_isl;
+                dec_vec_champion = dec_vec;
+            }
+        }
+
+        std::cout << "Final champion = " << champion_score << std::endl;
+        for (auto const& i : dec_vec_champion)
+            std::cout << i << ", ";
+        std::cout << "\n" ;
+
+
+        modelParams.push_back(dec_vec_champion);
+
+    }
+
+    return modelParams;
+}
+
+
 
 std::vector<double> findMultiObjClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3) {
 
@@ -385,12 +470,12 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
  
     //DRL params
     double alpha_drl_subOptimal = v[6];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[7];
+    double beta_drl_subOptimal = v[7];
+    double lambda_drl_subOptimal = v[8];
     
     double alpha_drl_optimal = v[6];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[7];
+    double beta_drl_optimal = v[7];
+    double lambda_drl_optimal = v[8];
 
     
     int n1 = static_cast<int>(std::floor(v[0]));
@@ -439,7 +524,16 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         ll_ses = ll_ses*(-1);
         ll1 = ll1 + ll_ses;
     }
-    double bic_score1 = 5*log(allpaths.n_rows)+ 2*ll1;
+    double bic_score1 = 3*log(allpaths.n_rows)+ 2*ll1;
+
+    arma::mat m1_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3->getPathProbMat(),aca2_Optimal_Hybrid3->getPathProbMat());
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
+
+
 
     double ll2 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -455,7 +549,15 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         ll_ses = ll_ses*(-1);
         ll2 = ll2 + ll_ses;
     }
-    double bic_score2 = 5*log(allpaths.n_rows)+ 2*ll2;
+    double bic_score2 = 6*log(allpaths.n_rows)+ 2*ll2;
+
+    arma::mat m2_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
+
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
     double ll3 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -471,7 +573,15 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         ll_ses = ll_ses*(-1);
         ll3 = ll3 + ll_ses;
     }
-    double bic_score3 = 5*log(allpaths.n_rows)+ 2*ll3;
+    double bic_score3 = 6*log(allpaths.n_rows)+ 2*ll3;
+
+    arma::mat m3_probMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),aca2_Optimal_Hybrid3->getPathProbMat());
+
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
 
     double ll4 = 0;
@@ -488,7 +598,14 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         ll_ses = ll_ses*(-1);
         ll4 = ll4 + ll_ses;
     }
-    double bic_score4 = 5*log(allpaths.n_rows)+ 2*ll4;
+    double bic_score4 = 4*log(allpaths.n_rows)+ 2*ll4;
+
+    arma::mat m4_probMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
 
 
     double ll5 = 0;
@@ -501,6 +618,13 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     }
     double bic_score5 = 2*log(allpaths.n_rows)+ 2*ll5;
 
+    arma::mat m5_probMat = aca2_Optimal_Hybrid3->getPathProbMat();
+
+    aca2_Suboptimal_Hybrid3->resetCredits();
+    aca2_Optimal_Hybrid3->resetCredits();
+    drl_Suboptimal_Hybrid3->resetCredits();
+    drl_Optimal_Hybrid3->resetCredits();
+
     double ll6 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
@@ -509,7 +633,9 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         ll_ses = ll_ses*(-1);
         ll6 = ll6 + ll_ses;
     }
-    double bic_score6 = 2*log(allpaths.n_rows)+ 2*ll6;
+    double bic_score6 = 3*log(allpaths.n_rows)+ 2*ll6;
+
+    arma::mat m6_probMat = drl_Optimal_Hybrid3->getPathProbMat();
 
     std::cout << "acaSubOpt + aca2Opt, n=" << n1  << ", lik=" << ll1 << ", bic=" << bic_score1 << std::endl;
     std::cout << "acaSubOpt + drlOpt, n=" << n2  << ", lik=" << ll2 << ", bic=" << bic_score2 << std::endl;
@@ -541,10 +667,6 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         }
     }
 
-    arma::mat& aca2_suboptimal_probs =  aca2_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& aca2_optimal_probs =  aca2_Optimal_Hybrid3->getPathProbMat();
-    arma::mat& drl_suboptimal_probs =  drl_Suboptimal_Hybrid3->getPathProbMat();
-    arma::mat& drl_optimal_probs =  drl_Optimal_Hybrid3->getPathProbMat();
     
     // COMMENTING OUT ARL
     // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
@@ -558,60 +680,68 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
     // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
 
     
-    if(rat=="rat_103")
-    {
-        arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-        arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
-
-        arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-        arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-
-        probMat = arma::join_rows(subOptProbMat,optProbMat);
+    // if(smallestIdx==0)
+    // {
         
 
-    }else  if(rat=="rat_106")
-    {
-        arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-        arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+    // }else  if(rat=="rat_106")
+    // {
+    //     arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+    //     arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
 
-        arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-        arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
+    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
 
-        probMat = arma::join_rows(subOptProbMat,optProbMat);
+    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
 
-    }else  if(rat=="rat_112")
-    {
-        arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-        arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+    // }else  if(rat=="rat_112")
+    // {
+    //     arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+    //     arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
 
-        arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-        arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
+    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
 
-        probMat = arma::join_rows(subOptProbMat,optProbMat);
+    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
         
-    }else  if(rat=="rat_113")
-    {
-        arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
-        arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
+    // }else  if(rat=="rat_113")
+    // {
+    //     arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
+    //     arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
 
-        arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-        arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
+    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
 
-        probMat = arma::join_rows(subOptProbMat,optProbMat);
+    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
         
-    }else  if(rat=="rat_114")
-    {
-        arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
-        arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
+    // }else  if(rat=="rat_114")
+    // {
+    //     arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
+    //     arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
 
-        arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-        arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
+    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
 
-        probMat = arma::join_rows(subOptProbMat,optProbMat);
+    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
         
-    }
+    // }
 
-    probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
+    // arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
+    // arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
+
+    // arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
+    // arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
+    // probMat = arma::join_cols(subOptProbMat,optProbMat);
+
+
+    // probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
+
+    m1_probMat.save("m1_probMat_" + rat+ ".csv", arma::csv_ascii);
+    m2_probMat.save("m2_probMat_"+ rat+".csv", arma::csv_ascii);
+    m3_probMat.save("m3_probMat_"+ rat+".csv", arma::csv_ascii);
+    m4_probMat.save("m4_probMat_" + rat+ ".csv", arma::csv_ascii);
+    m5_probMat.save("m5_probMat_"+ rat+".csv", arma::csv_ascii);
+    m6_probMat.save("m6_probMat_" + rat+ ".csv", arma::csv_ascii);
     
     return allRecordRes;
 }

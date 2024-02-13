@@ -15,9 +15,9 @@ class PagmoMle {
 public:
   PagmoMle();
   // Constructor
-  PagmoMle(const RatData& ratdata_, const MazeGraph& mazeGraph_,  
-  std::string learningRule_, bool optimal_):
-  ratdata(ratdata_),  mazeGraph(mazeGraph_), learningRule(learningRule_), optimal(optimal_) {}
+  PagmoMle(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
+  const MazeGraph& Optimal_Hybrid3_, std::string model_):
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), model(model_) {}
 
 
   // Destructor
@@ -33,9 +33,9 @@ public:
 private:
   // Members
   const RatData& ratdata;
-  const MazeGraph& mazeGraph;
-  const std::string learningRule;
-  const bool optimal;
+  const MazeGraph& Suboptimal_Hybrid3;
+  const MazeGraph& Optimal_Hybrid3;
+  const std::string model;
 
   
 };
