@@ -1,5 +1,6 @@
 #include "InferStrategy.h"
 #include "Simulation.h"
+#include "ParticleFilter.h"
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/map.hpp>
@@ -61,7 +62,7 @@ int main(int argc, char* argv[])
 
 
         //Estimate cluster parameters and write to clusterParams.txt
-        findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
+        //findClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
         //findMultiObjClusterParams(rdata, suboptimalHybrid3, optimalHybrid3);
 
         // //read clusterParams.txt to get the parameters for rat
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
         // inFile.close();
 
 
-        runEM(rdata, suboptimalHybrid3, optimalHybrid3, modelParams,R, true);
+        //runEM(rdata, suboptimalHybrid3, optimalHybrid3, modelParams,R, true);
 
         //runEM2(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
