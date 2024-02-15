@@ -73,6 +73,14 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
+        //   int N = 100;
+
+        // Run the particle filter algorithm
+        vector<double> q = particle_filter(N, RatData& ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, v );
+
+
+
+
         // std::vector<std::vector<double>> modelParams;
         // std::string rat = rdata.getRat();
         // std::string filename = "clusterMLE_" + rat + ".txt" ;
