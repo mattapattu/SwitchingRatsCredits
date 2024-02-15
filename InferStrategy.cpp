@@ -252,39 +252,15 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     return;
 }
 
-std::vector<std::vector<double>> findParams(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3)
+void findParams(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3)
 {
     std::vector<std::string> models = {"m1","m2","m3","m4","m5","m6"};
     std::vector<std::vector<double>> modelParams;
 
-    std::string filename_cluster = "clusterMLE.txt";
-    std::ifstream cluster_infile(filename_cluster);
-    std::map<std::string, std::vector<double>> paramClusterMap;
-    boost::archive::text_iarchive ia_cluster(cluster_infile);
-    ia_cluster >> paramClusterMap;
-    cluster_infile.close();
-
-    std::cout << "paramClusterMap: ";
-    for (const auto& entry : paramClusterMap) {
-        const std::string& key = entry.first;
-        const std::vector<double>& values = entry.second;
-
-        // Print key
-        std::cout << "Key: " << key << ", Values: ";
-
-        // Print values in the vector
-        for (double value : values) {
-            std::cout << value << " ";
-        }
-
-        std::cout << std::endl;
-    }
-
-
     for(int i=0; i<6; i++)
     {
         PagmoMle pagmomle(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3,models[i]);
-        std::cout << "Initialized problem class" <<std::endl;
+        std::cout << "Initialized problem class, model=" << models[i] <<std::endl;
 
         // Create a problem using Pagmo
         problem prob{pagmomle};
@@ -322,7 +298,22 @@ std::vector<std::vector<double>> findParams(RatData& ratdata, MazeGraph& Subopti
             }
         }
 
+        // pagmo::thread_bfe thread_bfe;
+        // pagmo::pso_gen method ( 10 );
+        // //pagmo::gaco method(10);
+        // method.set_bfe ( pagmo::bfe { thread_bfe } );
+        // pagmo::algorithm algo = pagmo::algorithm { method };
+        // pagmo::population pop { prob, thread_bfe, 100 };
+        // // Evolve the population for 100 generations
+        // for ( auto evolution = 0; evolution < 5; evolution++ ) {
+        //     pop = algo.evolve(pop);
+        // }
+
+        // std::vector<double> dec_vec_champion = pop.champion_x();
+        // std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
+
         std::cout << "Final champion = " << champion_score << std::endl;
+        std::cout << "dec_vec_champion: " << std::endl;
         for (auto const& i : dec_vec_champion)
             std::cout << i << ", ";
         std::cout << "\n" ;
@@ -331,8 +322,19 @@ std::vector<std::vector<double>> findParams(RatData& ratdata, MazeGraph& Subopti
         modelParams.push_back(dec_vec_champion);
 
     }
+    std::string rat = ratdata.getRat();
+    std::string filename_cluster = "clusterMLE_" + rat + ".txt" ;
+    std::ofstream outFile(filename_cluster);
+    for (const auto &vec : modelParams) {
+        for (const auto &val : vec) {
+            outFile << val << ' ';
+        }
+        outFile << '\n';
+    }
+    outFile.close();
 
-    return modelParams;
+
+    return ;
 }
 
 
@@ -448,92 +450,115 @@ std::vector<double> findMultiObjClusterParams(const RatData& ratdata, const Maze
 
 
 
-std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::map<std::string, std::vector<double>> clusterParams, bool debug)
+void runEM(RatData& ratdata, MazeGraph& Suboptimal_Hybrid3, MazeGraph& Optimal_Hybrid3, std::vector<std::vector<double>> modelParams, RInside& R, bool debug)
 {
     
     std::string rat = ratdata.getRat();
-    std::vector<double> v = clusterParams[rat]; 
-        double alpha_aca_subOptimal = v[4];
-    double gamma_aca_subOptimal = v[5];
 
-    double alpha_aca_optimal = v[4];
-    double gamma_aca_optimal = v[5];
+    //m1 params
+    std::vector<double> v1 = modelParams[0];
 
-    //ARL params
-    // double alpha_arl_subOptimal = params.find(std::make_pair("arl", false))->second[0];
-    // double beta_arl_subOptimal = 1e-7;
-    // double lambda_arl_subOptimal = params.find(std::make_pair("arl", false))->second[1];
-    
-    // double alpha_arl_optimal = params.find(std::make_pair("arl", true))->second[0];
-    // double beta_arl_optimal = 1e-7;
-    // double lambda_arl_optimal = params.find(std::make_pair("arl", true))->second[1];
+    double alpha_aca_subOptimal_m1 = v1[0];
+    double gamma_aca_subOptimal_m1 = v1[1];
+    double alpha_aca_optimal_m1 = v1[0];
+    double gamma_aca_optimal_m1 = v1[1];
+
+    int n1 = static_cast<int>(std::floor(v1[2]));
  
-    //DRL params
-    double alpha_drl_subOptimal = v[6];
-    double beta_drl_subOptimal = v[7];
-    double lambda_drl_subOptimal = v[8];
+    //m2 params
+    std::vector<double> v2 = modelParams[1];
     
-    double alpha_drl_optimal = v[6];
-    double beta_drl_optimal = v[7];
-    double lambda_drl_optimal = v[8];
+    double alpha_aca_subOptimal_m2 = v2[0];
+    double gamma_aca_subOptimal_m2 = v2[1];
 
-    
-    int n1 = static_cast<int>(std::floor(v[0]));
-    int n2 = static_cast<int>(std::floor(v[1]));
-    int n3 = static_cast<int>(std::floor(v[2]));
-    int n4 = static_cast<int>(std::floor(v[3]));
+    double alpha_drl_optimal_m2 = v2[2];
+    double beta_drl_optimal_m2 = v2[3];
+    double lambda_drl_optimal_m2 = v2[4];
 
-    if(debug)
-    {
-        std::cout << "alpha_aca_subOptimal=" << alpha_aca_subOptimal << ", gamma_aca_subOptimal=" << gamma_aca_subOptimal << ", alpha_aca_optimal=" << alpha_aca_optimal << ", gamma_aca_optimal=" << gamma_aca_optimal << std::endl;
-    }
-    
+    int n2 = static_cast<int>(std::floor(v2[5]));
+
+
+    //m3 params
+    std::vector<double> v3 = modelParams[2];
+
+    double alpha_drl_subOptimal_m3 = v3[0];
+    double beta_drl_subOptimal_m3 = v3[1];
+    double lambda_drl_subOptimal_m3 = v3[2];
+
+    double alpha_aca_optimal_m3 = v3[3];
+    double gamma_aca_optimal_m3 = v3[4];
+    int n3 = static_cast<int>(std::floor(v3[5]));   
+
+    //m4
+    std::vector<double> v4 = modelParams[3];
+
+    double alpha_drl_subOptimal_m4 = v4[0];
+    double beta_drl_subOptimal_m4 = v4[1];
+    double lambda_drl_subOptimal_m4 = v4[2];
+
+    double alpha_drl_optimal_m4 = v4[0];
+    double beta_drl_optimal_m4 = v4[1];
+    double lambda_drl_optimal_m4 = v4[2];
+
+    int n4 = static_cast<int>(std::floor(v4[3]));
+
+    //m5
+    std::vector<double> v5 = modelParams[4];
+    double alpha_aca_optimal_m5 = v5[0];
+    double gamma_aca_optimal_m5 = v5[1];
+
+    //m6
+    std::vector<double> v6 = modelParams[5];
+    double alpha_drl_optimal_m6 = v6[0];
+    double beta_drl_optimal_m6 = v6[1];
+    double lambda_drl_optimal_m6 = v6[2];
+
+      
     // Create instances of Strategy
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
+    auto aca2_Suboptimal_Hybrid3_m1 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal_m1, gamma_aca_subOptimal_m1, 0, 0, 0, 0, false);
+    auto aca2_Optimal_Hybrid3_m1 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m1, gamma_aca_optimal_m1, 0, 0, 0, 0, true);
+
+    auto aca2_Suboptimal_Hybrid3_m2 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal_m2, gamma_aca_subOptimal_m2, 0, 0, 0, 0, false);
+    auto drl_Optimal_Hybrid3_m2 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m2, beta_drl_optimal_m2, lambda_drl_optimal_m2, 0, 0, 0, true);
+
     
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
+    auto drl_Suboptimal_Hybrid3_m3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal_m3, beta_drl_subOptimal_m3, lambda_drl_subOptimal_m3, 0, 0, 0, false);
+    auto aca2_Optimal_Hybrid3_m3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m3, gamma_aca_optimal_m3, 0, 0, 0, 0, true);
 
-    // auto arl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"arl", alpha_arl_subOptimal, beta_arl_subOptimal, lambda_arl_subOptimal, crpAlpha, phi, eta, false);
-    // auto arl_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"arl",alpha_arl_optimal, beta_arl_optimal, lambda_arl_optimal, crpAlpha, phi, eta, true);
 
+    auto drl_Suboptimal_Hybrid3_m4 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal_m4, beta_drl_subOptimal_m4, lambda_drl_subOptimal_m4, 0, 0, 0, false);
+    auto drl_Optimal_Hybrid3_m4 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m4, beta_drl_optimal_m4, lambda_drl_optimal_m4, 0, 0, 0, true);
+
+    auto aca2_Optimal_Hybrid3_m5 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal_m5, gamma_aca_optimal_m5, 0, 0, 0, 0, true);
+
+    auto drl_Optimal_Hybrid3_m6 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal_m6, beta_drl_optimal_m6, lambda_drl_optimal_m6, 0, 0, 0, true);
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-
+    
     std::vector<std::string> cluster;
     std::string last_choice;
-    
-    arma::mat probMat;
-    
-    std::vector<RecordResults> allRecordRes;
+
+    RecordResults allResults("None", {}, {}, {}, {}, {});
+
     double ll1 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
         double ll_ses = 0;
         if(ses < n1)
         {
-           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Suboptimal_Hybrid3_m1->getTrajectoryLikelihood(ratdata, ses);
         }else{
-           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Optimal_Hybrid3_m1->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll1 = ll1 + ll_ses;
     }
+    arma::mat m1_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3_m1->getPathProbMat(),aca2_Optimal_Hybrid3_m1->getPathProbMat());
     double bic_score1 = 3*log(allpaths.n_rows)+ 2*ll1;
-
-    arma::mat m1_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3->getPathProbMat(),aca2_Optimal_Hybrid3->getPathProbMat());
-
-    aca2_Suboptimal_Hybrid3->resetCredits();
-    aca2_Optimal_Hybrid3->resetCredits();
-    drl_Suboptimal_Hybrid3->resetCredits();
-    drl_Optimal_Hybrid3->resetCredits();
-
-
 
     double ll2 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -541,23 +566,16 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         double ll_ses = 0;
         if(ses < n2)
         {
-           ll_ses  = aca2_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Suboptimal_Hybrid3_m2->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Optimal_Hybrid3_m2->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll2 = ll2 + ll_ses;
     }
+    arma::mat m2_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3_m2->getPathProbMat(),drl_Optimal_Hybrid3_m2->getPathProbMat());
     double bic_score2 = 6*log(allpaths.n_rows)+ 2*ll2;
-
-    arma::mat m2_probMat = arma::join_cols(aca2_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
-
-
-    aca2_Suboptimal_Hybrid3->resetCredits();
-    aca2_Optimal_Hybrid3->resetCredits();
-    drl_Suboptimal_Hybrid3->resetCredits();
-    drl_Optimal_Hybrid3->resetCredits();
 
     double ll3 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -565,24 +583,16 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         double ll_ses = 0;
         if(ses < n3)
         {
-           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Suboptimal_Hybrid3_m3->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = aca2_Optimal_Hybrid3_m3->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll3 = ll3 + ll_ses;
     }
+    arma::mat m3_probMat = arma::join_cols(drl_Suboptimal_Hybrid3_m3->getPathProbMat(),aca2_Optimal_Hybrid3_m3->getPathProbMat());
     double bic_score3 = 6*log(allpaths.n_rows)+ 2*ll3;
-
-    arma::mat m3_probMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),aca2_Optimal_Hybrid3->getPathProbMat());
-
-
-    aca2_Suboptimal_Hybrid3->resetCredits();
-    aca2_Optimal_Hybrid3->resetCredits();
-    drl_Suboptimal_Hybrid3->resetCredits();
-    drl_Optimal_Hybrid3->resetCredits();
-
 
     double ll4 = 0;
     for(int ses=0; ses < sessions; ses++)
@@ -590,52 +600,38 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
         double ll_ses = 0;
         if(ses < n4)
         {
-           ll_ses  = drl_Suboptimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Suboptimal_Hybrid3_m4->getTrajectoryLikelihood(ratdata, ses); 
         }else{
-           ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+           ll_ses  = drl_Optimal_Hybrid3_m4->getTrajectoryLikelihood(ratdata, ses); 
         }
         
         ll_ses = ll_ses*(-1);
         ll4 = ll4 + ll_ses;
     }
+    arma::mat m4_probMat = arma::join_cols(drl_Suboptimal_Hybrid3_m4->getPathProbMat(),drl_Optimal_Hybrid3_m4->getPathProbMat());
     double bic_score4 = 4*log(allpaths.n_rows)+ 2*ll4;
-
-    arma::mat m4_probMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
-
-    aca2_Suboptimal_Hybrid3->resetCredits();
-    aca2_Optimal_Hybrid3->resetCredits();
-    drl_Suboptimal_Hybrid3->resetCredits();
-    drl_Optimal_Hybrid3->resetCredits();
-
 
     double ll5 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
-        double ll_ses  = aca2_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        double ll_ses  = aca2_Optimal_Hybrid3_m5->getTrajectoryLikelihood(ratdata, ses); 
         
         ll_ses = ll_ses*(-1);
         ll5 = ll5 + ll_ses;
     }
+    arma::mat m5_probMat = aca2_Optimal_Hybrid3_m5->getPathProbMat();
     double bic_score5 = 2*log(allpaths.n_rows)+ 2*ll5;
-
-    arma::mat m5_probMat = aca2_Optimal_Hybrid3->getPathProbMat();
-
-    aca2_Suboptimal_Hybrid3->resetCredits();
-    aca2_Optimal_Hybrid3->resetCredits();
-    drl_Suboptimal_Hybrid3->resetCredits();
-    drl_Optimal_Hybrid3->resetCredits();
 
     double ll6 = 0;
     for(int ses=0; ses < sessions; ses++)
     {
-        double ll_ses  = drl_Optimal_Hybrid3->getTrajectoryLikelihood(ratdata, ses); 
+        double ll_ses  = drl_Optimal_Hybrid3_m6->getTrajectoryLikelihood(ratdata, ses); 
         
         ll_ses = ll_ses*(-1);
         ll6 = ll6 + ll_ses;
     }
+    arma::mat m6_probMat = drl_Optimal_Hybrid3_m6->getPathProbMat();
     double bic_score6 = 3*log(allpaths.n_rows)+ 2*ll6;
-
-    arma::mat m6_probMat = drl_Optimal_Hybrid3->getPathProbMat();
 
     std::cout << "acaSubOpt + aca2Opt, n=" << n1  << ", lik=" << ll1 << ", bic=" << bic_score1 << std::endl;
     std::cout << "acaSubOpt + drlOpt, n=" << n2  << ", lik=" << ll2 << ", bic=" << bic_score2 << std::endl;
@@ -663,87 +659,78 @@ std::vector<RecordResults> runEM(RatData& ratdata, MazeGraph& suboptimalHybrid3,
             smallestIdx = std::distance(bic_scores.begin(), it);
             std::cout << "Index of the smallest element: " << smallestIdx << std::endl;
         } else {
-            std::cout << "Error: Couldn't find the index of the largest element." << std::endl;
+            std::cout << "Error: Couldn't find the index of the smallest element." << std::endl;
         }
     }
 
+    std::vector<std::string> selectedStrategies;
+    std::vector<std::string> trueGenStrategies = ratdata.getGeneratorStrategies();
+    if(smallestIdx == 0)
+    {
+        std::vector<std::string> v(sessions, "aca2_Suboptimal_Hybrid3"); 
+        for (int i = n1; i < sessions; i++) {
+            v[i] = "aca2_Optimal_Hybrid3"; // Set the i-th element to acaOpt
+        }
+        selectedStrategies = v;
+    }else if(smallestIdx == 1)
+    {
+        std::vector<std::string> v(sessions, "aca2_Suboptimal_Hybrid3"); 
+        for (int i = n2; i < sessions; i++) {
+            v[i] = "drl_Optimal_Hybrid3"; // Set the i-th element to acaOpt
+        }
+        selectedStrategies = v;
+    }else if(smallestIdx == 2)
+    {
+        std::vector<std::string> v(sessions, "drl_Suboptimal_Hybrid3"); 
+        for (int i = n3; i < sessions; i++) {
+            v[i] = "aca2_Optimal_Hybrid3"; // Set the i-th element to acaOpt
+        }
+        selectedStrategies = v;
+    }else if(smallestIdx == 3)
+    {
+        std::vector<std::string> v(sessions, "drl_Suboptimal_Hybrid3"); 
+        for (int i = n4; i < sessions; i++) {
+            v[i] = "drl_Optimal_Hybrid3"; // Set the i-th element to acaOpt
+        }
+        selectedStrategies = v;
+    }else if(smallestIdx == 4)
+    {
+        std::vector<std::string> v(sessions, "aca2_Optimal_Hybrid3"); 
+        selectedStrategies = v;
+    }else if(smallestIdx == 5)
+    {
+        std::vector<std::string> v(sessions, "drl_Optimal_Hybrid3"); 
+        selectedStrategies = v;
+    }else if(smallestIdx == 5)
+    {
+        std::cout << "No bic score sufficiently small";
+        std::vector<std::string> v(sessions, "None"); 
+        selectedStrategies = v;
+    }
+
+    // probMat.save("ProbMat_Sim_" + rat+ ".csv", arma::csv_ascii);
+   
+
+    // m1_probMat.save("m1_probMat_" + rat+ ".csv", arma::csv_ascii);
+    // m2_probMat.save("m2_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m3_probMat.save("m3_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m4_probMat.save("m4_probMat_" + rat+ ".csv", arma::csv_ascii);
+    // m5_probMat.save("m5_probMat_"+ rat+".csv", arma::csv_ascii);
+    // m6_probMat.save("m6_probMat_" + rat+ ".csv", arma::csv_ascii);
+
+    Rcpp::List l = Rcpp::List::create(Rcpp::Named("m1_probMat") = Rcpp::wrap(m1_probMat),
+                                      Rcpp::Named("m2_probMat") = Rcpp::wrap(m2_probMat),
+                                      Rcpp::Named("m3_probMat") = Rcpp::wrap(m3_probMat),
+                                      Rcpp::Named("m4_probMat") = Rcpp::wrap(m4_probMat),
+                                      Rcpp::Named("m5_probMat") = Rcpp::wrap(m5_probMat),
+                                      Rcpp::Named("m6_probMat") = Rcpp::wrap(m6_probMat));
+
+    std::string filename = "modelProbs_" + rat + ".RData";
+    R["l"] = l;
+    std::string rCode = "save(l, file='" + filename + "')";
+    R.parseEvalQ(rCode.c_str());
     
-    // COMMENTING OUT ARL
-    // arma::mat& arl_suboptimal_probs =  arl_Suboptimal_Hybrid3->getPathProbMat();
-    // arma::mat& arl_optimal_probs =  arl_Optimal_Hybrid3->getPathProbMat();
-
-    // aca2_suboptimal_probs.save("aca2_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // aca2_optimal_probs.save("aca2_optimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_suboptimal_probs.save("drl_suboptimal_probs_"+ rat+".csv", arma::csv_ascii);
-    // drl_optimal_probs.save("drl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // arl_suboptimal_probs.save("arl_suboptimal_probs_" + rat+ ".csv", arma::csv_ascii);
-    // arl_optimal_probs.save("arl_optimal_probs_" + rat+ ".csv", arma::csv_ascii);
-
-    
-    // if(smallestIdx==0)
-    // {
-        
-
-    // }else  if(rat=="rat_106")
-    // {
-    //     arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-    //     arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
-
-    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-
-    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
-
-    // }else  if(rat=="rat_112")
-    // {
-    //     arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-    //     arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
-
-    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-
-    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
-        
-    // }else  if(rat=="rat_113")
-    // {
-    //     arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
-    //     arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
-
-    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-
-    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
-        
-    // }else  if(rat=="rat_114")
-    // {
-    //     arma::uvec subOptIndices = arma::find(drl_suboptimal_probs.col(13) < n4);
-    //     arma::mat subOptProbMat = drl_suboptimal_probs.rows(subOptIndices);
-
-    //     arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-    //     arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-
-    //     probMat = arma::join_cols(subOptProbMat,optProbMat);
-        
-    // }
-
-    // arma::uvec subOptIndices = arma::find(aca2_suboptimal_probs.col(13) < n2);
-    // arma::mat subOptProbMat = aca2_suboptimal_probs.rows(subOptIndices);
-
-    // arma::uvec optIndices = arma::find(drl_optimal_probs.col(13) >= n2);
-    // arma::mat optProbMat = drl_optimal_probs.rows(optIndices);
-    // probMat = arma::join_cols(subOptProbMat,optProbMat);
-
-
-    // probMat.save("ProbMat_" + rat+ ".csv", arma::csv_ascii);
-
-    m1_probMat.save("m1_probMat_" + rat+ ".csv", arma::csv_ascii);
-    m2_probMat.save("m2_probMat_"+ rat+".csv", arma::csv_ascii);
-    m3_probMat.save("m3_probMat_"+ rat+".csv", arma::csv_ascii);
-    m4_probMat.save("m4_probMat_" + rat+ ".csv", arma::csv_ascii);
-    m5_probMat.save("m5_probMat_"+ rat+".csv", arma::csv_ascii);
-    m6_probMat.save("m6_probMat_" + rat+ ".csv", arma::csv_ascii);
-    
-    return allRecordRes;
+    return;
 }
 
 

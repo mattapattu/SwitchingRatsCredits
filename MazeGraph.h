@@ -13,9 +13,10 @@ struct MazeEdge {
 
 class MazeGraph{
     public:
-        MazeGraph(const Rcpp::S4& turnModel, bool optimal){
+        MazeGraph(const Rcpp::S4& turnModel, bool optimal_){
            
             name = Rcpp::as<std::string>(turnModel.slot("Name"));
+            optimal = optimal_;
 
             Rcpp::S4 s4graphS0 = Rcpp::as<Rcpp::S4>(turnModel.slot("S0"));
             Rcpp::CharacterVector rcppNodeListS0 = turnModel.slot("nodes.S0");
@@ -230,6 +231,11 @@ class MazeGraph{
             return nodeGroups;
         }
 
+        bool getOptimal()
+        {
+            return optimal;
+        }
+
 
     private:
         
@@ -265,6 +271,7 @@ class MazeGraph{
 
 
         std::vector<std::vector<int>> nodeGroups;
+        bool optimal;
 
 
 

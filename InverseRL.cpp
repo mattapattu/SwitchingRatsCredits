@@ -64,7 +64,7 @@ void printFirst5Rows(const arma::mat& matrix, std::string matname) {
 }
 
 
-void updateRewardFunction(const RatData& ratdata, int session, Strategy& strategy)
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> getRewardFunctions(const RatData& ratdata, Strategy& strategy, double phi)
 {
   arma::mat allpaths = ratdata.getPaths();
   std::string strategy_name = strategy.getName();
@@ -74,180 +74,226 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
   arma::vec allpath_rewards = allpaths.col(2);
   arma::vec sessionVec = allpaths.col(4);
   arma::vec uniqSessIdx = arma::unique(sessionVec);
+  int sessions = uniqSessIdx.n_elem;
+
 
   bool sim = ratdata.getSim();
   
   BoostGraph& S0 = strategy.getStateS0();
   BoostGraph& S1 = strategy.getStateS1();
 
-  int sessId = uniqSessIdx(session);
-  //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
-  arma::uvec sessionIdx = arma::find(sessionVec == sessId);
-  arma::vec actions_sess = allpath_actions.elem(sessionIdx);
-  arma::vec states_sess = allpath_states.elem(sessionIdx);
-  arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
-  
-  int initState = 0;
-  bool changeState = false;
-  bool returnToInitState = false;
-  // float avg_score = 0;
-  bool resetVector = true;
-  int nrow = actions_sess.n_rows;
-  int S;
-  if(sim == 1)
+    // set reward learning rate to 0.01
+  strategy.setPhi(phi);
+
+  std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> rewardFunctions;
+
+  for(int ses=0; ses < sessions; ses++)
   {
-    S = states_sess(0); 
-  }
-  else
-  {
-    S = states_sess(0) - 1; 
-  }
-  int A = 0;
-  std::vector<double> rewardUpdatesS0;
-  std::vector<double> rewardUpdatesS1;
-  
-  for (int i = 0; i < nrow; i++)
-  {
+      int sessId = uniqSessIdx(ses);
+    //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
+    arma::uvec sessionIdx = arma::find(sessionVec == sessId);
+    arma::vec actions_sess = allpath_actions.elem(sessionIdx);
+    arma::vec states_sess = allpath_states.elem(sessionIdx);
+    arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
     
-    if (resetVector)
+    int initState = 0;
+    bool changeState = false;
+    bool returnToInitState = false;
+    // float avg_score = 0;
+    bool resetVector = true;
+    int nrow = actions_sess.n_rows;
+    int S;
+    if(sim == 1)
     {
-      initState = S;
-      //Rcpp::Rcout <<"initState="<<initState<<std::endl;
-      resetVector = false;
-    }
-    
-    //double pathReward=0.0;
-    
-    if (sim == 1)
-    {
-      A = actions_sess(i);
+      S = states_sess(0); 
     }
     else
     {
-      A = actions_sess(i) - 1;
+      S = states_sess(0) - 1; 
+    }
+    int A = 0;
+    std::vector<double> rewardUpdatesS0;
+    std::vector<double> rewardUpdatesS1;
+    std::vector<double> rewardsS0; 
+    std::vector<double> rewardsS1; 
+    if(ses==0)
+    {
+      if(strategy.getOptimal())
+      {
+          rewardsS0 = {0,0,0,0,0,0,0,0,0};
+          rewardsS1 = {0,0,0,0,0,0,0,0,0};
+      }else{
+          rewardsS0 = {0,0,0,0,0,0,0,0,0,0,0,0};
+      }
+
+    }else{
+      if(strategy.getOptimal())
+      {
+        rewardsS0 = rewardFunctions.first[ses-1];
+        rewardsS1 = rewardFunctions.second[ses-1];
+      }else{
+        rewardsS0 = rewardFunctions.first[ses-1];
+      }
+      
     }
 
-    double R = rewards_sess(i);
-    if(R > 0)
+    
+    for (int i = 0; i < nrow; i++)
     {
-      R = 5;
-    }
-
-    int S_prime = 0;
-    if(i < (nrow-1))
-    {
+      
+      if (resetVector)
+      {
+        initState = S;
+        //Rcpp::Rcout <<"initState="<<initState<<std::endl;
+        resetVector = false;
+      }
+      
+      //double pathReward=0.0;
+      
       if (sim == 1)
       {
-        S_prime = states_sess(i + 1);
+        A = actions_sess(i);
       }
       else
       {
-        S_prime = states_sess(i + 1) - 1;
+        A = actions_sess(i) - 1;
       }
-    }
-    
-    if (S_prime != initState)
-    {
-      changeState = true;
-    }
-    else if (S_prime == initState && changeState)
-    {
-      returnToInitState = true;
-    }
-    
-    BoostGraph::Vertex prevNode;
-    BoostGraph::Vertex currNode;
-    BoostGraph::Vertex rootNode;
-    std::vector<double> rewardVec;
-    BoostGraph* graph;
-    std::vector<double> rewardsS0 = strategy.getRewardsS0();
-    std::vector<double> rewardsS1 = strategy.getRewardsS1();
 
-    if (S == 0 && strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
-    }else if(S == 1 && strategy.getOptimal())
-    {
-      graph = &S1;
-      rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
-    }else if(S == 0 && !strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
-    }else if(S == 1 && !strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
-    }
-    std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
-    int nbOfTurns = turns.size();
-
-
-    for (int j = 0; j < nbOfTurns; j++)
-    {
-      std::string currTurn = turns[j]; 
-      currNode = graph->findNode(currTurn);
-      int nodeId = graph->getNodeId(currNode);
-      double crpPosterior = strategy.getCrpPosterior(session);
-      if (j == (nbOfTurns - 1))
+      double R = rewards_sess(i);
+      if(R > 0)
       {
-        rewardVec[nodeId] += strategy.getPhi() * crpPosterior *(R-rewardVec[nodeId]);
+        R = 5;
       }
-      else
+
+      int S_prime = 0;
+      if(i < (nrow-1))
       {
-        rewardVec[nodeId] +=  strategy.getPhi() * crpPosterior *(-rewardVec[nodeId]);;
+        if (sim == 1)
+        {
+          S_prime = states_sess(i + 1);
+        }
+        else
+        {
+          S_prime = states_sess(i + 1) - 1;
+        }
       }
-      //std::cout << "strategy=" << strategy_name << ", currNode=" << ", rewardVec=" << rewardVec[nodeId] << std::endl;
+      
+      if (S_prime != initState)
+      {
+        changeState = true;
+      }
+      else if (S_prime == initState && changeState)
+      {
+        returnToInitState = true;
+      }
+      
+      BoostGraph::Vertex prevNode;
+      BoostGraph::Vertex currNode;
+      BoostGraph::Vertex rootNode;
+      std::vector<double> rewardVec;
+      BoostGraph* graph;
 
       if (S == 0 && strategy.getOptimal())
       {
-        strategy.setRewardsS0(rewardVec);
+        graph = &S0;
+        rootNode = graph->findNode("E");
+        rewardVec = rewardsS0;
       }else if(S == 1 && strategy.getOptimal())
       {
-        strategy.setRewardsS1(rewardVec);
+        graph = &S1;
+        rootNode = graph->findNode("I");
+        rewardVec = rewardsS1;
       }else if(S == 0 && !strategy.getOptimal())
       {
-        strategy.setRewardsS0(rewardVec);
+        graph = &S0;
+        rootNode = graph->findNode("E");
+        rewardVec = rewardsS0;
       }else if(S == 1 && !strategy.getOptimal())
       {
-        strategy.setRewardsS0(rewardVec);
+        graph = &S0;
+        rootNode = graph->findNode("I");
+        rewardVec = rewardsS0;
       }
-     
-      BoostGraph::Edge edge;
-      if(j==0)
-      {
-        edge = graph->findEdge(rootNode, currNode);
-      }
-      else
-      {
-        edge = graph->findEdge(prevNode, currNode);
-      }
+      std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
+      int nbOfTurns = turns.size();
 
- 
-      //Rcpp::Rcout <<"prob_a="<< prob_a << ", pathProb=" <<pathProb <<std::endl;
+
+      for (int j = 0; j < nbOfTurns; j++)
+      {
+        std::string currTurn = turns[j]; 
+        currNode = graph->findNode(currTurn);
+        int nodeId = graph->getNodeId(currNode);
+        if (j == (nbOfTurns - 1))
+        {
+          rewardVec[nodeId] += strategy.getPhi() * (R-rewardVec[nodeId]);
+        }
+        else
+        {
+          rewardVec[nodeId] +=  strategy.getPhi() * (-rewardVec[nodeId]);;
+        }
+        //std::cout << "strategy=" << strategy_name << ", currNode=" << ", rewardVec=" << rewardVec[nodeId] << std::endl;
+
+        
       
-      prevNode = currNode;
-    } 
-      
-    //Check if episode ended
-    if (returnToInitState || (i==nrow-1))
-    {
-      //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
-      changeState = false;
-      returnToInitState = false;   
-      
-      resetVector = true;
+        BoostGraph::Edge edge;
+        if(j==0)
+        {
+          edge = graph->findEdge(rootNode, currNode);
+        }
+        else
+        {
+          edge = graph->findEdge(prevNode, currNode);
+        }
+
+  
+        //Rcpp::Rcout <<"prob_a="<< prob_a << ", pathProb=" <<pathProb <<std::endl;
+        
+        prevNode = currNode;
+      } 
+
+      if (S == 0 && strategy.getOptimal())
+      {
+        //strategy.setRewardsS0(rewardVec);
+        rewardsS0=rewardVec;
+      }else if(S == 1 && strategy.getOptimal())
+      {
+        //strategy.setRewardsS1(rewardVec);
+        rewardsS1=rewardVec;
+      }else if(S == 0 && !strategy.getOptimal())
+      {
+        //strategy.setRewardsS0(rewardVec);
+        rewardsS0=rewardVec;
+      }else if(S == 1 && !strategy.getOptimal())
+      {
+        //strategy.setRewardsS0(rewardVec);
+        rewardsS0=rewardVec;
+      }
+        
+      //Check if episode ended
+      if (returnToInitState || (i==nrow-1))
+      {
+        //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
+        changeState = false;
+        returnToInitState = false;   
+        
+        resetVector = true;
+      }
+      S = S_prime;
     }
-    S = S_prime;
+
+    rewardFunctions.first.push_back(rewardsS0);
+    if(strategy.getOptimal())
+    {
+      rewardFunctions.second.push_back(rewardsS1);
+    }
+
+    // std::vector<double> rewardsS0 = strategy.getRewardsS0();
+    // std::vector<double> rewardsS1 = strategy.getRewardsS1();
+
+
   }
 
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
+
  
   // std::cout << "rewardsS0: ";
   // for (const auto& element : rewardsS0) {
@@ -262,203 +308,8 @@ void updateRewardFunction(const RatData& ratdata, int session, Strategy& strateg
   // std::cout << std::endl;
 
 
-  return ;
+  return rewardFunctions;
 }
-
-
-void initializeRewards(const RatData& ratdata, int session, Strategy& strategy)
-{
-  arma::mat allpaths = ratdata.getPaths();
-  std::string strategy_name = strategy.getName();
-
-  arma::vec allpath_actions = allpaths.col(0);
-  arma::vec allpath_states = allpaths.col(1);
-  arma::vec allpath_rewards = allpaths.col(2);
-  arma::vec sessionVec = allpaths.col(4);
-  arma::vec uniqSessIdx = arma::unique(sessionVec);
-
-  bool sim = ratdata.getSim();
-  
-  
-  BoostGraph& S0 = strategy.getStateS0();
-  BoostGraph& S1 = strategy.getStateS1();
-
-  int sessId = sessionVec(session);
-  //Rcpp::Rcout <<"sessId="<<sessId<<std::endl;
-  arma::uvec sessionIdx = arma::find(sessionVec == sessId);
-  arma::vec actions_sess = allpath_actions.elem(sessionIdx);
-  arma::vec states_sess = allpath_states.elem(sessionIdx);
-  arma::vec rewards_sess = allpath_rewards.elem(sessionIdx);
-
-  //double phi = 0.001;
-  double phi = strategy.getPhi();
-  
-  
-  int initState = 0;
-  bool changeState = false;
-  bool returnToInitState = false;
-  // float avg_score = 0;
-  bool resetVector = true;
-  int nrow = actions_sess.n_rows;
-  int S;
-  if(sim == 1)
-  {
-    S = states_sess(0); 
-  }
-  else
-  {
-    S = states_sess(0) - 1; 
-  }
-  int A = 0;
-  std::vector<double> rewardUpdatesS0;
-  std::vector<double> rewardUpdatesS1;
-  
-  for (int i = 0; i < nrow; i++)
-  {
-    
-    if (resetVector)
-    {
-      initState = S;
-      //Rcpp::Rcout <<"initState="<<initState<<std::endl;
-      resetVector = false;
-    }
-    
-    //double pathReward=0.0;
-    
-    if (sim == 1)
-    {
-      A = actions_sess(i);
-    }
-    else
-    {
-      A = actions_sess(i) - 1;
-    }
-
-    double R = rewards_sess(i);
-    if(R > 0)
-    {
-      R = 5;
-    }
-
-    int S_prime = 0;
-    if(i < (nrow-1))
-    {
-      if (sim == 1)
-      {
-        S_prime = states_sess(i + 1);
-      }
-      else
-      {
-        S_prime = states_sess(i + 1) - 1;
-      }
-    }
-    
-    if (S_prime != initState)
-    {
-      changeState = true;
-    }
-    else if (S_prime == initState && changeState)
-    {
-      returnToInitState = true;
-    }
-    
-    BoostGraph::Vertex prevNode;
-    BoostGraph::Vertex currNode;
-    BoostGraph::Vertex rootNode;
-    std::vector<double> rewardVec;
-    BoostGraph* graph;
-    std::vector<double> rewardsS0 = strategy.getRewardsS0();
-    std::vector<double> rewardsS1 = strategy.getRewardsS1();
-
-
-    if (S == 0 && strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
-    }else if(S == 1 && strategy.getOptimal())
-    {
-      graph = &S1;
-      rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
-    }else if(S == 0 && !strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
-    }else if(S == 1 && !strategy.getOptimal())
-    {
-      graph = &S0;
-      rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
-    }
-    std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
-    int nbOfTurns = turns.size();
-
-
-    for (int j = 0; j < nbOfTurns; j++)
-    {
-      std::string currTurn = turns[j]; 
-      currNode = graph->findNode(currTurn);
-      int nodeId = graph->getNodeId(currNode);
-      if (j == (nbOfTurns - 1))
-      {
-        rewardVec[nodeId] += phi * (R-rewardVec[nodeId]);
-      }
-      else
-      {
-        rewardVec[nodeId] +=  phi * (-rewardVec[nodeId]);
-      }
-
-      //std::cout <<"currTurn="<< currTurn << ", R=" <<R << ", rewardVec[nodeId]=" <<rewardVec[nodeId] <<std::endl;
-
-      if (S == 0 && strategy.getOptimal())
-      {
-        strategy.setRewardsS0(rewardVec);
-      }else if(S == 1 && strategy.getOptimal())
-      {
-        strategy.setRewardsS1(rewardVec);
-      }else if(S == 0 && !strategy.getOptimal())
-      {
-        strategy.setRewardsS0(rewardVec);
-      }else if(S == 1 && !strategy.getOptimal())
-      {
-        strategy.setRewardsS0(rewardVec);
-      }
-
-
-      prevNode = currNode;
-    } 
-      
-    //Check if episode ended
-    if (returnToInitState || (i==nrow-1))
-    {
-      //Rcpp::Rcout <<  "Inside end episode"<<std::endl;
-      changeState = false;
-      returnToInitState = false;   
-      resetVector = true;
-    }
-    S = S_prime;
-  }
-
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
- 
-  // std::cout << "rewardsS0: ";
-  // for (const auto& element : rewardsS0) {
-  //   std::cout << element << " ";
-  // }
-  // std::cout << std::endl;
-
-  // std::cout << "rewardsS1: ";
-  // for (const auto& element : rewardsS1) {
-  //   std::cout << element << " ";
-  // }
-  // std::cout << std::endl;
-
-  return ;
-}
-
 
 
 std::vector<std::string> generatePathTrajectory(Strategy& strategy, BoostGraph* graph, BoostGraph::Vertex rootNode)

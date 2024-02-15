@@ -5,19 +5,19 @@
 
 
 
-void Strategy::initRewards(const RatData& ratdata)
-{
-    initializeRewards(ratdata, 0, *this);
-    return;
+// void Strategy::initRewards(const RatData& ratdata)
+// {
+//     initializeRewards(ratdata, 0, *this);
+//     return;
 
-}   
+// }   
 
-void Strategy::updateRewards(const RatData& ratdata, int session)
-{
-    updateRewardFunction(ratdata, session, *this);
-    return;
+// void Strategy::updateRewards(const RatData& ratdata, int session)
+// {
+//     updateRewardFunction(ratdata, session, *this);
+//     return;
 
-}   
+// }   
 
 double Strategy::getTrajectoryLikelihood(const RatData& ratdata, int session)
 {
@@ -28,10 +28,16 @@ double Strategy::getTrajectoryLikelihood(const RatData& ratdata, int session)
 void Strategy::updatePathProbMat(int ses)
 {
 
-    arma::rowvec probRow(14);
+    arma::rowvec probRow(15);
     probRow.fill(-1);
     probRow(12) = pathProbMat.n_rows;
     probRow(13) = ses;
+    if(getOptimal())
+    {
+        probRow(14) = 1;
+    }else{
+        probRow(14) = 0;
+    }
 
     for (int path = 0; path < 6; path++)
     {

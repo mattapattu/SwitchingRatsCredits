@@ -135,8 +135,13 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  std::vector<double> rewardsS1;
+  if(strategy.getOptimal())
+  {
+    rewardsS1 = strategy.getRewardsS1(session); 
+  }
+
   double previous_turntime = 0;
 
   std::map<std::pair<BoostGraph::Vertex, int>, double> eligibilityTraces;
@@ -155,11 +160,11 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
     
     A = actions_sess(i);
 
-    double R = rewards_sess(i);
-    if(R > 0)
-    {
-      R = 5;
-    }
+    // double R = rewards_sess(i);
+    // if(R > 0)
+    // {
+    //   R = 5;
+    // }
     
     int S_prime = 0;
     if(i < (nrow-1))
@@ -208,11 +213,11 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
       
-      //currTurnReward = rewardVec[nodeId];
-      if(j==nbOfTurns-1 && R > 0)
-      {
-        currTurnReward = R;
-      }
+      currTurnReward = rewardVec[nodeId];
+      // if(j==nbOfTurns-1 && R > 0)
+      // {
+      //   currTurnReward = R;
+      // }
 
       double turntime = turn_times_session(session_turn_count);
 
@@ -495,17 +500,13 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0; 
-  std::vector<double> rewardsS1; 
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  std::vector<double> rewardsS1;
   if(strategy.getOptimal())
   {
-      rewardsS0 = {0,0,0,0,0,0,0,5,0};
-      rewardsS1 = {0,0,0,0,0,0,0,0,5};
-
-  }else{
-      rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
-      //s0rewards = {0,0,0,0,0,0,5,5,0,0,0,0};
+    rewardsS1 = strategy.getRewardsS1(session); 
   }
+
   double previous_turntime = 0;
 
   std::map<std::pair<BoostGraph::Vertex, int>, double> eligibilityTraces;
@@ -580,16 +581,10 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       double turntime = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
       pathDuration = pathDuration + turntime;
 
-      if(j== (nbOfTurns-1) && R(S,A) > 0)
-      {
-        if(!strategy.getOptimal() && S == 1)
-        {
-          currTurnReward = 0;
-        }else
-        {
-          currTurnReward = 5;
-        }
-      }
+      // if(j== (nbOfTurns-1) && R(S,A) > 0)
+      // {
+      //   currTurnReward = 5;
+      // }
       // rewardVec[hybridNodeId] += strategy.getPhi()*(trueReward-rewardVec[hybridNodeId]);
 
       // if(S == 1 && strategy.getOptimal())
@@ -599,7 +594,7 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       //   strategy.setRewardsS0(rewardVec);
       // }
 
-      // currTurnReward = rewardVec[hybridNodeId];
+      currTurnReward = rewardVec[hybridNodeId];
       
       //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
 

@@ -102,8 +102,13 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
   double alpha = strategy.getAlpha();
   double gamma = strategy.getGamma();
 
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  std::vector<double> rewardsS1;
+  if(strategy.getOptimal())
+  {
+    rewardsS1 = strategy.getRewardsS1(session); 
+  }
+
   
 
   int episodeNb = 0; 
@@ -219,12 +224,12 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       A = actions_sess(i) - 1;
     }
 
-    double R = rewards_sess(i);
+    // double R = rewards_sess(i);
 
-    if(R > 0)
-    {
-      R = 5;
-    }
+    // if(R > 0)
+    // {
+    //   R = 5;
+    // }
     
     int S_prime = 0;
     if(i < (nrow-1))
@@ -286,10 +291,11 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       std::string currTurn = turns[j]; 
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
-      if(j==nbOfTurns-1 && R > 0)
-      {
-        score_episode = score_episode + R;
-      }
+      // if(j==nbOfTurns-1 && R > 0)
+      // {
+      //   score_episode = score_episode + R;
+      // }
+      score_episode = score_episode + rewardVec[nodeId];
       
       //currNode->credit = currNode->credit + 1; //Test
       //Rcpp::Rcout <<"currNode="<< currNode->node<<std::endl;
@@ -442,16 +448,13 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
   //std::cout << strategy.getName() << ", session=" << session << ", alpha=" <<alpha << ", gamma=" <<gamma << std::endl;
 
-  std::vector<double> rewardsS0; 
-  std::vector<double> rewardsS1; 
-
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  std::vector<double> rewardsS1;
   if(strategy.getOptimal())
-    {
-        rewardsS0 = {0,0,0,0,0,0,0,5,0};
-        rewardsS1 = {0,0,0,0,0,0,0,0,5};
-    }else{
-        rewardsS0 = {0,0,0,0,0,0,5,0,0,0,0,0};
-    }
+  {
+    rewardsS1 = strategy.getRewardsS1(session); 
+  }
+
 
   
 
@@ -618,19 +621,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       double nodeCredits = graph->getNodeCredits(v);
 
       int hybridNodeId = graph->getNodeId(v);
-      //score_episode = score_episode + rewardVec[hybridNodeId];
-
-      if(k==nbOfTurns-1 && R(S,A) > 0)
-      {
-        score_episode = score_episode + R(S,A);
-        // if(!strategy.getOptimal() && S == 1)
-        // {
-        //   score_episode = score_episode + 0;
-        // }else
-        // {
-        //   score_episode = score_episode + 5;
-        // }
-      }
+      score_episode = score_episode + rewardVec[hybridNodeId];
 
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);

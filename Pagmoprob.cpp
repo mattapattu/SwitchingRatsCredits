@@ -29,6 +29,7 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     double alpha_drl_optimal = v[6];
     double beta_drl_optimal = v[7];
     double lambda_drl_optimal = v[8];
+    double phi = v[9];
 
     
     int n1 = static_cast<int>(std::floor(v[0]));
@@ -43,7 +44,18 @@ pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
     auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
     auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
 
-    
+    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> suboptimalRewardfuncs =  getRewardFunctions(ratdata, *aca2_Suboptimal_Hybrid3, phi);
+    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> optimalRewardfuncs =  getRewardFunctions(ratdata, *aca2_Optimal_Hybrid3,phi);
+
+    aca2_Suboptimal_Hybrid3->setRewardsS0(suboptimalRewardfuncs.first);
+    drl_Suboptimal_Hybrid3->setRewardsS0(suboptimalRewardfuncs.first);
+
+    aca2_Optimal_Hybrid3->setRewardsS0(optimalRewardfuncs.first);
+    aca2_Optimal_Hybrid3->setRewardsS1(optimalRewardfuncs.second);
+
+    drl_Optimal_Hybrid3->setRewardsS0(optimalRewardfuncs.first);
+    drl_Optimal_Hybrid3->setRewardsS1(optimalRewardfuncs.second);
+
     
     std::vector<std::shared_ptr<Strategy>> strategies;
 
@@ -221,8 +233,8 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
 
     //bounds.first={1e-2,0.5,1e-2,0.5,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8,1e-8};
     //bounds.first={1e-2,0.5,1e-2,0.8,1e-2,1e-2,1e-2,1e-2,0.1,1e-8,1e-8};
-    bounds.first={1,1,1,1,0,0,0,0};
-    bounds.second={10,10,10,10,1,1,1,1};
+    bounds.first={1,1,1,1,0,0,0,0,0};
+    bounds.second={10,10,10,10,1,1,1,1,1};
 
     // bounds.first={0,0,0,0,0,0,0,0,1e-6,0,0};
     //bounds.second={1,1,1,1,1,1,1,1,1e-3,1,10};

@@ -21,5 +21,7 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 std::pair<arma::mat, arma::mat> simulateAvgRwdQLearning(const RatData& ratdata, int session, Strategy& strategy);
 std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ratdata, int session, Strategy& strategy);
 std::pair<arma::mat, arma::mat> simulateTrajectory(const RatData& ratdata, int session, Strategy& strategy);
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> getRewardFunctions(const RatData& ratdata, Strategy& strategy, double phi=0.1);
+
 
 #endif

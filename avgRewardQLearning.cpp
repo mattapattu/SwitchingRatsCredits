@@ -133,8 +133,8 @@ double getAvgRwdQLearningLik(const RatData& ratdata, int session, Strategy& stra
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0 = strategy.getRewardsS0();
-  std::vector<double> rewardsS1 = strategy.getRewardsS1();
+  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  std::vector<double> rewardsS1 = strategy.getRewardsS1(session);
 
   std::map<std::pair<BoostGraph::Vertex, int>, double> eligibilityTraces;
 

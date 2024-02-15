@@ -30,26 +30,26 @@ public:
         setName(model);
 
         // Rcpp::S4 s0graph = Rcpp::as<Rcpp::S4>(testModel_.slot("S0"));
-        std::vector<std::string> s0nodes = testModel_.getNodeListS0();
-        int s0nodes_size = s0nodes.size();
-        std::vector<double> vecObj(s0nodes_size, 0);
-        rewardsS0 = vecObj;
+        // std::vector<std::string> s0nodes = testModel_.getNodeListS0();
+        // int s0nodes_size = s0nodes.size();
+        // std::vector<double> vecObj(s0nodes_size, 0);
+        // rewardsS0.push_back(vecObj);
 
         optimal = optimal_;
         int s1nodes_size = 0;
         // stateS0 = BoostGraph(testModel_, 0);
 
-        if (optimal_)
-        {
-            // stateS1 = BoostGraph(testModel_, 1);
+        // if (optimal_)
+        // {
+        //     // stateS1 = BoostGraph(testModel_, 1);
 
-            // Rcpp::S4 s1graph = Rcpp::as<Rcpp::S4>(turnModel.slot("S1"));
-            std::vector<std::string> s1nodes = testModel_.getNodeListS1();
-            s1nodes_size = s1nodes.size();
+        //     // Rcpp::S4 s1graph = Rcpp::as<Rcpp::S4>(turnModel.slot("S1"));
+        //     std::vector<std::string> s1nodes = testModel_.getNodeListS1();
+        //     s1nodes_size = s1nodes.size();
 
-            std::vector<double> vecObj(s1nodes_size, 0);
-            rewardsS1 = vecObj;
-        }
+        //     std::vector<double> vecObj(s1nodes_size, 0);
+        //     //rewardsS1.push_back(vecObj);
+        // }
 
         return;
     }
@@ -171,24 +171,26 @@ public:
         return eta;
     }
 
-    void setRewardsS0(std::vector<double> rewards)
+    void setRewardsS0(std::vector<std::vector<double>> rewards)
     {
-        rewardsS0 = rewards;
+        rewardsS0=rewards;
     }
 
-    void setRewardsS1(std::vector<double> rewards)
+    void setRewardsS1(std::vector<std::vector<double>> rewards)
     {
-        rewardsS1 = rewards;
+        rewardsS1=rewards;
     }
 
-    std::vector<double> getRewardsS0()
+
+
+    std::vector<double> getRewardsS0(int ses)
     {
-        return rewardsS0;
+        return rewardsS0[ses];
     }
 
-    std::vector<double> getRewardsS1()
+    std::vector<double> getRewardsS1(int ses)
     {
-        return rewardsS1;
+        return rewardsS1[ses];
     }
 
     void setMarginalLikelihood(double likelihood)
@@ -305,15 +307,15 @@ public:
     //     return;
     // }
 
-    void resetRewards()
-    {
-        std::fill(rewardsS0.begin(), rewardsS0.end(), 0);
-        if (optimal)
-        {
-            std::fill(rewardsS1.begin(), rewardsS1.end(), 0);
-        }
-        return;
-    }
+    // void resetRewards()
+    // {
+    //     std::fill(rewardsS0.begin(), rewardsS0.end(), 0);
+    //     if (optimal)
+    //     {
+    //         std::fill(rewardsS1.begin(), rewardsS1.end(), 0);
+    //     }
+    //     return;
+    // }
 
     
     void updatePathProbMat(int ses);
@@ -337,8 +339,8 @@ private:
     BoostGraph stateS1;       // To store credits of actions from each session
     std::string learningRule; // creditAssignment
     std::vector<double> crpPosteriors;
-    std::vector<double> rewardsS0;
-    std::vector<double> rewardsS1;
+    std::vector<std::vector<double>> rewardsS0;
+    std::vector<std::vector<double>> rewardsS1;
     std::vector<double> marginalLikelihood;
     double crpPriorInEachTrial;
     bool optimal;
