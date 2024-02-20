@@ -160,11 +160,11 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
     
     A = actions_sess(i);
 
-    // double R = rewards_sess(i);
-    // if(R > 0)
-    // {
-    //   R = 5;
-    // }
+    double R = rewards_sess(i);
+    if(R > 0)
+    {
+      R = 5;
+    }
     
     int S_prime = 0;
     if(i < (nrow-1))
@@ -213,11 +213,11 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
       
-      currTurnReward = rewardVec[nodeId];
-      // if(j==nbOfTurns-1 && R > 0)
-      // {
-      //   currTurnReward = R;
-      // }
+      // currTurnReward = rewardVec[nodeId];
+      if(j==nbOfTurns-1 && R > 0)
+      {
+        currTurnReward = R;
+      }
 
       double turntime = turn_times_session(session_turn_count);
 
@@ -581,10 +581,10 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       double turntime = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
       pathDuration = pathDuration + turntime;
 
-      // if(j== (nbOfTurns-1) && R(S,A) > 0)
-      // {
-      //   currTurnReward = 5;
-      // }
+      if(j== (nbOfTurns-1) && R(S,A) > 0)
+      {
+        currTurnReward = 5;
+      }
       // rewardVec[hybridNodeId] += strategy.getPhi()*(trueReward-rewardVec[hybridNodeId]);
 
       // if(S == 1 && strategy.getOptimal())
@@ -594,9 +594,9 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       //   strategy.setRewardsS0(rewardVec);
       // }
 
-      currTurnReward = rewardVec[hybridNodeId];
+      // currTurnReward = rewardVec[hybridNodeId];
       
-      //std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
+      // std::cout << "Session=" << session <<  ", S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j <<  ", currTurn=" << currTurn << ", session_turn_count="  << session_turn_count <<std::endl;
 
       generated_TurnsData_sess(turnIdx, 0) = hybridNodeId;
       generated_TurnsData_sess(turnIdx, 1) = S;
@@ -680,7 +680,7 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
       currTurnReward = exp(-beta*turntime)*currTurnReward;
       double td_err = currTurnReward +  exp(-beta*turntime)*qMax - currNode_credit;
 
-      //std::cout << "td_err = " << td_err << "\n";
+      // std::cout << "td_err = " << td_err << "\n";
       // std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", currTurnReward=" << currTurnReward << ", td_err=" << td_err << ", nodeCredits=" << graph->getNodeCredits(currNode) << ", etrace=" << graph->getEligibilityTrace(currNode) << ", qMax=" << qMax << ", turntime=" << turntime  << std::endl;
 
 
@@ -692,11 +692,20 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
 
       // std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", updated_nodeCredits=" << graph->getNodeCredits(currNode) << std::endl;
 
-
+      // std::cout << "S0 credits:";
       // S0.printNodeCredits();
       // if(strategy.getOptimal())
       // {
+      //   std::cout << "S1 credits:";
       //   S1.printNodeCredits();
+      // }
+
+      // std::cout << "S0 probs:";
+      // S0.printNodeProbabilities();
+      // if(strategy.getOptimal())
+      // {
+      //   std::cout << "S1 probs:";
+      //   S1.printNodeProbabilities();
       // }
 
       // S0.printNodeEligibilityTraces();

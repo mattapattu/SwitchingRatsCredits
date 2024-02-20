@@ -44,10 +44,10 @@ public:
   // }
 
 
-  // vector_double::size_type get_nec() const
-  // {
-  //   return 2;
-  // }
+  vector_double::size_type get_nec() const
+  {
+    return 1;
+  }
   // vector_double::size_type get_nic() const
   // {
   //   return 3;

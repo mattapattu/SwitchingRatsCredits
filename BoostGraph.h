@@ -250,6 +250,16 @@ public:
         //std::cout << "Updating all eligibility trace by factor = " << factor << "\n";
         for (auto vi = boost::vertices(graph); vi.first != vi.second; ++vi.first) {
             graph[*vi.first].eligibilityTrace *= factor ;
+
+            if (std::isnan(graph[*vi.first].eligibilityTrace)) {
+                    
+                    throw std::runtime_error("Error nan eligibility trace");
+            }
+            if (std::isinf(graph[*vi.first].eligibilityTrace)) {
+                    
+                    throw std::runtime_error("Error nan eligibility trace");
+            }
+
         }
     }
 
@@ -261,6 +271,10 @@ public:
             if (std::isinf(graph[*vi.first].credit)) {
                 // std::cout << "Node: " << graph[*vi.first].node << " credit is infinity. Check" << std::endl;
                 throw std::runtime_error("Error infinite credit val");
+            }
+            if (std::isnan(graph[*vi.first].credit)) {
+                    
+                    throw std::runtime_error("Error nan node credits");
             }
 
         }
@@ -580,13 +594,13 @@ public:
 
                 if (std::isnan(graph[edge].probability)) {
                     
-                    // std::cout << "Node credits: " ;
-                    // for (const double& p : values) {
-                    //     std::cout << p << " ";
-                    // }
-                    // std::cout << std::endl;
+                    std::cout << "Node credits: " ;
+                    for (const double& p : values) {
+                        std::cout << p << " ";
+                    }
+                    std::cout << std::endl;
 
-                    // std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is nan. Check" << std::endl;
+                    std::cout << "Edge src: " << graph[node].node << " dest: "  << graph[child].node << " logprob is nan. Check" << std::endl;
                     throw std::runtime_error("Error nan probability");
                 }
 

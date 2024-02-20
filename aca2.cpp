@@ -224,12 +224,12 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       A = actions_sess(i) - 1;
     }
 
-    // double R = rewards_sess(i);
+    double R = rewards_sess(i);
 
-    // if(R > 0)
-    // {
-    //   R = 5;
-    // }
+    if(R > 0)
+    {
+      R = 5;
+    }
     
     int S_prime = 0;
     if(i < (nrow-1))
@@ -291,11 +291,11 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
       std::string currTurn = turns[j]; 
       currNode = graph->findNode(currTurn);
       int nodeId = graph->getNodeId(currNode);
-      // if(j==nbOfTurns-1 && R > 0)
-      // {
-      //   score_episode = score_episode + R;
-      // }
-      score_episode = score_episode + rewardVec[nodeId];
+      if(j==nbOfTurns-1 && R > 0)
+      {
+        score_episode = score_episode + R;
+      }
+      // score_episode = score_episode + rewardVec[nodeId];
       
       //currNode->credit = currNode->credit + 1; //Test
       //Rcpp::Rcout <<"currNode="<< currNode->node<<std::endl;
@@ -369,8 +369,8 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     S = S_prime;
     strategy.updatePathProbMat(session);
   }
-  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
-  //double decay_factor = gamma;
+  //double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  double decay_factor = gamma;
   S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
@@ -621,7 +621,11 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
       double nodeCredits = graph->getNodeCredits(v);
 
       int hybridNodeId = graph->getNodeId(v);
-      score_episode = score_episode + rewardVec[hybridNodeId];
+      if(k==nbOfTurns-1 && R(S,A) > 0)
+      {
+        score_episode = score_episode + R(S,A);
+      }
+      // score_episode = score_episode + rewardVec[hybridNodeId];
 
       double hybridNodeDuration = 0;
       hybridNodeDuration = simulateTurnDuration(turnTimes, hybridNodeId, S, session, strategy);
@@ -707,8 +711,8 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     strategy.updatePathProbMat(session);
   }
   
-  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
-  //double decay_factor = gamma;
+  //double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  double decay_factor = gamma;
   S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
