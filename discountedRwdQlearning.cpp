@@ -135,12 +135,12 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
-  std::vector<double> rewardsS1;
-  if(strategy.getOptimal())
-  {
-    rewardsS1 = strategy.getRewardsS1(session); 
-  }
+  // std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  // std::vector<double> rewardsS1;
+  // if(strategy.getOptimal())
+  // {
+  //   rewardsS1 = strategy.getRewardsS1(session); 
+  // }
 
   double previous_turntime = 0;
 
@@ -185,22 +185,22 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && strategy.getOptimal())
     {
       graph = &S1;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
+      //rewardVec = rewardsS1;
     }else if(S == 0 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }
     std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
     int nbOfTurns = turns.size();
@@ -500,12 +500,12 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
   BoostGraph::Vertex rootNode;
   std::vector<double> rewardVec;
   BoostGraph* graph;
-  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
-  std::vector<double> rewardsS1;
-  if(strategy.getOptimal())
-  {
-    rewardsS1 = strategy.getRewardsS1(session); 
-  }
+  // std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  // std::vector<double> rewardsS1;
+  // if(strategy.getOptimal())
+  // {
+  //   rewardsS1 = strategy.getRewardsS1(session); 
+  // }
 
   double previous_turntime = 0;
 
@@ -536,22 +536,22 @@ std::pair<arma::mat, arma::mat> simulateDiscountedRwdQlearning(const RatData& ra
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && strategy.getOptimal())
     {
       graph = &S1;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
+      //rewardVec = rewardsS1;
     }else if(S == 0 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }
 
 

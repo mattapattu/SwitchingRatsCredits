@@ -20,9 +20,15 @@ class PagmoProb {
 public:
   PagmoProb();
   // Constructor
-  PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
+
+    PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
   const MazeGraph& Optimal_Hybrid3_):
-  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_) {}
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_)  {}
+
+
+  PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
+  const MazeGraph& Optimal_Hybrid3_, int N_, std::pair<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>> resTuple_):
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_), resTuple(resTuple_)  {}
 
   PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
   const MazeGraph& Optimal_Hybrid3_, const std::map<std::pair<std::string, bool>, std::vector<double>> params_):
@@ -44,13 +50,13 @@ public:
   // }
 
 
-  vector_double::size_type get_nec() const
-  {
-    return 1;
-  }
+  // vector_double::size_type get_nec() const
+  // {
+  //   return 0;
+  // }
   // vector_double::size_type get_nic() const
   // {
-  //   return 3;
+  //   return 0;
   // }
 
 
@@ -74,6 +80,9 @@ private:
   const MazeGraph& Suboptimal_Hybrid3;
   const MazeGraph& Optimal_Hybrid3;
   const std::map<std::pair<std::string, bool>, std::vector<double>> params;
+  int N;
+  std::pair<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>> resTuple;
+
   //mutable std::vector<std::atomic<std::pair<double, std::vector<double>>>> indexedValues;
   // mutable std::mutex  vectorMutex;
 

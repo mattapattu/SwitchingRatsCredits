@@ -39,7 +39,7 @@ public:
     double beta_drl_optimal = 1e-4;
     double lambda_drl_optimal = v[3];
     alpha_crp = v[4];
-    initCrpProbs = {v[5],v[6],v[7],v[8]};
+    initCrpProbs = {0.25, 0.25, 0.25, 0.25};
 
        
     // Create instances of Strategy
@@ -361,6 +361,8 @@ private:
 
 std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3,  std::vector<double> v);
 void print_vector(std::vector<double> v);
+double M_step(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N, std::pair<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>> smoothed_w, std::vector<double> params);
+std::vector<double> EM(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N);
 
 
 #endif

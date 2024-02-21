@@ -257,7 +257,7 @@ public:
             }
             if (std::isinf(graph[*vi.first].eligibilityTrace)) {
                     
-                    throw std::runtime_error("Error nan eligibility trace");
+                    throw std::runtime_error("Error inf eligibility trace");
             }
 
         }

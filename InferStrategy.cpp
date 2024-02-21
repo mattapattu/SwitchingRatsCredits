@@ -71,7 +71,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     // Create a problem using Pagmo
     problem prob{pagmoprob};
 
-    //unconstrain unprob{prob, "kuri"};
+    unconstrain unprob{prob, "kuri"};
     //2 - Instantiate a pagmo algorithm (self-adaptive differential
     ////evolution, 100 generations).
     // pagmo::algorithm algo{sade(10,2,2)};
@@ -132,7 +132,7 @@ void findClusterParams(const RatData& ratdata, const MazeGraph& Suboptimal_Hybri
     method.set_bfe ( pagmo::bfe { thread_bfe } );
     pagmo::algorithm algo = pagmo::algorithm { method };
     // pagmo::algorithm algo(pagmo::cstrs_self_adaptive{10,method});
-    pagmo::population pop { prob, thread_bfe,10 };
+    pagmo::population pop { unprob, thread_bfe,10 };
     // Evolve the population for 100 generations
     for ( auto evolution = 0; evolution < 2; evolution++ ) {
         pop = algo.evolve(pop);

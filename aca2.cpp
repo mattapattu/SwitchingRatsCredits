@@ -102,12 +102,12 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
   double alpha = strategy.getAlpha();
   double gamma = strategy.getGamma();
 
-  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
-  std::vector<double> rewardsS1;
-  if(strategy.getOptimal())
-  {
-    rewardsS1 = strategy.getRewardsS1(session); 
-  }
+  //std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  // std::vector<double> rewardsS1;
+  // if(strategy.getOptimal())
+  // {
+  //   rewardsS1 = strategy.getRewardsS1(session); 
+  // }
 
   
 
@@ -263,22 +263,22 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && strategy.getOptimal())
     {
       graph = &S1;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
+      //rewardVec = rewardsS1;
     }else if(S == 0 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }
     std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
     int nbOfTurns = turns.size();
@@ -448,12 +448,12 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
 
   //std::cout << strategy.getName() << ", session=" << session << ", alpha=" <<alpha << ", gamma=" <<gamma << std::endl;
 
-  std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
-  std::vector<double> rewardsS1;
-  if(strategy.getOptimal())
-  {
-    rewardsS1 = strategy.getRewardsS1(session); 
-  }
+  // std::vector<double> rewardsS0 = strategy.getRewardsS0(session);
+  // std::vector<double> rewardsS1;
+  // if(strategy.getOptimal())
+  // {
+  //   rewardsS1 = strategy.getRewardsS1(session); 
+  // }
 
 
   
@@ -575,22 +575,22 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && strategy.getOptimal())
     {
       graph = &S1;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS1;
+      //rewardVec = rewardsS1;
     }else if(S == 0 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("E");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }else if(S == 1 && !strategy.getOptimal())
     {
       graph = &S0;
       rootNode = graph->findNode("I");
-      rewardVec = rewardsS0;
+      //rewardVec = rewardsS0;
     }
     // std::vector<std::string> turns = graph->getTurnsFromPaths(A, S, strategy.getOptimal());
     
