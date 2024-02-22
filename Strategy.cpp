@@ -22,6 +22,9 @@
 double Strategy::getTrajectoryLikelihood(const RatData& ratdata, int session)
 {
     double lik = computeTrajectoryLik(ratdata, session, *this);
+    if (std::isinf(lik)) {                    
+        throw std::runtime_error("Loglikelihood is inf");
+    }
     return lik;
 } 
 

@@ -332,14 +332,11 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
     double lambda_drl_optimal = v[3];
-    double phi = 0.1;
+    // double phi = 0.1;
+    double alpha_crp = v[4];
 
     
-    int n1 = static_cast<int>(std::floor(v[0]));
-    int n2 = static_cast<int>(std::floor(v[1]));
-    int n3 = static_cast<int>(std::floor(v[2]));
-    int n4 = static_cast<int>(std::floor(v[3]));
-
+    
     // Create instances of Strategy
     auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(suboptimalHybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
     auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(optimalHybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
@@ -355,18 +352,6 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-
-    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> suboptimalRewardfuncs =  getRewardFunctions(ratdata, *aca2_Suboptimal_Hybrid3, phi);
-    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> optimalRewardfuncs =  getRewardFunctions(ratdata, *aca2_Optimal_Hybrid3, phi);
-
-    aca2_Suboptimal_Hybrid3->setRewardsS0(suboptimalRewardfuncs.first);
-    drl_Suboptimal_Hybrid3->setRewardsS0(suboptimalRewardfuncs.first);
-
-    aca2_Optimal_Hybrid3->setRewardsS0(optimalRewardfuncs.first);
-    aca2_Optimal_Hybrid3->setRewardsS1(optimalRewardfuncs.second);
-
-    drl_Optimal_Hybrid3->setRewardsS0(optimalRewardfuncs.first);
-    drl_Optimal_Hybrid3->setRewardsS1(optimalRewardfuncs.second);
 
     //std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -391,15 +376,15 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
 
-    strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
-    strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+    strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(drl_Optimal_Hybrid3, drl_Optimal_Hybrid3));
 
@@ -1547,7 +1532,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
             std::vector<double> v = clusterParams[rat]; 
-            std::vector<double> simClusterParams = {0.1, 0.7, 0.1, 0.7, 0.1, 0.25};
+            std::vector<double> simClusterParams = {0.107946, 0.8247385, 0.551107, 0.182533, 0.795134};
 
             RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, i, run);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
@@ -1555,8 +1540,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
             //std::vector<double> simClusterParams = findMultiObjClusterParamsWithSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
             //std::vector<std::vector<double>> modelParams = findParamsSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
             //runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, modelParams, true, run,i, R);
-            std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams);
-            std::cout << "lik=" << q.second << std::endl;
+            // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams);
+            // std::cout << "lik=" << q.second << std::endl;
+            std::vector<double> params = EM(ratSimData, suboptimalHybrid3, optimalHybrid3, 100);
+
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception
@@ -1569,7 +1556,6 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
      
 
 }
-
 
 
 

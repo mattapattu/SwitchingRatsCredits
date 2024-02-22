@@ -3,7 +3,6 @@
 #include "Strategy.h"
 #include "InferStrategy.h"
 #include <algorithm>
-#include "ParticleFilter.h"
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
@@ -17,7 +16,7 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PagmoProb::get_bounds() co
   {
     std::pair<vector_double, vector_double> bounds;
 
-    bounds.first={1e-8,1e-8,1e-8,1e-8,1e-8};
+    bounds.first={0.1,0.7,1e-8,1e-8,1e-8};
     bounds.second={1,1,1,1,5};
 
     return(bounds);

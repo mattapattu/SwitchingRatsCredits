@@ -392,7 +392,9 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
 
   //std::cout << "strategy=" << strategy.getName() << ", alpha=" <<strategy.getAlpha() << ", gamma=" << strategy.getGamma() << ", lambda=" << strategy.getLambda() << ", ses=" << session << ", loglikelihood=" << result << std::endl;
 
-
+  // if (result==0) {                    
+  //   throw std::runtime_error(strategy.getName()+ " loglikelihood is zero for ses=" + std::to_string(session));
+  // }
   return (result);
 }
 

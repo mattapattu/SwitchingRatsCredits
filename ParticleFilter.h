@@ -63,6 +63,7 @@ public:
     for(int ses=0; ses<sessions; ses++)
     {
         chosenStrategy.push_back(-1);
+        originalSampledStrat.push_back(-1);
     }
 
 
@@ -92,6 +93,17 @@ public:
   // Destructor
   ~ParticleFilter() {}
 
+  
+ void updateStratCounts(int ses)
+ {
+    std::vector<int> n(4, 0);
+
+    for (int i = 0; i < ses; i++) {
+        n[chosenStrategy[i]]++;
+    }
+    stratCounts.push_back(n);
+ }
+
  //CRP
   std::vector<double> crpPrior(int ses)
   {
@@ -99,9 +111,11 @@ public:
     {
         std::vector<int> n(4, 0);
 
-        for (int i = 0; i < ses; i++) {
-            n[chosenStrategy[i]]++;
-        }
+        // for (int i = 0; i < ses; i++) {
+        //     n[chosenStrategy[i]]++;
+        // }
+
+        n = stratCounts[ses];
           
         std::vector<double> q(4, 0);
 
@@ -269,6 +283,9 @@ public:
   double getSesLikelihood(int strat, int ses)
   {
     double ll_ses  = strategies[strat]->getTrajectoryLikelihood(ratdata, ses); 
+    // if (exp(ll_ses)==0) {                    
+    //     throw std::runtime_error("likelihood is zero");
+    // }
     return(exp(ll_ses));
   }
 
@@ -313,11 +330,15 @@ public:
     chosenStrategy = chosenStrategy_;
   }
 
-  void setCrpPriors(std::vector<double> crpPrior)
+  void addCrpPrior(std::vector<double> crpPrior)
   {
     crpPriors.push_back(crpPrior);
   }
 
+  void setCrpPriors(std::vector<std::vector<double>> crpPriors_)
+  {
+    crpPriors = crpPriors_;
+  }
   std::vector<std::vector<double>> getCrpPriors()
   {
     return(crpPriors);
@@ -331,6 +352,30 @@ public:
   std::vector<double> getLikelihoods()
   {
     return likelihoods;
+  }
+  std::vector<int> getOriginalSampledStrats()
+  {
+    return originalSampledStrat;
+  }
+
+  void addOriginalSampledStrat(int ses, int sampled_strat)
+  {
+    originalSampledStrat[ses] = sampled_strat;
+  }
+
+  void setOriginalSampledStrats(std::vector<int> origSampledStrats)
+  {
+    originalSampledStrat = origSampledStrats;
+  }
+
+  std::vector<std::vector<int>> getStratCounts()
+  {
+    return stratCounts;
+  }
+
+  void setStratCounts(std::vector<std::vector<int>> stratCounts_)
+  {
+    stratCounts = stratCounts_;
   }
 
 
@@ -349,19 +394,21 @@ private:
 
   std::vector<std::shared_ptr<Strategy>> strategies;
   std::vector<int> chosenStrategy;
+  std::vector<int> originalSampledStrat;
   double weight;
   int particleId;
   double alpha_crp;
   std::vector<std::vector<double>> crpPriors;
   std::vector<double> likelihoods;
   std::vector<double> initCrpProbs;
+  std::vector<std::vector<int>> stratCounts;
       
 };
 
 
 std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3,  std::vector<double> v);
 void print_vector(std::vector<double> v);
-double M_step(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N, std::pair<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>> smoothed_w, std::vector<double> params);
+double M_step(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N, std::tuple<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> smoothed_w, std::vector<double> params);
 std::vector<double> EM(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N);
 
 

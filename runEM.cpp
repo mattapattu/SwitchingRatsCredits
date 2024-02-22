@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    //std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
+    std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
 
-    std::vector<std::string> rats = {"rat103"};
+    //std::vector<std::string> rats = {"rat103"};
 
     //std::string rat = argv[1];
     //std::vector<std::string> rats = {rat};
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
+        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
 
     }
 
