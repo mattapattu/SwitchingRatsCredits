@@ -494,9 +494,7 @@ std::vector<std::vector<double>> w_smoothed(std::vector<std::vector<double>> fil
                 for (int k = 0; k < N; k++)
                 {
                     std::vector<int> assignments_k = particleFilterVec[k].getOriginalSampledStrats();
-                    std::vector<int> assignments_i = particleFilterVec[i].getOriginalSampledStrats();
                     int X_k_tplus1 = assignments_k[t + 1];
-                    int X_i_t = assignments_i[t];
                     weightedSum = weightedSum + (smoothedWeights[t + 1][k] * crpPriors_i_t[X_k_tplus1] / v[t][k]);
                     if (std::isnan(weightedSum))
                     {
@@ -625,8 +623,38 @@ std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector
     std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<double>>> resTuple = particle_filter_new(N, particleFilterVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3);
     std::vector<std::vector<double>> filteredWeights = std::get<0>(resTuple);
     std::vector<std::vector<double>> smoothedWeights = w_smoothed(filteredWeights, particleFilterVec, N);
-    // wijSmoothed[t][i,j]
+    
+    std::cout << "filteredWeights:";
+    for (const auto& row : filteredWeights) {
+        for (const auto& element : row) {
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;  // Start a new line for each row
+    }
+
+    
+    std::cout << "smoothedWeights:";
+    for (const auto& row : smoothedWeights) {
+        for (const auto& element : row) {
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;  // Start a new line for each row
+    }
+
     std::vector<std::vector<std::vector<double>>> wijSmoothed = wij_smoothed(filteredWeights, particleFilterVec, smoothedWeights, N);
+    for (const auto& m : wijSmoothed) {
+        std::cout << "[\n"; // Start of a matrix
+        // Loop over the rows
+        for (const auto& r : m) {
+            std::cout << "  ["; // Start of a row
+            // Loop over the columns
+            for (const auto& c : r) {
+                std::cout << c << " "; // Print an element
+            }
+        std::cout << "]\n"; // End of a row
+        }
+    std::cout << "]\n"; // End of a matrix
+  }
 
     return std::make_tuple(smoothedWeights, wijSmoothed, particleFilterVec);
 }
@@ -953,7 +981,7 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
 void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N)
 {
     
-    for(int i=0; i<5; i++)
+    for(int i=0; i<1; i++)
     {
         std::vector<double> params = {0.228439, 0.921127, 0.0429102, 0.575078, 0.755174, 0.0658294, 0.09602, 0.179565};
         std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params);
