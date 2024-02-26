@@ -74,11 +74,14 @@ int main(int argc, char* argv[])
         ia_cluster >> clusterParams;
         cluster_infile.close();
 
-        // std::vector<double> v = clusterParams[rat]; 
-        // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, rdata, suboptimalHybrid3, optimalHybrid3, v );
+        //std::vector<double> v = {0.1, 0.812323, 0.0703131, 0.813582}; 
+        //std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, rdata, suboptimalHybrid3, optimalHybrid3, v );
 
         
-        std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100);
+        //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100);
+        //std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 100);
+        testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 2000);
+
 
         //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
 
@@ -110,7 +113,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
 
     }
 

@@ -26,6 +26,9 @@ public:
   const MazeGraph& Optimal_Hybrid3_):
   ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_)  {}
 
+  PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
+  const MazeGraph& Optimal_Hybrid3_, int N_):
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_)  {}
 
   PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
   const MazeGraph& Optimal_Hybrid3_, int N_, std::tuple<std::vector<std::vector<double>>,std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple_):

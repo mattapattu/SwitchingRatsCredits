@@ -376,13 +376,13 @@ RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeG
 
     std::vector<std::pair<std::shared_ptr<Strategy>, std::shared_ptr<Strategy>>> strategyPairVector;
 
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
-
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
 
-    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
-
     strategyPairVector.push_back(std::make_pair(aca2_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, drl_Optimal_Hybrid3));
+
+    strategyPairVector.push_back(std::make_pair(drl_Suboptimal_Hybrid3, aca2_Optimal_Hybrid3));
 
     strategyPairVector.push_back(std::make_pair(aca2_Optimal_Hybrid3, aca2_Optimal_Hybrid3));
 
@@ -1542,7 +1542,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
             //runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, modelParams, true, run,i, R);
             // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams);
             // std::cout << "lik=" << q.second << std::endl;
-            std::vector<double> params = EM(ratSimData, suboptimalHybrid3, optimalHybrid3, 100);
+            std::vector<double> params = EM(ratSimData, suboptimalHybrid3, optimalHybrid3, 500);
 
 
         }catch (const std::out_of_range& e) {
