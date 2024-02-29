@@ -6,7 +6,7 @@ INCLUDES = -I /home/mattapattu/.local/include -I"/usr/include/eigen3/" -I"/usr/s
 LIB_PATHS = -L /home/mattapattu/.local/lib -L/usr/lib/R/lib -L"/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RInside/lib"
 RPATH = -Wl,-R/home/mattapattu/.local/lib -Wl,-rpath,/home/mattapattu/R/x86_64-pc-linux-gnu-library/4.1/RInside/lib
 
-SRC =  InverseRL.cpp Strategy.cpp aca2.cpp discountedRwdQlearning.cpp avgRewardQLearning.cpp Pagmoprob.cpp PagmoMle.cpp InferStrategy.cpp Simulation.cpp runEM.cpp PagmoMultiObjCluster.cpp ParticleFilter.cpp
+SRC =  InverseRL.cpp Strategy.cpp aca2.cpp discountedRwdQlearning.cpp avgRewardQLearning.cpp Pagmoprob.cpp PagmoMle.cpp runEM.cpp ParticleFilter.cpp
 TARGET = inverseRL
 
 $(TARGET): $(SRC)

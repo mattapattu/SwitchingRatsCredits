@@ -9,6 +9,7 @@
 
 #include "ParticleFilter.h"
 #include "Pagmoprob.h"
+#include "BS_thread_pool.h"
 #include <iostream>
 #include <vector>
 #include <random>
@@ -16,12 +17,10 @@
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/algorithms/nlopt.hpp>
-#include <omp.h>
-#include <pagmo/batch_evaluators/thread_bfe.hpp>
-#include <pagmo/algorithms/pso_gen.hpp>
-#include <pagmo/algorithms/sade.hpp>
 
 using namespace std;
+
+
 
 // A function that returns a random integer in the range [0, n-1]
 int randint(int n)
@@ -135,7 +134,7 @@ std::vector<double> systematicResampling(const std::vector<double> &particleWeig
     return resampledParticles;
 }
 
-std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, vector<double> v)
+std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, vector<double> v,BS::thread_pool& pool)
 {
 
     arma::mat allpaths = ratdata.getPaths();
@@ -164,25 +163,49 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
     {
         //   // Initialize the weights with uniform probabilities
         double ses_lik = 0;
-// Update the weights with the likelihood of the current outcome
-#pragma omp parallel for shared(w, particleFilterVec, ses)
-        for (int i = 0; i < N; i++)
-        {
+        // Update the weights with the likelihood of the current outcome
+        std::mutex mutex;
+
+        auto sample_particle_filter = [&](int i) {
+            // Use lock_guard to ensure mutual exclusion for particleFilterVec and w updates
+            std::lock_guard<std::mutex> lock(mutex);
+
             particleFilterVec[i].updateStratCounts(ses);
-            vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
-            // crpPriors.push_back(crp_i);
+            std::vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
+            particleFilterVec[i].addCrpPrior(crp_i);
 
             int sampled_strat = sample(crp_i);
             particleFilterVec[i].addAssignment(ses, sampled_strat);
+            particleFilterVec[i].addOriginalSampledStrat(ses, sampled_strat);
             double lik = particleFilterVec[i].getSesLikelihood(sampled_strat, ses);
+            particleFilterVec[i].setLikelihood(lik);
             w[i] *= lik;
-            // ses_lik = ses_lik + log(lik);
-            // std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", sampled_strat=" << sampled_strat << ", lik=" << lik << ", w[i]=" << w[i] << std::endl;
-            if (std::isinf(w[i]))
-            {
+
+            // Add any other logic specific to your application
+
+            if (std::isnan(w[i])) {
+                throw std::runtime_error("weight w[i] is nan after sampling. Check");
+            }
+
+            if (std::isinf(w[i])) {
                 throw std::runtime_error("weight w[i] is infty after sampling. Check");
             }
+        };
+
+        // ThreadPool pool(16);
+        // std::vector<std::future<void>> futures;
+
+        for (int i = 0; i < N; i++) {
+            auto bound_lambda = std::bind(sample_particle_filter, i);
+            std::future<void> my_future = pool.submit_task(bound_lambda);
         }
+
+        // // Wait for all tasks to complete
+        // for (auto& future : futures) {
+        //     future.wait();
+        // }
+
+
 
         // ses_lik = ses_lik/N;
 
@@ -242,17 +265,37 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
-#pragma omp parallel for shared(particleFilterVec, resampledIndices, ses)
-            for (int i = 0; i < N; i++)
-            {
+            std::mutex mutex;
+
+            auto resample_particle_filter = [&](int i) {
+                std::lock_guard<std::mutex> lock(mutex);
                 int newIndex = resampledIndices[i];
+
                 ParticleFilter pf(particleFilterVec[newIndex]);
+
+                // Use lock_guard to ensure mutual exclusion for particleFilterVec updates
+
                 int chosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
                 particleFilterVec[i].setChosenStrategies(particleFilterVec[newIndex].getChosenStratgies());
                 particleFilterVec[i].setStrategies(particleFilterVec[newIndex].getStrategies());
                 int updatedChosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
+
                 // std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", resampledParticle=" << particleFilterVec[newIndex].getParticleId() << ", chosenStrat=" << chosenStrat << ", updatedChosenStrat=" << updatedChosenStrat << std::endl;
+            };
+
+            // ThreadPool pool(16);
+            // std::vector<std::future<void>> futures;
+
+            for (int i = 0; i < N; i++) {
+                auto bound_lambda = std::bind(resample_particle_filter, i);
+                std::future<void> my_future = pool.submit_task(bound_lambda);
+
             }
+
+            // // Wait for all tasks to complete
+            // for (auto& future : futures) {
+            //     future.wait();
+            // }
 
             double initWeight = 1.0 / (double)N;
             std::fill(w.begin(), w.end(), initWeight);
@@ -301,7 +344,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
 // A function that implements the particle filter algorithm
 // Input: the number of particles N, the number of experts M, the number of trials T, the expert distributions p, and the observed outcomes y
 // Output: a vector of posterior probabilities for each expert
-std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<double>>> particle_filter_new(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3)
+std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<double>>> particle_filter_new(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, BS::thread_pool& pool)
 {
 
     arma::mat allpaths = ratdata.getPaths();
@@ -326,11 +369,16 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
         double ses_lik = 0;
 // std::cout << "ses=" << ses << std::endl;
 // Update the weights with the likelihood of the current outcome
-#pragma omp parallel for shared(w, particleFilterVec, ses)
-        for (int i = 0; i < N; i++)
-        {
+        
+        
+        std::mutex mutex1;
+
+        auto sample_particle_filter = [&](int i, int ses) {
+            // Use lock_guard to ensure mutual exclusion for particleFilterVec and w updates
+            std::lock_guard<std::mutex> lock(mutex1);
+
             particleFilterVec[i].updateStratCounts(ses);
-            vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
+            std::vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
             particleFilterVec[i].addCrpPrior(crp_i);
 
             int sampled_strat = sample(crp_i);
@@ -339,23 +387,36 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
             double lik = particleFilterVec[i].getSesLikelihood(sampled_strat, ses);
             particleFilterVec[i].setLikelihood(lik);
             w[i] *= lik;
-            // ses_lik = ses_lik + lik;
-            //   std::cout << "ses=" << ses << ", crpPrior=";
-            //  for (auto const& i : crp_i)
-            //      std::cout << i << ", ";
-            //  std::cout << "\n" ;
+            // std::cout << "ses=" <<ses << ", i=" << i << ", sampled_strat=" << sampled_strat << "chosenStratgies[i]=" << particleFilterVec[i].getChosenStratgies()[ses] << std::endl;
+            // Add any other logic specific to your application
 
-            // std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", sampled_strat=" << sampled_strat << ", lik=" << lik << ", w[i]=" << w[i] << std::endl;
-            if (std::isnan(w[i]))
-            {
+            if (std::isnan(w[i])) {
                 throw std::runtime_error("weight w[i] is nan after sampling. Check");
             }
 
-            if (std::isinf(w[i]))
-            {
+            if (std::isinf(w[i])) {
                 throw std::runtime_error("weight w[i] is infty after sampling. Check");
             }
+        };
+
+        // ThreadPool pool(16);
+        // std::vector<std::future<void>> futures;
+
+        for (int i = 0; i < N; i++) {
+            auto bound_lambda = std::bind(sample_particle_filter, i,ses);
+            std::future<void> my_future = pool.submit_task(bound_lambda);
         }
+
+        pool.wait();
+
+
+
+
+        // // Wait for all tasks to complete
+        // for (auto& future : futures) {
+        //     future.wait();
+        // }
+
 
         ses_lik = std::accumulate(w.begin(), w.end(), 0.0);
         ses_lik = ses_lik / N;
@@ -386,18 +447,43 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
-// std::cout << "ses=" <<ses <<", updating particles" << std::endl;
-#pragma omp parallel for shared(resampledIndices, particleFilterVec, ses)
-            for (int i = 0; i < N; i++)
-            {
-                int newIndex = resampledIndices[i];
+            // std::cout << "ses=" <<ses <<", updating particles" << std::endl;
+
+            std::mutex mutex2;
+
+            auto resample_particle_filter = [&](int i, std::vector<double> resampledIndices_) {
+                int newIndex = resampledIndices_[i];
+                std::lock_guard<std::mutex> lock(mutex2);
                 ParticleFilter pf(particleFilterVec[newIndex]);
+
+                // Use lock_guard to ensure mutual exclusion for particleFilterVec updates
+
                 int chosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
                 particleFilterVec[i].setChosenStrategies(particleFilterVec[newIndex].getChosenStratgies());
                 particleFilterVec[i].setStrategies(particleFilterVec[newIndex].getStrategies());
                 int updatedChosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
+
                 // std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", resampledParticle=" << particleFilterVec[newIndex].getParticleId() << ", chosenStrat=" << chosenStrat << ", updatedChosenStrat=" << updatedChosenStrat << std::endl;
+            };
+
+            // ThreadPool pool(16);
+            // std::vector<std::future<void>> futures;
+
+
+            for (int i = 0; i < N; i++) {
+                auto bound_lambda = std::bind(resample_particle_filter, i,resampledIndices);
+                std::future<void> my_future = pool.submit_task(bound_lambda);
+
             }
+
+            pool.wait();
+
+            // // Wait for all tasks to complete
+            // for (auto& future : futures) {
+            //     future.wait();
+            // }
+
+
             // std::cout << "ses=" <<ses <<", updating particles completed." << std::endl;
             double initWeight = 1.0 / (double)N;
             std::fill(w.begin(), w.end(), initWeight);
@@ -426,43 +512,63 @@ void print_vector(vector<double> v)
     cout << "]" << endl;
 }
 
-std::vector<std::vector<double>> w_smoothed(std::vector<std::vector<double>> filteredWeights, std::vector<ParticleFilter> particleFilterVec, int N)
+std::vector<std::vector<double>> w_smoothed(std::vector<std::vector<double>> filteredWeights, std::vector<ParticleFilter> particleFilterVec, int N,BS::thread_pool& pool)
 {
     int n_rows = filteredWeights.size();
     // w_smoothed[t][i]
 
     std::vector<std::vector<double>> v(n_rows, std::vector<double>(N, 0.0));
 
-#pragma omp parallel for collapse(2)
-    for (int t = 0; t < n_rows - 1; t++)
-    {
-        for (int k = 0; k < N; k++)
-        {
-            for (int j = 0; j < N; j++)
-            {
-                std::vector<std::vector<double>> crpPriors_j = particleFilterVec[j].getCrpPriors();
-                std::vector<double> crpPriors_j_t = crpPriors_j[t];
+    // Mutex to protect shared data during updates
+    std::mutex mutex;
 
-                std::vector<int> assignments_k = particleFilterVec[k].getOriginalSampledStrats();
-                int X_k_tplus1 = assignments_k[t + 1];
+    auto compute_v_element = [&](int t, int k) {
+        for (int j = 0; j < N; j++) {
+            std::vector<std::vector<double>> crpPriors_j = particleFilterVec[j].getCrpPriors();
+            std::vector<double> crpPriors_j_t = crpPriors_j[t];
 
-                v[t][k] = v[t][k] + (filteredWeights[t][j] * crpPriors_j_t[X_k_tplus1]);
+            std::vector<int> assignments_k = particleFilterVec[k].getOriginalSampledStrats();
+            int X_k_tplus1 = assignments_k[t + 1];
 
-                if (std::isnan(v[t][k]))
-                {
-                    throw std::runtime_error("v[t][k] is nan. Check");
-                }
-                if (std::isinf(v[t][k]))
-                {
-                    throw std::runtime_error("v[t][k] is infinity. Check");
-                }
+            double contribution = filteredWeights[t][j] * crpPriors_j_t[X_k_tplus1];
+
+            // Use lock_guard to ensure mutual exclusion for v[t][k] updates
+            std::lock_guard<std::mutex> lock(mutex);
+
+            v[t][k] += contribution;
+
+            if (std::isnan(v[t][k])) {
+                throw std::runtime_error("v[t][k] is nan. Check");
             }
-            if (v[t][k] == 0)
-            {
-                v[t][k] = 1e-6;
+            if (std::isinf(v[t][k])) {
+                throw std::runtime_error("v[t][k] is infinity. Check");
             }
         }
+
+        if (v[t][k] == 0) {
+            // Use lock_guard to ensure mutual exclusion for v[t][k] updates
+            std::lock_guard<std::mutex> lock(mutex);
+
+            v[t][k] = 1e-6;
+        }
+    };
+
+    // ThreadPool pool(16);
+    // std::vector<std::future<void>> futures;
+
+    for (int t = 0; t < n_rows - 1; t++) {
+        for (int k = 0; k < N; k++) {
+            auto bound_lambda = std::bind(compute_v_element, t, k);
+            std::future<void> my_future = pool.submit_task(bound_lambda);
+
+        }
     }
+    pool.wait();
+    // // Wait for all tasks to complete
+    // for (auto& future : futures) {
+    //     future.wait();
+    // }
+
 
     // std::cout << "v:";
     // for (const auto& row : v) {
@@ -474,52 +580,41 @@ std::vector<std::vector<double>> w_smoothed(std::vector<std::vector<double>> fil
 
     std::vector<std::vector<double>> smoothedWeights(n_rows, std::vector<double>(N, 0.0));
 
-    for (int t = n_rows - 1; t >= 0; t--)
-    {
-// std::cout << "ses=" << t <<", w_smoothed." << std::endl;
-#pragma omp parallel for
-        for (int i = 0; i < N; i++)
-        {
-            if (t == n_rows - 1)
-            {
-                smoothedWeights[t][i] = filteredWeights[n_rows - 1][i];
-            }
-            else
-            {
-                std::vector<std::vector<double>> crpPriors_i = particleFilterVec[i].getCrpPriors();
-                std::vector<double> crpPriors_i_t = crpPriors_i[t];
+    auto compute_smoothed_weight = [&](int t, int i) {
+        if (t == n_rows - 1) {
+            smoothedWeights[t][i] = filteredWeights[n_rows - 1][i];
+        } else {
+            std::vector<std::vector<double>> crpPriors_i = particleFilterVec[i].getCrpPriors();
+            std::vector<double> crpPriors_i_t = crpPriors_i[t];
 
-                double weightedSum = 0;
-#pragma omp parallel for reduction(+ : weightedSum)
-                for (int k = 0; k < N; k++)
-                {
-                    std::vector<int> assignments_k = particleFilterVec[k].getOriginalSampledStrats();
-                    int X_k_tplus1 = assignments_k[t + 1];
-                    weightedSum = weightedSum + (smoothedWeights[t + 1][k] * crpPriors_i_t[X_k_tplus1] / v[t][k]);
-                    if (std::isnan(weightedSum))
-                    {
-                        throw std::runtime_error("weightedSum is nan. Check");
-                    }
-
-                    if (std::isinf(weightedSum))
-                    {
-                        throw std::runtime_error("weightedSum is infinity. Check");
-                    }
-                }
-                smoothedWeights[t][i] = weightedSum * filteredWeights[t][i];
-                if (smoothedWeights[t][i] > 1)
-                {
-                    throw std::runtime_error("weights greater than 1. Check");
-                }
+            double weightedSum = 0;
+            for (int k = 0; k < N; k++) {
+                std::vector<int> assignments_k = particleFilterVec[k].getOriginalSampledStrats();
+                std::vector<int> assignments_i = particleFilterVec[i].getOriginalSampledStrats();
+                int X_k_tplus1 = assignments_k[t + 1];
+                int X_i_t = assignments_i[t];
+                weightedSum += (smoothedWeights[t + 1][k] * crpPriors_i_t[X_k_tplus1] / v[t][k]);
+                // Add appropriate error checking here if needed
             }
+            smoothedWeights[t][i] = weightedSum * filteredWeights[t][i];
+            // Add any other logic specific to your application
         }
+    };
 
-        bool sumIsZero = std::accumulate(smoothedWeights[t].begin(), smoothedWeights[t].end(), 0.0,
-                                         [](double sum, double element)
-                                         {
-                                             return sum + element;
-                                         }) == 0.0;
+    // std::vector<std::thread> threads_smoothedWeights;
+
+    for (int t = n_rows - 1; t >= 0; t--) {
+        for (int i = 0; i < N; i++) {
+            auto bound_lambda = std::bind(compute_smoothed_weight, t, i);
+            std::future<void> my_future = pool.submit_task(bound_lambda);
+        }
     }
+    pool.wait();
+    // // Wait for all tasks to complete
+    // for (auto& future : futures) {
+    //     future.wait();
+    // }
+
 
     // bool allZero = std::all_of(smoothedWeights.begin(), smoothedWeights.end(),
     //     [](const std::vector<double>& row) {
@@ -537,66 +632,74 @@ std::vector<std::vector<double>> w_smoothed(std::vector<std::vector<double>> fil
     return (smoothedWeights);
 }
 
-std::vector<std::vector<std::vector<double>>> wij_smoothed(std::vector<std::vector<double>> filteredWeights, std::vector<ParticleFilter> particleFilterVec, std::vector<std::vector<double>> w_smoothed, int N)
+std::vector<std::vector<std::vector<double>>> wij_smoothed(std::vector<std::vector<double>> filteredWeights, std::vector<ParticleFilter> particleFilterVec, std::vector<std::vector<double>> w_smoothed, int N,BS::thread_pool& pool)
 {
     int n_rows = filteredWeights.size();
     std::vector<std::vector<std::vector<double>>> wijSmoothed(n_rows - 2, std::vector<std::vector<double>>(N, std::vector<double>(N, 0.0)));
 
     std::vector<std::vector<double>> v(n_rows, std::vector<double>(N, 0.0));
-#pragma omp parallel for collapse(2)
-    for (int t = 0; t < n_rows - 2; t++)
-    {
-        for (int j = 0; j < N; j++)
-        {
-            for (int l = 0; l < N; l++)
-            {
-                double w_t_l = filteredWeights[t][l];
-                std::vector<std::vector<double>> crpPriors_l = particleFilterVec[l].getCrpPriors();
-                std::vector<int> assignments_j = particleFilterVec[j].getOriginalSampledStrats();
-                int x_j_tplus1 = assignments_j[t + 1];
 
-                std::vector<double> crpPriors_l_t = crpPriors_l[t];
-                v[t][j] = v[t][j] + crpPriors_l_t[x_j_tplus1] * w_t_l;
-            }
-            if (v[t][j] == 0)
-            {
-                v[t][j] = 1e-6;
-            }
+    auto compute_v_element = [&](int t, int j) {
+        for (int l = 0; l < N; l++) {
+            double w_t_l = filteredWeights[t][l];
+            std::vector<std::vector<double>> crpPriors_l = particleFilterVec[l].getCrpPriors();
+            std::vector<int> assignments_j = particleFilterVec[j].getOriginalSampledStrats();
+            int x_j_tplus1 = assignments_j[t + 1];
+
+            std::vector<double> crpPriors_l_t = crpPriors_l[t];
+            v[t][j] += crpPriors_l_t[x_j_tplus1] * w_t_l;
+        }
+        if (v[t][j] == 0) {
+            v[t][j] = 1e-6;
+        }
+    };
+
+    // ThreadPool pool(16);
+
+    // std::vector<std::future<void>> futures;
+
+
+    for (int t = 0; t < n_rows - 2; t++) {
+        for (int j = 0; j < N; j++) {
+            auto bound_lambda = std::bind(compute_v_element, t, j);
+            std::future<void> my_future = pool.submit_task(bound_lambda);
+
         }
     }
+    pool.wait();
+    // // Wait for all tasks to complete
+    // for (auto& future : futures) {
+    //     future.wait();
+    // }
+
+
+    auto compute_ij_element = [&](int t, int i, int j) {
+        double w_t_i = filteredWeights[t][i];
+        double w_smoothed_tplus1_j = w_smoothed[t + 1][j];
+
+        std::vector<double> crpPriors_i_t = particleFilterVec[i].getCrpPriors()[t];
+        int x_j_tplus1 = particleFilterVec[j].getOriginalSampledStrats()[t + 1];
+
+        wijSmoothed[t][i][j] = w_t_i * w_smoothed_tplus1_j * crpPriors_i_t[x_j_tplus1] / v[t][j];
+    };
 
     for (int t = 0; t < n_rows - 2; t++)
     {
-        // std::cout << "wij_smoothed, t=" << t << std::endl;
-        std::vector<std::vector<double>> &wij_smoothed_t = wijSmoothed[t];
-#pragma omp parallel for collapse(2)
         for (int i = 0; i < N; i++)
         {
             for (int j = 0; j < N; j++)
             {
-
-                double w_t_i = filteredWeights[t][i];
-                double w_smoothed_tplus1_j = w_smoothed[t + 1][j];
-
-                std::vector<std::vector<double>> crpPriors_i = particleFilterVec[i].getCrpPriors();
-                std::vector<double> crpPriors_i_t = crpPriors_i[t];
-                std::vector<int> assignments_j = particleFilterVec[j].getOriginalSampledStrats();
-                int x_j_tplus1 = assignments_j[t + 1];
-
-                // double denom=0;
-                // #pragma omp parallel for reduction(+:denom)
-                // for(int l=0; l<N; l++)
-                // {
-                //     double w_t_l = filteredWeights[t][l];
-                //     std::vector<std::vector<double>> crpPriors_l = particleFilterVec[l].getCrpPriors();
-                //     std::vector<double> crpPriors_l_t = crpPriors_l[t];
-                //     denom = denom + crpPriors_l_t[x_j_tplus1] * w_t_l;
-
-                // }
-                wij_smoothed_t[i][j] = w_t_i * w_smoothed_tplus1_j * crpPriors_i_t[x_j_tplus1] / v[t][j];
+                auto bound_lambda = std::bind(compute_ij_element, t, i, j);
+                std::future<void> my_future = pool.submit_task(bound_lambda);
             }
         }
     }
+    pool.wait();
+    // // Wait for all tasks to complete
+    // for (auto& future : futures) {
+    //     future.wait();
+    // }
+
 
     // std::cout << "wij_smoothed completed" << std::endl;
 
@@ -605,7 +708,7 @@ std::vector<std::vector<std::vector<double>>> wij_smoothed(std::vector<std::vect
     return (wijSmoothed);
 }
 
-std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> E_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params)
+std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> E_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params, BS::thread_pool& pool)
 {
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -620,46 +723,16 @@ std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector
         // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
     }
 
-    std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<double>>> resTuple = particle_filter_new(N, particleFilterVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3);
+    std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<double>>> resTuple = particle_filter_new(N, particleFilterVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, pool);
     std::vector<std::vector<double>> filteredWeights = std::get<0>(resTuple);
-    std::vector<std::vector<double>> smoothedWeights = w_smoothed(filteredWeights, particleFilterVec, N);
-    
-    std::cout << "filteredWeights:";
-    for (const auto& row : filteredWeights) {
-        for (const auto& element : row) {
-            std::cout << element << " ";
-        }
-        std::cout << std::endl;  // Start a new line for each row
-    }
-
-    
-    std::cout << "smoothedWeights:";
-    for (const auto& row : smoothedWeights) {
-        for (const auto& element : row) {
-            std::cout << element << " ";
-        }
-        std::cout << std::endl;  // Start a new line for each row
-    }
-
-    std::vector<std::vector<std::vector<double>>> wijSmoothed = wij_smoothed(filteredWeights, particleFilterVec, smoothedWeights, N);
-    for (const auto& m : wijSmoothed) {
-        std::cout << "[\n"; // Start of a matrix
-        // Loop over the rows
-        for (const auto& r : m) {
-            std::cout << "  ["; // Start of a row
-            // Loop over the columns
-            for (const auto& c : r) {
-                std::cout << c << " "; // Print an element
-            }
-        std::cout << "]\n"; // End of a row
-        }
-    std::cout << "]\n"; // End of a matrix
-  }
+    std::vector<std::vector<double>> smoothedWeights = w_smoothed(filteredWeights, particleFilterVec, N, pool);
+    // wijSmoothed[t][i,j]
+    std::vector<std::vector<std::vector<double>>> wijSmoothed = wij_smoothed(filteredWeights, particleFilterVec, smoothedWeights, N,pool);
 
     return std::make_tuple(smoothedWeights, wijSmoothed, particleFilterVec);
 }
 
-double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> smoothed_w, std::vector<double> params)
+double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> smoothed_w, std::vector<double> params, BS::thread_pool& pool)
 {
 
     arma::mat allpaths = ratdata.getPaths();
@@ -687,31 +760,48 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
     double I_2 = 0;
     double I_3 = 0;
 
-    for (int t = 0; t < sessions; t++)
-    {
-// std::cout << "I_3 loop, t=" << t << std::endl;
-#pragma omp parallel for reduction(+ : I_3)
-        for (int i = 0; i < N; i++)
-        {
+    std::mutex mutex;
+
+    auto update_I_3 = [&](int t) {
+        double local_I_3 = 0.0;
+
+        for (int i = 0; i < N; i++) {
+            
+            std::lock_guard<std::mutex> lock(mutex);
+
             std::vector<int> originalSampledStrats = particleFilterVec[i].getOriginalSampledStrats();
             double lik_i = particleFilterVec[i].getSesLikelihood(originalSampledStrats[t], t);
-            if (lik_i == 0)
-            {
+
+            if (lik_i == 0) {
                 lik_i = 1e-6;
             }
-            I_3 = I_3 + (smoothedWeights[t][i] * log(lik_i));
 
-            if (std::isnan(I_3))
-            {
-                throw std::runtime_error("Error nan I_3 value");
-            }
+            local_I_3 += (smoothedWeights[t][i] * log(lik_i));
 
-            if (std::isinf(I_3))
-            {
-                throw std::runtime_error("Error inf I_3 value");
+            if (std::isnan(local_I_3) || std::isinf(local_I_3)) {
+                throw std::runtime_error("Error in local_I_3 value");
             }
         }
+
+        // Use lock_guard to ensure mutual exclusion for I_3 update
+        I_3 += local_I_3;
+    };
+
+    // ThreadPool pool(16);
+
+    // std::vector<std::future<void>> futures;
+
+
+    for (int t = 0; t < sessions; t++) {
+        auto bound_lambda = std::bind(update_I_3, t);
+        std::future<void> my_future = pool.submit_task(bound_lambda);
     }
+
+    // // Wait for all tasks to complete
+    // for (auto& future : futures) {
+    //     future.wait();
+    // }
+
 
     // for(int t=0; t<sessions-2; t++)
     // {
@@ -768,7 +858,7 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
     return (I_1 + I_2 + I_3);
 }
 
-std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N)
+std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
     double finalChamp = 1e8;
     std::vector<double> paramVec;
@@ -807,7 +897,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         {
 
             std::cout << "k=" <<k <<  ", i=" << i << ", E-step" << std::endl;
-            std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params);
+            std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, pool);
             std::vector<std::vector<double>> smoothedWeights = std::get<0>(res);
             std::vector<std::vector<std::vector<double>>> wijSmoothed = std::get<1>(res);
 
@@ -839,7 +929,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
 
             std::cout << "i=" << i << ", starting M-step" << std::endl;
 
-            PagmoProb pagmoprob(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res);
+            PagmoProb pagmoprob(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res, pool);
             // PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
             std::cout << "Initialized problem class" << std::endl;
 
@@ -878,7 +968,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
                 break;
             }
             params = dec_vec_champion;
-            std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params);
+            std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
             std::cout << "loglikelihood=" << q.second << std::endl;
             QFuncVals.push_back(q.second);
 
@@ -901,11 +991,11 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
     return (paramVec);
 }
 
-std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N)
+std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N,BS::thread_pool& pool)
 {
     std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res;
 
-    PagmoProb pagmoprob(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res);
+    PagmoProb pagmoprob(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res,pool);
     // PagmoProb pagmoprob(ratdata,Suboptimal_Hybrid3,Optimal_Hybrid3);
     std::cout << "Initialized problem class" << std::endl;
 
@@ -971,21 +1061,26 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
     // std::cout << "Value of the objfun in dec_vec_champion: " << fv[0] << '\n';
 
     std::vector<double> params = dec_vec_champion;
-    std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params);
+    std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
     std::cout << "loglikelihood=" << q.second << std::endl;
 
     return (params);
 }
 
 
-void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N)
+void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    
-    for(int i=0; i<1; i++)
+
+    unsigned int numThreads = std::thread::hardware_concurrency();
+
+    // Print the result
+    std::cout << "Number of threads available: " << numThreads << "\n";
+
+    for(int i=0; i<5; i++)
     {
         std::vector<double> params = {0.228439, 0.921127, 0.0429102, 0.575078, 0.755174, 0.0658294, 0.09602, 0.179565};
-        std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params);
-        double Q = M_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res, params);
+        std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> res = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, pool);
+        double Q = M_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, res, params, pool);
         std::cout << "i=" <<i << ", Q=" << Q << std::endl;
     }
 }

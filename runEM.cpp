@@ -9,6 +9,7 @@
 
 
 
+
 int main(int argc, char* argv[]) 
 {
     std::cout <<"Inside main" <<std::endl;
@@ -26,6 +27,7 @@ int main(int argc, char* argv[])
 
     //std::string run = argv[1];
 
+    BS::thread_pool pool(5);
 
     for(const std::string& ratName: rats)
     {
@@ -80,7 +82,7 @@ int main(int argc, char* argv[])
         
         //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100);
         //std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 100);
-        testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 5);
+        testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 5,pool);
 
 
         //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
@@ -118,7 +120,5 @@ int main(int argc, char* argv[])
     }
 
         
-    
-   
 
 }

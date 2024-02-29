@@ -6,7 +6,7 @@
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
-   double Q = M_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, resTuple, v);
+   double Q = M_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, resTuple, v, pool);
    Q = (-1)*Q;
 
   //  std::vector<ParticleFilter>  particleFilterVec;
