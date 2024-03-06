@@ -34,6 +34,10 @@ public:
   const MazeGraph& Optimal_Hybrid3_, int N_, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple_, BS::thread_pool& pool_):
   ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_), resTuple(resTuple_), pool(pool_)  {}
 
+    PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
+  const MazeGraph& Optimal_Hybrid3_, int N_, BS::thread_pool& pool_):
+  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_), pool(pool_)  {}
+
   // PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
   // const MazeGraph& Optimal_Hybrid3_, const std::map<std::pair<std::string, bool>, std::vector<double>> params_):
   // ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), params(params_) {}
