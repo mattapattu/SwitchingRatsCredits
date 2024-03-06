@@ -7,13 +7,14 @@
 #include <RInside.h>
 #include <algorithm>
 #include "BS_thread_pool.h"
+#include <pagmo/algorithm.hpp>
+
 
 
 
 
 
 using namespace Rcpp;
-using namespace pagmo;
 
 class ParticleFilter {
 public:

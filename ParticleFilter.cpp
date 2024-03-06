@@ -14,9 +14,7 @@
 #include <vector>
 #include <random>
 #include <algorithm>
-#include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
-#include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/de.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/problems/schwefel.hpp>
@@ -1278,7 +1276,8 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         problem prob{pagmoprob};
         int count = 0;
         
-        pagmo::nlopt method("sbplx");
+        // pagmo::nlopt method("sbplx");
+        pagmo::de method;
         method.set_maxeval(20);
         pagmo::algorithm algo = pagmo::algorithm{method};
         pagmo::population pop(prob, 10);
