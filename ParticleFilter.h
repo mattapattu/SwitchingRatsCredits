@@ -40,7 +40,7 @@ public:
     double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
     double lambda_drl_optimal = v[3];
-    alpha_crp = 0.25;
+    alpha_crp = v[4];
 
     initCrpProbs = {0.25,0.25,0.25,0.25};
     // normalizeCrp(initCrpProbs);
@@ -232,8 +232,8 @@ public:
             normalizeCrp(q);
         }else if((n[0] == 0 && n[2] == 0) && (n[1]>0 || n[3] > 0 )) // Case4: Optimal selected, no suboptimal
         {
-            q[0] = 0;
-            q[2] = 0;
+            q[0] = alpha_crp/(2*(ses + alpha_crp));;
+            q[2] = alpha_crp/(2*(ses + alpha_crp));;
 
             q[1] = n[1];
             q[3] = n[3];

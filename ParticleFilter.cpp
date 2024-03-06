@@ -355,7 +355,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/2)
+        if (n_eff < N/10)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -654,7 +654,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/2)
+        if (n_eff < N/10)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
