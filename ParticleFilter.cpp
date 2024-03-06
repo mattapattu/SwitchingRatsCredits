@@ -17,6 +17,11 @@
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/algorithms/nlopt.hpp>
+#include <pagmo/algorithm.hpp>
+#include <pagmo/algorithms/de.hpp>
+#include <pagmo/archipelago.hpp>
+#include <pagmo/problems/schwefel.hpp>
+
 
 
 using namespace std;
@@ -355,7 +360,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/10)
+        if (n_eff < N/5)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -654,7 +659,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/10)
+        if (n_eff < N/5)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -1339,7 +1344,7 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
     // pagmo::population pop(prob, 20);
     // pop = algo.evolve(pop);
 
-        pagmo::sade method (5,2,2 );
+        pagmo::de method (5);
         //method.set_maxeval(10);
         pagmo::algorithm algo = pagmo::algorithm {method};
         pagmo::population pop(prob, 20);
