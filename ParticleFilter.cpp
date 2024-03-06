@@ -16,7 +16,6 @@
 #include <algorithm>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
-#include <pagmo/algorithms/nlopt.hpp>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/de.hpp>
 #include <pagmo/archipelago.hpp>
