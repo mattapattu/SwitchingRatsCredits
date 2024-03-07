@@ -1346,7 +1346,11 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
         //method.set_maxeval(10);
         pagmo::algorithm algo = pagmo::algorithm {method};
         pagmo::population pop(prob, 20);
-        pop = algo.evolve(pop);
+        for(int k=0; k<3;k++)
+        {
+            pop = algo.evolve(pop);
+        }
+        
 
     std::vector<double> dec_vec_champion = pop.champion_x();
     std::cout << "Final champion = " << pop.champion_f()[0] << std::endl;
