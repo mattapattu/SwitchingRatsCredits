@@ -17,6 +17,8 @@
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/algorithms/nlopt.hpp>
+#include <pagmo/algorithms/de.hpp>
+
 
 
 using namespace std;
@@ -330,23 +332,34 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
 
         filteredWeights.push_back(w);
 
-        // std::cout << "ses=" << ses << ", normalied w=";
+        // std::cout << "ses=" << ses << ", particle w = ";
         // for (auto const& i : w)
         //     std::cout << i << ", ";
         // std::cout << "\n" ;
 
-        // Resample the particles with replacement according to the weights
-        // vector<vector<int>> m_new(N, vector<int>(T));
-        // for (int i = 0; i < N; i++) {
-        //   int j = sample(w);
-        //   //particleFilterVec[i] = std::make_shared<ParticleFilter>(particleFilterVec[j]);
-        //   ParticleFilter pf(particleFilterVec[j]);
-        //   int chosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
-        //   particleFilterVec[i].setChosenStrategies(particleFilterVec[j].getChosenStratgies());
-        //   particleFilterVec[i].setStrategies(particleFilterVec[j].getStrategies());
-        //   int updatedChosenStrat = particleFilterVec[i].getChosenStratgies()[ses];
-        //   std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", resampledParticle=" << particleFilterVec[j].getParticleId() << ", chosenStrat=" << chosenStrat << ", updatedChosenStrat=" << updatedChosenStrat << std::endl;
+        // for(int l=0; l<N;l++)
+        // {
+        //     std::vector<double> likelioods = particleFilterVec[l].getLikelihoods();
+        //     std::vector<int> history = particleFilterVec[l].getChosenStratgies();
+        //     std::cout << "ses=" << ses << ", particle=" << l <<", history=";
+        //     for (int n=0; n<=ses; n++)
+        //         std::cout << history[n] << ", ";
+        //     std::cout << "\n" ;
 
+
+        //     std::cout << "ses=" << ses << ", particle=" << l <<", likelihoods=";
+        //     for (auto const& m : likelioods)
+        //         std::cout << m << ", ";
+        //     std::cout << "\n" ;
+
+        // }
+
+        // std::cout << "ses=" << ses << ", samplingDistributionVec:";
+        // for (const auto& row : samplingDistributionVec) {
+        //     for (const auto& element : row) {
+        //         std::cout << element << " ";
+        //     }
+        //     std::cout << std::endl;
         // }
 
         double weightSq = 0;
@@ -355,7 +368,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/10)
+        if (n_eff < N/2)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -407,7 +420,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
     {
         for (int i = 0; i < N; i++)
         {
-            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getChosenStratgies();
+            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOriginalSampledStrats();
 
             // std::cout << "ses=" <<ses << ", particleId=" <<i << ", chosenStrat=" << chosenStrategy_pf[ses] << std::endl;
             postProbsOfExperts[ses][chosenStrategy_pf[ses]] = postProbsOfExperts[ses][chosenStrategy_pf[ses]] + filteredWeights[ses][i];
@@ -654,7 +667,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/10)
+        if (n_eff < N/2)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -1339,7 +1352,7 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
     // pagmo::population pop(prob, 20);
     // pop = algo.evolve(pop);
 
-        pagmo::de method (5,2,2 );
+        pagmo::de method (5);
         //method.set_maxeval(10);
         pagmo::algorithm algo = pagmo::algorithm {method};
         pagmo::population pop(prob, 20);
@@ -1394,7 +1407,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 {
 
     unsigned int numThreads = std::thread::hardware_concurrency();
-    std::vector<double> params = {0.215106, 0.872738, 0.0288027, 0.544798};
+    std::vector<double> params = {0.0385542, 0.771898, 0.0845617, 0.405625, 2.18937};
 
 
     // Print the result
@@ -1404,7 +1417,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
         
     //     {
     //         std::cout << "i=" <<i << ", performing E-step" << std::endl;
-    //         auto [smoothedWeights, wijSmoothed, particleFilterVec, filteredWeights] = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, pool);
+            // auto [smoothedWeights, wijSmoothed, particleFilterVec, filteredWeights] = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, pool);
 
     //         // std::vector<std::vector<double>> smoothedWeights = std::get<0>(res);
     //         // std::vector<ParticleFilter> particleFilterVec = std::get<2>(res);
