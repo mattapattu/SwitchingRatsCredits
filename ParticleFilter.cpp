@@ -1339,7 +1339,7 @@ std::vector<double> Mle(const RatData &ratdata, const MazeGraph &Suboptimal_Hybr
     // pagmo::population pop(prob, 20);
     // pop = algo.evolve(pop);
 
-        pagmo::sade method (5,2,2 );
+        pagmo::de method (5,2,2 );
         //method.set_maxeval(10);
         pagmo::algorithm algo = pagmo::algorithm {method};
         pagmo::population pop(prob, 20);

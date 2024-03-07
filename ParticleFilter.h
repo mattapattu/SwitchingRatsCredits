@@ -3,9 +3,6 @@
 
 #include <cstdlib>
 #include <pagmo/algorithm.hpp>
-#include <pagmo/algorithms/sade.hpp>
-#include <pagmo/archipelago.hpp>
-#include <pagmo/problems/schwefel.hpp>
 #include "Strategy.h"
 #include "InverseRL.h"
 #include <RInside.h>
