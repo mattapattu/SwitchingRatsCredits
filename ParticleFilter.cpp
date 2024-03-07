@@ -409,7 +409,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
     {
         for (int i = 0; i < N; i++)
         {
-            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOrigSampledStrats();
+            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOriginalSampledStrats();
 
             // std::cout << "ses=" <<ses << ", particleId=" <<i << ", chosenStrat=" << chosenStrategy_pf[ses] << std::endl;
             postProbsOfExperts[ses][chosenStrategy_pf[ses]] = postProbsOfExperts[ses][chosenStrategy_pf[ses]] + filteredWeights[ses][i];
