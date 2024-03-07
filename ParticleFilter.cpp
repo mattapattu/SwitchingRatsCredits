@@ -357,7 +357,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/5)
+        if (n_eff < N/2)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
@@ -409,7 +409,7 @@ std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const
     {
         for (int i = 0; i < N; i++)
         {
-            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getChosenStratgies();
+            std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOrigSampledStrats();
 
             // std::cout << "ses=" <<ses << ", particleId=" <<i << ", chosenStrat=" << chosenStrategy_pf[ses] << std::endl;
             postProbsOfExperts[ses][chosenStrategy_pf[ses]] = postProbsOfExperts[ses][chosenStrategy_pf[ses]] + filteredWeights[ses][i];
@@ -656,7 +656,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
             weightSq = weightSq + std::pow(w[k], 2);
         }
         double n_eff = 1 / weightSq;
-        if (n_eff < N/5)
+        if (n_eff < N/2)
         {
             // std::cout << "ses=" <<ses <<", n_eff=" << n_eff << ", performing resampling" << std::endl;
             std::vector<double> resampledIndices = systematicResampling(w);
