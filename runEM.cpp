@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
     //std::string run = argv[1];
 
-    BS::thread_pool pool(18);
+    BS::thread_pool pool;
     for(const std::string& ratName: rats)
     {
         std::string cmd = "load('/home/amoongat/Projects/SwitchingRatsCredits/"+ ratName +".Rdata')";
