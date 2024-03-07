@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
         
         //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
-         std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
+         std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 200, pool);
         //testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 100,pool,R);
 
 
