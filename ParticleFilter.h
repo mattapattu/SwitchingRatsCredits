@@ -157,15 +157,15 @@ public:
         {
 
             std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-            // std::cout <<", n = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+            std::cout <<", n = ";
+            for (auto const& i : n)
+                std::cout << i << ", ";
+            std::cout << "\n" ;
 
-            // std::cout << ", stratCounts[ses] = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+            std::cout << ", stratCounts[ses] = ";
+            for (auto const& i : n)
+                std::cout << i << ", ";
+            std::cout << "\n" ;
             throw std::runtime_error("Error crp count vec is not proper");
         }
           
