@@ -1293,7 +1293,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         int count = 0;
         
         pagmo::nlopt method("sbplx");
-        method.set_maxeval(20);
+        method.set_maxeval(50);
         pagmo::algorithm algo = pagmo::algorithm{method};
         pagmo::population pop(prob, 10);
         pop = algo.evolve(pop);
@@ -1310,7 +1310,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         std::cout << "\n";
         params = dec_vec_champion;
         // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
-        std::cout << "loglikelihood=" << q.second << std::endl;
+        // std::cout << "loglikelihood=" << q.second << std::endl;
         // QFuncVals.push_back(q.second);
 
     }
