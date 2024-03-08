@@ -78,8 +78,8 @@ int main(int argc, char* argv[])
         //std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, rdata, suboptimalHybrid3, optimalHybrid3, v );
 
         
-        //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
-         std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 500, pool);
+        std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
+         //std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 500, pool);
         //testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 100,pool,R);
 
 

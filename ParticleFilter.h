@@ -2,19 +2,19 @@
 #define PARTICLE_FILTER_H
 
 #include <cstdlib>
+#include <pagmo/algorithm.hpp>
 #include "Strategy.h"
 #include "InverseRL.h"
 #include <RInside.h>
 #include <algorithm>
 #include "BS_thread_pool.h"
-#include <pagmo/algorithm.hpp>
-
 
 
 
 
 
 using namespace Rcpp;
+using namespace pagmo;
 
 class ParticleFilter {
 public:
@@ -157,15 +157,15 @@ public:
         {
 
             std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-            // std::cout <<", n = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+            std::cout <<", n = ";
+            for (auto const& i : n)
+                std::cout << i << ", ";
+            std::cout << "\n" ;
 
-            // std::cout << ", stratCounts[ses] = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+            std::cout << ", stratCounts[ses] = ";
+            for (auto const& i : n)
+                std::cout << i << ", ";
+            std::cout << "\n" ;
             throw std::runtime_error("Error crp count vec is not proper");
         }
           
