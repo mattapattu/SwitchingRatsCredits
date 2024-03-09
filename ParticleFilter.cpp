@@ -480,7 +480,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
     {
         //   // Initialize the weights with uniform probabilities
         double ses_lik = 0;
-// std::cout << "ses=" << ses << std::endl;
+        // std::cout << "ses=" << ses << std::endl;
 // Update the weights with the likelihood of the current outcome
         
         std::vector<std::vector<double>> samplingDistributionVec(N, std::vector<double>(4, 0.0));
@@ -488,7 +488,6 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
 
             particleFilterVec[i].updateStratCounts(ses);
             std::vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
-
             std::vector<std::shared_ptr<Strategy>> strategies = particleFilterVec[i].getStrategies();
             particleFilterVec[i].backUpStratCredits();
             std::vector<double> likelihoods;
@@ -501,19 +500,16 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
                 }
                 likelihoods.push_back(lik);
             }
-
             double sum = 0;
             for(int k=0; k<strategies.size();k++)
             {
                 sum += crp_i[k]*likelihoods[k];
             }    
-
             std::vector<double> p;
             for(int k=0; k<strategies.size();k++)
             {
                 p.push_back(crp_i[k]*likelihoods[k]/sum);
             }
-
             if(sum==0)
             {
                 std::cout << "Err in generate_sampling_distribution. Check" << std::endl;
@@ -528,8 +524,9 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
 
                 throw std::runtime_error("Err in generate_sampling_distribution. Check");
             }
-
+            
             particleFilterVec[i].rollBackCredits();
+
 
             samplingDistributionVec[i] = p;
 
@@ -546,6 +543,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
 
                 throw std::runtime_error("Sample not matching distribution. Check");
             }
+            
             particleFilterVec[i].addAssignment(ses, sampled_strat);
             particleFilterVec[i].addOriginalSampledStrat(ses, sampled_strat);
             double lik = particleFilterVec[i].getSesLikelihood(sampled_strat, ses);
@@ -559,36 +557,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
         });
 
         generate_sampling_distribution.wait();
-
-
-        // std::vector<double> samplingDistribution_ses = colwise_mean(samplingDistributionVec);
-
-        // BS::multi_future<void> sample_particle_filter = pool.submit_sequence(0,N,[&particleFilterVec,&ses,&w,&samplingDistributionVec](int i) {
-        //     // Use lock_guard to ensure mutual exclusion for particleFilterVec and w updates
-        //     // std::lock_guard<std::mutex> lock(mutex);
-
-        //     //particleFilterVec[i].updateStratCounts(ses);
-        //     //std::vector<double> crp_i = particleFilterVec[i].crpPrior(ses);
-            
-
-        //     // Add any other logic specific to your application
-
-        //     // if (std::isnan(w[i])) {
-        //     //     throw std::runtime_error("weight w[i] is nan after sampling. Check");
-        //     // }
-
-        //     // if (std::isinf(w[i])) {
-        //     //     throw std::runtime_error("weight w[i] is infty after sampling. Check");
-        //     // }
-        // });
-        // sample_particle_filter.wait();
-
-
-        // std::cout << "ses=" << ses << ", particle weights log_w = ";
-        // for (auto const& i : log_w)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
-    
+ 
 
         ses_lik = std::accumulate(w.begin(), w.end(), 0.0);
         ses_lik = ses_lik / N;
@@ -970,12 +939,35 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
     std::vector<std::vector<std::vector<double>>> wijSmoothed = std::get<1>(smoothed_w);
     std::vector<ParticleFilter> truePfVec = std::get<2>(smoothed_w);
 
+    std::cout << "params: ";
+    for (auto const& n : params)
+                    std::cout << n << ", ";
+                std::cout << "\n" ;
+    // std::vector<ParticleFilter> particleFilterVec(N, ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params));
+    
+
+    // BS::multi_future<void> loop_future = pool.submit_sequence(0,N,[&particleFilterVec,&ratdata,&Suboptimal_Hybrid3,&Optimal_Hybrid3,&params, &truePfVec](int i)
+    // {
+    //     // auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
+    //     // pf.setStratCounts(truePfVec[i].getStratCounts());
+    //     // // pf.setChosenStrategies(truePfVec[i].getChosenStratgies());
+    //     // pf.setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
+    //     // pf.setCrpPriors(truePfVec[i].getCrpPriors());
+    //     particleFilterVec[i].setStratCounts(truePfVec[i].getStratCounts()); ;
+    //     particleFilterVec[i].setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
+    //     particleFilterVec[i].setCrpPriors(truePfVec[i].getCrpPriors());
+    //     std::vector<std::shared_ptr<Strategy>> strategies =  particleFilterVec[i].getStrategies();   
+
+
+    // });
+    // loop_future.wait();
+
     std::vector<ParticleFilter> particleFilterVec;
     for (int i = 0; i < N; i++)
     {
         auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
         pf.setStratCounts(truePfVec[i].getStratCounts());
-        pf.setChosenStrategies(truePfVec[i].getChosenStratgies());
+        // pf.setChosenStrategies(truePfVec[i].getChosenStratgies());
         pf.setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
         pf.setCrpPriors(truePfVec[i].getCrpPriors());
         particleFilterVec.push_back(pf);
@@ -1000,6 +992,25 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
             double lik_i = particleFilterVec[i].getSesLikelihood(originalSampledStrats[t], t);
 
             // std::cout << "ses=" << t << ", i=" << i << ", originalSampledStrats=" << originalSampledStrats[t] << ", lik_i=" << lik_i << std::endl;
+            std::vector<std::shared_ptr<Strategy>> strategies =  particleFilterVec[i].getStrategies();
+            // for(int j=0; j < 4; j++)
+            // {
+                
+            //     std::vector<double> s0Credits = strategies[j]->getS0Credits();
+            //     std::cout << "ses=" << ", i=" << i << "strat=" << j <<  ", s0Credits: ";
+            //     for (auto const& n : s0Credits)
+            //                 std::cout << n << ", ";
+            //             std::cout << "\n" ;
+            //     if(strategies[j]->getOptimal())
+            //     {
+            //     std::vector<double> s1Credits = strategies[j]->getS1Credits();
+            //     std::cout << "ses=" << ", i=" << i << "strat=" << j <<  ", s1Credits: ";
+            //     for (auto const& n : s1Credits)
+            //         std::cout << n << ", ";
+            //     std::cout << "\n" ;
+            //     }
+            // }
+        
 
             if (lik_i == 0) {
                 lik_i = 1e-6;
@@ -1031,79 +1042,47 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
 
     }
 
-    // // Wait for all tasks to complete
-    // for (auto& future : futures) {
-    //     future.wait();
-    // }
-
     // for(int t=0; t<sessions-2; t++)
     // {
-    //     // std::cout << "I_2 loop, t=" << t << std::endl;
-    //     #pragma omp parallel for collapse(2) reduction(+:I_2)
-    //     for(int i=0; i<N; i++)
+    //     BS::multi_future<double> loop_future = pool.submit_sequence<double>(0,N,[&particleFilterVec,&smoothedWeights, &N, &wijSmoothed, &t](int i)
     //     {
+    //         double local_I_2 = 0.0;
+
     //         for(int j=0; j<N; j++)
     //         {
-    //             std::vector<double> crpPriors_i_t = particleFilterVec[i].crpPrior(t);
+    //             std::vector<double> crpPriors_i_t = particleFilterVec[i].getCrpPriors()[t];
     //             std::vector<int> assignments_j = particleFilterVec[j].getOriginalSampledStrats();
     //             int X_j_tplus1 = assignments_j[t+1];
 
     //             double w_ij_smoothed = wijSmoothed[t][i][j];
-    //             I_2 = I_2 + (log(crpPriors_i_t[X_j_tplus1])*w_ij_smoothed);
+    //             double p_crp_X_j_tplus1 = crpPriors_i_t[X_j_tplus1];
+    //             if(p_crp_X_j_tplus1==0)
+    //             {
+    //                 p_crp_X_j_tplus1 = std::numeric_limits<double>::min();
+    //             }
+    //             local_I_2 = local_I_2 + (log(p_crp_X_j_tplus1)*w_ij_smoothed);
 
-    //             if (std::isnan(I_2)) {
+    //             if (std::isnan(local_I_2)) {
+    //                 std::cout << "t=" << t << ", i=" << i << ", j=" << j << ", w_ij_smoothed=" << w_ij_smoothed << ", X_j_tplus1=" << X_j_tplus1 << ", crpPriors_i_t[X_j_tplus1]=" << p_crp_X_j_tplus1 << std::endl;
     //                 throw std::runtime_error("Error nan I_2 value");
     //             }
 
-    //             if (std::isinf(I_2)) {
+    //             if (std::isinf(local_I_2)) {
     //                 throw std::runtime_error("Error inf I_2 value");
     //             }
     //         }
-    //     }
-    // }
-
-    for(int t=0; t<sessions-2; t++)
-    {
-        BS::multi_future<double> loop_future = pool.submit_sequence<double>(0,N,[&particleFilterVec,&smoothedWeights, &N, &wijSmoothed, &t](int i)
-        {
-            double local_I_2 = 0.0;
-
-            for(int j=0; j<N; j++)
-            {
-                std::vector<double> crpPriors_i_t = particleFilterVec[i].getCrpPriors()[t];
-                std::vector<int> assignments_j = particleFilterVec[j].getOriginalSampledStrats();
-                int X_j_tplus1 = assignments_j[t+1];
-
-                double w_ij_smoothed = wijSmoothed[t][i][j];
-                double p_crp_X_j_tplus1 = crpPriors_i_t[X_j_tplus1];
-                if(p_crp_X_j_tplus1==0)
-                {
-                    p_crp_X_j_tplus1 = std::numeric_limits<double>::min();
-                }
-                local_I_2 = local_I_2 + (log(p_crp_X_j_tplus1)*w_ij_smoothed);
-
-                if (std::isnan(local_I_2)) {
-                    std::cout << "t=" << t << ", i=" << i << ", j=" << j << ", w_ij_smoothed=" << w_ij_smoothed << ", X_j_tplus1=" << X_j_tplus1 << ", crpPriors_i_t[X_j_tplus1]=" << p_crp_X_j_tplus1 << std::endl;
-                    throw std::runtime_error("Error nan I_2 value");
-                }
-
-                if (std::isinf(local_I_2)) {
-                    throw std::runtime_error("Error inf I_2 value");
-                }
-            }
             
 
-            return local_I_2;
+    //         return local_I_2;
 
-        });
+    //     });
 
-        loop_future.wait();
-        for (auto& future : loop_future) {
-           I_2+= future.get();
-        }
+    //     loop_future.wait();
+    //     for (auto& future : loop_future) {
+    //        I_2+= future.get();
+    //     }
 
-
-    }
+    // }
 
     // for (int i = 0; i < N; i++)
     // {
@@ -1115,14 +1094,6 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
     //     I_1 = I_1 + (smoothedWeights[0][i] * log(crpPriors_i_0[X_i_0]));
     // }
 
-    // for(int t=0; t<sessions-1; t++)
-    // {
-    //     for(int i=0; i<N; i++)
-    //     {
-    //         std::vector<double> liks_i = particleFilterVec[i].getLikelihoods();
-    //         I_3 = I_3+(smoothedWeights[t][i]*log(liks_i[t]));
-    //     }
-    // }
 
     if (I_1 + I_2 + I_3 == 0)
     {
@@ -1438,7 +1409,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 {
 
     unsigned int numThreads = std::thread::hardware_concurrency();
-    std::vector<double> params = {0.470911, 0.744444, 0.0262778, 0.975857, 4.63057};
+    std::vector<double> params = {0.524802, 0.783351, 0.876612, 0.846968};
 
 
     // Print the result

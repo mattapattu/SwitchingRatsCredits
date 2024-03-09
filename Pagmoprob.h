@@ -9,6 +9,8 @@
 #include <pagmo/problems/schwefel.hpp>
 #include "Strategy.h"
 #include "ParticleFilter.h"
+#include <pagmo/utils/gradients_and_hessians.hpp>
+
 
 
 
@@ -47,6 +49,13 @@ public:
 
   // Bounds function
   std::pair<vector_double, vector_double> get_bounds() const;
+
+  
+  vector_double gradient(const vector_double &dv) const
+  {
+    return estimate_gradient([this](const vector_double &x) {return this->fitness(x);},dv);
+  }
+
 
   // vector_double::size_type get_nix() const
   // {

@@ -51,7 +51,7 @@ public:
         //     //rewardsS1.push_back(vecObj);
         // }
 
-        return;
+        pathProbMat = arma::mat(0, 15);
     }
 
     void setName(std::string testModel)
