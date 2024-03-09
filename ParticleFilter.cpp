@@ -1276,7 +1276,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
     std::vector<double> params = {228439, 0.921127, 0.0429102, 0.575078,0.2};
     std::vector<double> QFuncVals;
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 40; i++)
     {
 
         std::cout << "i=" << i << ", E-step" << std::endl;
@@ -1310,7 +1310,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         std::cout << "\n";
         params = dec_vec_champion;
         // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
-        std::cout << "loglikelihood=" << q.second << std::endl;
+        // std::cout << "loglikelihood=" << q.second << std::endl;
         // QFuncVals.push_back(q.second);
 
     }
