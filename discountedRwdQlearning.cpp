@@ -300,10 +300,10 @@ double getDiscountedRwdQlearningLik(const RatData& ratdata, int session, Strateg
 
       //std::cout << "td_err = " << td_err << "\n";
       // std::cout << "S=" <<S << ", A=" << A << ", i=" << i << ", j=" << j << ", currTurn=" << currTurn << ", currTurnReward=" << currTurnReward << ", td_err=" << td_err << ", nodeCredits=" << graph->getNodeCredits(currNode) << ", etrace=" << graph->getEligibilityTrace(currNode) << ", qMax=" << qMax << ", turntime=" << turntime  << std::endl;
-      if(td_err > 20)
-      {
-        throw std::runtime_error("Check td err");
-      }
+      // if(td_err > 20)
+      // {
+      //   throw std::runtime_error("Check td err");
+      // }
 
       S0.tdUpdateAllVertexCredits(alpha, td_err);
       if(strategy.getOptimal())

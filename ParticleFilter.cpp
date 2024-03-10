@@ -937,40 +937,12 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
 
     std::vector<std::vector<double>> smoothedWeights = std::get<0>(smoothed_w);
     std::vector<std::vector<std::vector<double>>> wijSmoothed = std::get<1>(smoothed_w);
-    std::vector<ParticleFilter> truePfVec = std::get<2>(smoothed_w);
+    std::vector<ParticleFilter> particleFilterVec = std::get<2>(smoothed_w);
 
-    std::cout << "params: ";
-    for (auto const& n : params)
-                    std::cout << n << ", ";
-                std::cout << "\n" ;
-    // std::vector<ParticleFilter> particleFilterVec(N, ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params));
-    
-
-    // BS::multi_future<void> loop_future = pool.submit_sequence(0,N,[&particleFilterVec,&ratdata,&Suboptimal_Hybrid3,&Optimal_Hybrid3,&params, &truePfVec](int i)
-    // {
-    //     // auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
-    //     // pf.setStratCounts(truePfVec[i].getStratCounts());
-    //     // // pf.setChosenStrategies(truePfVec[i].getChosenStratgies());
-    //     // pf.setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
-    //     // pf.setCrpPriors(truePfVec[i].getCrpPriors());
-    //     particleFilterVec[i].setStratCounts(truePfVec[i].getStratCounts()); ;
-    //     particleFilterVec[i].setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
-    //     particleFilterVec[i].setCrpPriors(truePfVec[i].getCrpPriors());
-    //     std::vector<std::shared_ptr<Strategy>> strategies =  particleFilterVec[i].getStrategies();   
-
-
-    // });
-    // loop_future.wait();
-
-    std::vector<ParticleFilter> particleFilterVec;
+    // std::vector<ParticleFilter> particleFilterVec;
     for (int i = 0; i < N; i++)
     {
-        auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
-        pf.setStratCounts(truePfVec[i].getStratCounts());
-        // pf.setChosenStrategies(truePfVec[i].getChosenStratgies());
-        pf.setOriginalSampledStrats(truePfVec[i].getOriginalSampledStrats());
-        pf.setCrpPriors(truePfVec[i].getCrpPriors());
-        particleFilterVec.push_back(pf);
+        particleFilterVec[i].resetStrategies();
         // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
     }
 
@@ -979,38 +951,19 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
     double I_3 = 0;
 
 
-    for (int t = 0; t < sessions; t++) {
         
-        BS::multi_future<double> loop_future = pool.submit_sequence<double>(0,N,[&t,&particleFilterVec,&smoothedWeights](int i)
+    BS::multi_future<double> loop_future = pool.submit_sequence<double>(0,N,[&particleFilterVec,&smoothedWeights,&sessions](int i)
+    {
+        double local_I_3 = 0.0;
+        for(int t=0; t<sessions;t++)
         {
-            double local_I_3 = 0.0;
-
-            
+                   
             std::vector<int> originalSampledStrats = particleFilterVec[i].getOriginalSampledStrats();
             // std::cout << "ses=" << t << ", i=" << i << ", originalSampledStrats=" << originalSampledStrats[t] << std::endl;
 
             double lik_i = particleFilterVec[i].getSesLikelihood(originalSampledStrats[t], t);
 
-            // std::cout << "ses=" << t << ", i=" << i << ", originalSampledStrats=" << originalSampledStrats[t] << ", lik_i=" << lik_i << std::endl;
-            std::vector<std::shared_ptr<Strategy>> strategies =  particleFilterVec[i].getStrategies();
-            // for(int j=0; j < 4; j++)
-            // {
-                
-            //     std::vector<double> s0Credits = strategies[j]->getS0Credits();
-            //     std::cout << "ses=" << ", i=" << i << "strat=" << j <<  ", s0Credits: ";
-            //     for (auto const& n : s0Credits)
-            //                 std::cout << n << ", ";
-            //             std::cout << "\n" ;
-            //     if(strategies[j]->getOptimal())
-            //     {
-            //     std::vector<double> s1Credits = strategies[j]->getS1Credits();
-            //     std::cout << "ses=" << ", i=" << i << "strat=" << j <<  ", s1Credits: ";
-            //     for (auto const& n : s1Credits)
-            //         std::cout << n << ", ";
-            //     std::cout << "\n" ;
-            //     }
-            // }
-        
+            // std::cout << "ses=" << t << ", i=" << i << ", originalSampledStrats=" << originalSampledStrats[t] << ", lik_i=" << lik_i << std::endl;       
 
             if (lik_i == 0) {
                 lik_i = 1e-6;
@@ -1033,14 +986,17 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
                 throw std::runtime_error("Error in local_I_3 value");
             }
             
-            return local_I_3;
-        });
-        loop_future.wait();
-        for (auto& future : loop_future) {
-           I_3+= future.get();
+            
         }
+        return local_I_3;
+    });
 
+    loop_future.wait();
+    for (auto& future : loop_future) {
+        I_3+= future.get();
     }
+
+    
 
     // for(int t=0; t<sessions-2; t++)
     // {
@@ -1244,7 +1200,7 @@ double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const
 
 std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {228439, 0.921127, 0.0429102, 0.575078,0.2};
+    std::vector<double> params = {0.228439, 0.921127, 0.0429102, 0.575078,0.2};
     std::vector<double> QFuncVals;
 
     for (int i = 0; i < 40; i++)
@@ -1263,7 +1219,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
         problem prob{pagmoprob};
         int count = 0;
         
-        pagmo::nlopt method("sbplx");
+        pagmo::nlopt method("praxis");
         method.set_maxeval(20);
         pagmo::algorithm algo = pagmo::algorithm{method};
         pagmo::population pop(prob, 10);
@@ -1303,10 +1259,6 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
             smoothedPosterior[ses][chosenStrategy_pf[ses]] = smoothedPosterior[ses][chosenStrategy_pf[ses]] + smoothedWeights[ses][i];
             // postProbsOfExperts[ses][chosenStrategy_pf[ses]] = std::round(postProbsOfExperts[ses][chosenStrategy_pf[ses]] * 100.0) / 100.0;
         }
-        // for (int j = 0; j < 4; j++)
-        // {
-        //     smoothedPosterior[ses][j] = std::round(smoothedPosterior[ses][j] * 100.0) / 100.0;
-        // }
 
     }
     std::cout << "smoothed posterior:" << std::endl;
