@@ -24,21 +24,14 @@ public:
   PagmoProb();
   // Constructor
 
-  //   PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
-  // const MazeGraph& Optimal_Hybrid3_):
-  // ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_)  {}
 
   // PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
-  // const MazeGraph& Optimal_Hybrid3_, int N_):
-  // ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_)  {}
+  // const MazeGraph& Optimal_Hybrid3_, int N_, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple_, BS::thread_pool& pool_):
+  // ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_), resTuple(resTuple_), pool(pool_)  {}
 
   PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
-  const MazeGraph& Optimal_Hybrid3_, int N_, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple_, BS::thread_pool& pool_):
+  const MazeGraph& Optimal_Hybrid3_, int N_, std::tuple<std::vector<std::vector<double>>, std::vector<ParticleFilter>, std::vector<std::vector<int>>> resTuple_, BS::thread_pool& pool_):
   ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), N(N_), resTuple(resTuple_), pool(pool_)  {}
-
-  // PagmoProb(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_,  
-  // const MazeGraph& Optimal_Hybrid3_, const std::map<std::pair<std::string, bool>, std::vector<double>> params_):
-  // ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), params(params_) {}
 
 
   // Destructor
@@ -94,7 +87,8 @@ private:
   const MazeGraph& Optimal_Hybrid3;
   const std::map<std::pair<std::string, bool>, std::vector<double>> params;
   int N;
-  std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple;
+  //std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> resTuple;
+  std::tuple<std::vector<std::vector<double>>, std::vector<ParticleFilter>, std::vector<std::vector<int>>> resTuple;
   BS::thread_pool& pool;
   //mutable std::vector<std::atomic<std::pair<double, std::vector<double>>>> indexedValues;
   // mutable std::mutex  vectorMutex;
