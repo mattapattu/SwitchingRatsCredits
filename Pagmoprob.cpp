@@ -17,12 +17,23 @@
 
 pagmo::vector_double PagmoProb::fitness(const pagmo::vector_double& v) const
 {
-   double Q = M_step2(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, resTuple, v, pool);
+  //  double Q = M_step2(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, resTuple, v, pool);
+                                                                  
+  double Q_prev = 0;
+  if(k>1)
+  {
+    Q_prev =  M_step3(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, M, k, gamma, prevSmoothedTrajectories, v, pool);
+  }
 
-   Q = (-1)*Q;
+  double Q_k = M_step3(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, M, k, gamma, smoothedTrajectories, v, pool);
+
+  double gamma_k = (double) gamma/(double) k;
+  double Q_kplus1 = (1-gamma)*Q_prev + gamma*Q_k;
+
+  Q_kplus1 = (-1)*Q_kplus1;
 
   
-   return{Q};
+   return{Q_kplus1};
 
 }
 

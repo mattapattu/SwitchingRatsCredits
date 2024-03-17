@@ -36,7 +36,7 @@ public:
     double alpha_drl_optimal = v[2];
     double beta_drl_optimal = 1e-4;
     double lambda_drl_optimal = v[3];
-    alpha_crp = 0.25;
+    alpha_crp = 1e-6;
 
     initCrpProbs = {0.25,0.25,0.25,0.25};
 
@@ -206,6 +206,52 @@ public:
   // }
 
 
+  // std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
+  // {
+    
+  //   if(ses > 0)
+  //   {
+  //       std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
+
+  //       // n[0] = stratCounts[ses][0];
+  //       // n[1] = stratCounts[ses][1];
+  //       // n[2] = stratCounts[ses][2];
+  //       // n[3] = stratCounts[ses][3];
+
+  //       std::vector<int> n(4, 0);
+
+  //       for (int i = 0; i < ses; i++) {
+  //           n[history[i]]++;
+  //       }
+
+
+  // //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
+          
+  //       std::vector<double> q(4, 0);
+
+  //       for (int k = 0; k < 4; k++) {
+  //           if(n[k] > 0)
+  //           {
+  //               q[k] = n[k] / (ses + alpha_crp);
+  //           }else{
+  //               q[k] = alpha_crp / (ses + alpha_crp);
+  //               int zeroCount = std::count(n.begin(), n.end(), 0);
+  //               q[k] = q[k]/zeroCount;
+
+  //           }
+            
+  //       }
+
+  //       return(q);
+
+  //   }
+  //   else{
+  //       return initCrpProbs;
+  //   }
+
+  // }
+
+
 
   std::vector<double> crpPrior(int ses)
   {
@@ -341,27 +387,34 @@ public:
 
   std::vector<double> crpPrior2(std::vector<int> particleHistory, int ses)
   {
-        std::vector<int> n(particleHistory.begin(), particleHistory.begin()+ses);
+        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
 
         // n[0] = stratCounts[ses][0];
         // n[1] = stratCounts[ses][1];
         // n[2] = stratCounts[ses][2];
         // n[3] = stratCounts[ses][3];
 
+        std::vector<int> n(4, 0);
+
+      for (int i = 0; i < ses; i++) {
+          n[history[i]]++;
+      }
+
+
         int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
         if(n_counts >0 && n_counts!= ses)
         {
 
             std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-            std::cout <<", n = ";
-            for (auto const& i : n)
-                std::cout << i << ", ";
-            std::cout << "\n" ;
+            // std::cout <<", n = ";
+            // for (auto const& i : n)
+            //     std::cout << i << ", ";
+            // std::cout << "\n" ;
 
-            std::cout << ", stratCounts[ses] = ";
-            for (auto const& i : n)
-                std::cout << i << ", ";
-            std::cout << "\n" ;
+            // std::cout << ", stratCounts[ses] = ";
+            // for (auto const& i : n)
+            //     std::cout << i << ", ";
+            // std::cout << "\n" ;
             throw std::runtime_error("Error crp count vec is not proper");
         }
           
@@ -453,7 +506,11 @@ public:
 
         if (sum == 0) {
                 
-            std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", ses = " << ses << std::endl;
+            std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n:";
+            for (auto const& i : n)
+                std::cout << i << ", ";
+            std::cout << "\n" ;  
+
             throw std::runtime_error("Error crp prior vec is zero");
         }
 
@@ -755,7 +812,12 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<dou
 void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool, RInside & R);
 double M_step2(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::tuple<std::vector<std::vector<double>>, std::vector<ParticleFilter>, std::vector<std::vector<int>>> smoothedRes, std::vector<double> params, BS::thread_pool& pool);
 std::tuple<std::vector<std::vector<double>>, std::vector<ParticleFilter>, std::vector<std::vector<int>>> E_step2(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params, BS::thread_pool& pool);
-
+std::pair<std::vector<std::vector<double>>, double> fapf(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, BS::thread_pool& pool);
+int sample(std::vector<double> p);
+void normalize(std::vector<double> &p);
+std::vector<double> stratifiedResampling(std::vector<double>&particleWeights);
+std::vector<std::vector<int>> E_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, int M, std::vector<double> params, BS::thread_pool& pool);
+double M_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int M, int k, double gamma, std::vector<std::vector<int>> smoothedTrajectories, std::vector<double> params, BS::thread_pool& pool);
 
 
 #endif
