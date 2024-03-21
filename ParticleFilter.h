@@ -102,6 +102,9 @@ public:
     {
         chosenStrategy.push_back(-1);
         originalSampledStrat.push_back(-1);
+        particleTrajectories.push_back(std::vector<int>(sessions, -1));
+        crpPriors.push_back(std::vector<double>(4, -1));
+
     }
 
   }
@@ -224,7 +227,6 @@ public:
   //           n[history[i]]++;
   //       }
 
-
   // //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
           
   //       std::vector<double> q(4, 0);
@@ -250,6 +252,74 @@ public:
   //   }
 
   // }
+
+
+  std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
+  {
+    
+    if(ses > 0)
+    {
+        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
+
+        // n[0] = stratCounts[ses][0];
+        // n[1] = stratCounts[ses][1];
+        // n[2] = stratCounts[ses][2];
+        // n[3] = stratCounts[ses][3];
+
+        std::vector<int> n(4, 0);
+
+        for (int i = 0; i < ses; i++) {
+            n[history[i]]++;
+        }
+
+        int greaterThanZero = std::count_if(n.begin(), n.end(), [](int num) { return num > 0; });
+
+        if(greaterThanZero < 2)
+        {
+          std::vector<double> q(4, 0);
+
+          for (int k = 0; k < 4; k++) {
+              if(n[k] > 0)
+              {
+                  q[k] = n[k] / (ses + alpha_crp);
+              }else{
+                  q[k] = alpha_crp / (ses + alpha_crp);
+                  int zeroCount = std::count(n.begin(), n.end(), 0);
+                  q[k] = q[k]/zeroCount;
+
+              }
+              
+          }
+
+          return(q);
+          
+        }else{
+          
+            std::vector<double> q(4, 0);
+
+          for (int k = 0; k < 4; k++) {
+              if(n[k] > 0)
+              {
+                  q[k] = (n[k] + alpha_crp / greaterThanZero )/ (ses + alpha_crp);
+              }else{
+                  q[k] = 0;
+              }
+              
+          }
+
+          normalizeCrp(q);
+
+           return(q);
+        }
+
+          
+    }
+    else{
+        return initCrpProbs;
+    }
+
+  }
+
 
 
 
@@ -385,148 +455,159 @@ public:
   }
 
 
-  std::vector<double> crpPrior2(std::vector<int> particleHistory, int ses)
-  {
-        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
+  // std::vector<double> crpPrior2(std::vector<int> particleHistory, int ses)
+  // {
+  //       std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
 
-        // n[0] = stratCounts[ses][0];
-        // n[1] = stratCounts[ses][1];
-        // n[2] = stratCounts[ses][2];
-        // n[3] = stratCounts[ses][3];
+  //       // n[0] = stratCounts[ses][0];
+  //       // n[1] = stratCounts[ses][1];
+  //       // n[2] = stratCounts[ses][2];
+  //       // n[3] = stratCounts[ses][3];
 
-        std::vector<int> n(4, 0);
+  //       std::vector<int> n(4, 0);
 
-      for (int i = 0; i < ses; i++) {
-          n[history[i]]++;
-      }
+  //     for (int i = 0; i < ses; i++) {
+  //         n[history[i]]++;
+  //     }
 
 
-        int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
-        if(n_counts >0 && n_counts!= ses)
-        {
+  //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
+  //       if(n_counts >0 && n_counts!= ses)
+  //       {
 
-            std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-            // std::cout <<", n = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+  //           std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
+  //           // std::cout <<", n = ";
+  //           // for (auto const& i : n)
+  //           //     std::cout << i << ", ";
+  //           // std::cout << "\n" ;
 
-            // std::cout << ", stratCounts[ses] = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
-            throw std::runtime_error("Error crp count vec is not proper");
-        }
+  //           // std::cout << ", stratCounts[ses] = ";
+  //           // for (auto const& i : n)
+  //           //     std::cout << i << ", ";
+  //           // std::cout << "\n" ;
+  //           throw std::runtime_error("Error crp count vec is not proper");
+  //       }
           
-        //  std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-        // std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n = ";
-        // for (auto const& i : n)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+  //       //  std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
+  //       // std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n = ";
+  //       // for (auto const& i : n)
+  //       //     std::cout << i << ", ";
+  //       // std::cout << "\n" ;
 
-        // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", stratCounts[ses] = ";
-        // for (auto const& i : n)
-        //     std::cout << i << ", ";
-        // std::cout << "\n" ;
+  //       // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", stratCounts[ses] = ";
+  //       // for (auto const& i : n)
+  //       //     std::cout << i << ", ";
+  //       // std::cout << "\n" ;
         
 
-        std::vector<double> q(4, 0);
+  //       std::vector<double> q(4, 0);
+  //       int case_crp = -1;
 
-        // If all n == 0
-        if(n[0]==0 && n[1] == 0 && n[2] == 0 && n[3] == 0) //Case 1: No strategy selected
-        {
-            q=initCrpProbs;
-        }else if((n[0] > 0 || n[2] >0) && (n[1]==0 && n[3]==0 )) //Case2: Suboptimal selected, but no optimal
-        {                                                                       
-            if(n[0] > 0 && n[2]==0)
-            {
-                q[0] = n[0] / (ses + alpha_crp);
-                q[2] = 0;
-            }else if(n[0] == 0 && n[2] > 0)
-            {
-                q[0] = 0;
-                q[2] = n[2] / (ses + alpha_crp);
-            }
-            q[1] = alpha_crp/(2*(ses + alpha_crp));
-            q[3] = alpha_crp/(2*(ses + alpha_crp));
+  //       // If all n == 0
+  //       if(n[0]==0 && n[1] == 0 && n[2] == 0 && n[3] == 0) //Case 1: No strategy selected
+  //       {
+  //           q=initCrpProbs;
+  //           case_crp = 1;
+  //       }else if((n[0] > 0 || n[2] >0) && (n[1]==0 && n[3]==0 )) //Case2: Suboptimal selected, but no optimal
+  //       {                                                                       
+  //           if(n[0] > 0 && n[2]==0)
+  //           {
+  //               q[0] = n[0] / (ses + alpha_crp);
+  //               q[2] = 0;
+  //           }else if(n[0] == 0 && n[2] > 0)
+  //           {
+  //               q[0] = 0;
+  //               q[2] = n[2] / (ses + alpha_crp);
+  //           }
+  //           q[1] = alpha_crp/(2*(ses + alpha_crp));
+  //           q[3] = alpha_crp/(2*(ses + alpha_crp));
 
-            // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", case2, q = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;
+  //           // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", case2, q = ";
+  //           // for (auto const& i : n)
+  //           //     std::cout << i << ", ";
+  //           // std::cout << "\n" ;
 
-            normalizeCrp(q);
+  //           std::replace(q.begin(), q.end(), 0.0, 1e-6);
+  //           normalizeCrp(q);
+  //           case_crp = 2;
 
-        }else if(((n[0] > 0 && n[2] == 0 )||(n[0] == 0 && n[2] >0)) && ((n[1] > 0 && n[3] == 0 )||(n[1] == 0 && n[3] >0))) //Case3: Suboptimal and optimal selected
-        {                                                       //Either n[0]/n[2] is zero, && n[1]/n[3] is zero 
-                                                                //Not true crp, requires re-weighting
-            q[0] = n[0] / (ses + alpha_crp);
-            q[2] = n[2] / (ses + alpha_crp);
+  //       }else if(((n[0] > 0 && n[2] == 0 )||(n[0] == 0 && n[2] >0)) && ((n[1] > 0 && n[3] == 0 )||(n[1] == 0 && n[3] >0))) //Case3: Suboptimal and optimal selected
+  //       {                                                       //Either n[0]/n[2] is zero, && n[1]/n[3] is zero 
+  //                                                               //Not true crp, requires re-weighting
+  //           q[0] = n[0] / (ses + alpha_crp);
+  //           q[2] = n[2] / (ses + alpha_crp);
 
-            q[1] = n[1]/((ses + alpha_crp));
-            q[3] = n[3] / (ses + alpha_crp);
+  //           q[1] = n[1]/((ses + alpha_crp));
+  //           q[3] = n[3] / (ses + alpha_crp);
 
-            // std::replace_if(q.begin(), q.end(),
-            //         [](double value) { return value == 0.0; },
-            //         1e-6);
+  //           // std::replace_if(q.begin(), q.end(),
+  //           //         [](double value) { return value == 0.0; },
+  //           //         1e-6);
 
-            // std::cout <<"particleId=" << particleId<<  ", ses=" <<ses <<  ", case3, q = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;        
+  //           // std::cout <<"particleId=" << particleId<<  ", ses=" <<ses <<  ", case3, q = ";
+  //           // for (auto const& i : n)
+  //           //     std::cout << i << ", ";
+  //           // std::cout << "\n" ;        
+  //           std::replace(q.begin(), q.end(), 0.0, 1e-6);
+  //           normalizeCrp(q);
+  //           case_crp = 3;
+  //       }else if((n[0] == 0 && n[2] == 0) && (n[1]>0 || n[3] > 0 )) // Case4: Optimal selected, no suboptimal
+  //       {
+  //           q[0] = alpha_crp/(2*(ses + alpha_crp));;
+  //           q[2] = alpha_crp/(2*(ses + alpha_crp));;
 
-            normalizeCrp(q);
-        }else if((n[0] == 0 && n[2] == 0) && (n[1]>0 || n[3] > 0 )) // Case4: Optimal selected, no suboptimal
-        {
-            q[0] = alpha_crp/(2*(ses + alpha_crp));;
-            q[2] = alpha_crp/(2*(ses + alpha_crp));;
+  //           q[1] = n[1];
+  //           q[3] = n[3];
 
-            q[1] = n[1];
-            q[3] = n[3];
+  //           // std::replace_if(q.begin(), q.end(),
+  //           //     [](double value) { return value == 0.0; },
+  //           //     1e-6);
 
-            // std::replace_if(q.begin(), q.end(),
-            //     [](double value) { return value == 0.0; },
-            //     1e-6);
+  //           // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", case4, q = ";
+  //           // for (auto const& i : n)
+  //           //     std::cout << i << ", ";
+  //           // std::cout << "\n" ;        
 
-            // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", case4, q = ";
-            // for (auto const& i : n)
-            //     std::cout << i << ", ";
-            // std::cout << "\n" ;        
+  //           std::replace(q.begin(), q.end(), 0.0, 1e-6);
+  //           normalizeCrp(q);
+  //           case_crp = 3;
+  //       }   
 
-            
-            normalizeCrp(q);
-        }   
-
-        // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", q after normalizing = ";
-        //     for (auto const& i : n)
-        //         std::cout << i << ", ";
-        //     std::cout << "\n" ;  
+  //       // std::cout << "particleId=" << particleId<<  ", ses=" <<ses <<  ", q after normalizing = ";
+  //       //     for (auto const& i : n)
+  //       //         std::cout << i << ", ";
+  //       //     std::cout << "\n" ;  
         
-        double sum = std::accumulate(q.begin(), q.end(), 0.0);
+  //       double sum = std::accumulate(q.begin(), q.end(), 0.0);
 
-        if (sum == 0) {
+  //       // if (sum == 0) {
                 
-            std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n:";
-            for (auto const& i : n)
-                std::cout << i << ", ";
-            std::cout << "\n" ;  
+  //       //     std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", case=" << case_crp << ", n:";
+  //       //     for (auto const& i : n)
+  //       //         std::cout << i << ", ";
+  //       //     std::cout << "\n" ; 
 
-            throw std::runtime_error("Error crp prior vec is zero");
-        }
+  //       //     std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", particleHistory:";
+  //       //      for (auto const& i : particleHistory)
+  //       //         std::cout << i << ", ";
+  //       //     std::cout << "\n" ; 
 
-        double tolerance = 1e-5;
+  //       //     //throw std::runtime_error("Error crp prior vec is zero");
+  //       // }
 
-        if(std::abs(sum - 1.0) > tolerance) {
+  //       // double tolerance = 1e-5;
+
+  //       // if(std::abs(sum - 1.0) > tolerance) {
                 
-            std::cout << "Error: particleId=" << particleId<<  ", ses=" <<ses << ", sum=" << sum << ", q= ";
-            for (auto const& i : q)
-                std::cout << i << ", ";
-            std::cout << "\n" ;
-            throw std::runtime_error("Error crp prior sum is not one");
-        }
+  //       //     std::cout << "Error: particleId=" << particleId<<  ", ses=" <<ses << ", sum=" << sum << ", q= ";
+  //       //     for (auto const& i : q)
+  //       //         std::cout << i << ", ";
+  //       //     std::cout << "\n" ;
+  //       //     throw std::runtime_error("Error crp prior sum is not one");
+  //       // }
         
-        return(q);
-  }
+  //       return(q);
+  // }
 
 
   
@@ -715,16 +796,16 @@ public:
     chosenStrategy_bkp = chosenStrategy;
   }
 
-  std::vector<int>& getChosenStrategyBackups()
+  std::vector<int> getChosenStrategyBackups()
   {
     return chosenStrategy_bkp;
   }
 
 
 
-  void addCrpPrior(std::vector<double> crpPrior)
+  void addCrpPrior(std::vector<double> crpPrior, int ses)
   {
-    crpPriors.push_back(crpPrior);
+    crpPriors[ses]=crpPrior;
   }
 
   void setCrpPriors(std::vector<std::vector<double>> crpPriors_)
@@ -769,8 +850,18 @@ public:
   {
     stratCounts = stratCounts_;
   }
-  
 
+
+  void addParticleTrajectory(std::vector<int> particleTrajectory, int session)
+  {
+    particleTrajectories[session] = particleTrajectory;
+  }
+
+
+  std::vector<std::vector<int>> getParticleTrajectories()
+  {
+    return particleTrajectories;
+  }
 
   
 
@@ -797,13 +888,14 @@ private:
   std::vector<double> initCrpProbs;
   std::vector<std::vector<int>> stratCounts;
   std::vector<std::pair<std::vector<double>,std::vector<double>>> stratCreditBackUps;
+  std::vector<std::vector<int>> particleTrajectories;
       
 };
 
 
 
 
-std::pair<std::vector<std::vector<double>>, double> particle_filter(int N, const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3,  std::vector<double> v);
+std::tuple<std::vector<std::vector<double>>, double, std::vector<int>> particle_filter(int N, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, std::vector<double> v,BS::thread_pool& pool);
 void print_vector(std::vector<double> v);
 double M_step(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::tuple<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>, std::vector<ParticleFilter>> smoothed_w, std::vector<double> params, BS::thread_pool& pool);
 std::vector<double> EM(const RatData& ratdata, const MazeGraph& Suboptimal_Hybrid3, const MazeGraph& Optimal_Hybrid3, int N,BS::thread_pool& pool);
@@ -818,6 +910,9 @@ void normalize(std::vector<double> &p);
 std::vector<double> stratifiedResampling(std::vector<double>&particleWeights);
 std::vector<std::vector<int>> E_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, int M, std::vector<double> params, BS::thread_pool& pool);
 double M_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int M, int k, double gamma, std::vector<std::vector<int>> smoothedTrajectories, std::vector<double> params, BS::thread_pool& pool);
-
+std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int>>> cpf_as(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, std::vector<int> x_cond ,BS::thread_pool& pool);
+double M_step4(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<std::vector<int>> smoothedTrajectories, std::vector<std::vector<double>> filteredWeights, std::vector<double> params, BS::thread_pool& pool);
+std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool);
+std::vector<double> systematicResampling(const std::vector<double> &particleWeights);
 
 #endif
