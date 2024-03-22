@@ -1510,6 +1510,105 @@ double M_step4(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 }
 
 
+double M_step5(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, std::vector<int> smoothedTrajectory, std::vector<double> params, BS::thread_pool& pool)
+{
+    arma::mat allpaths = ratdata.getPaths();
+    arma::vec sessionVec = allpaths.col(4);
+    arma::vec uniqSessIdx = arma::unique(sessionVec);
+    int sessions = uniqSessIdx.n_elem;
+    
+    auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, 1, 1.0);
+    
+
+    double I_1 = 0;
+    double I_2 = 0;
+    double I_3 = 0;
+
+    std::vector<double> I2_vec;
+    std::vector<double> I3_vec;
+        
+    double local_I_3 = 0.0;
+    for(int t=0; t<sessions;t++)
+    {
+                
+        // std::vector<int> originalSampledStrats = particleFilterVec[i].getOriginalSampledStrats();
+        // std::cout << "ses=" << t << ", i=" << i << ", originalSampledStrats=" << originalSampledStrats[t] << std::endl;
+
+        double lik_i = pf.getSesLikelihood(smoothedTrajectory[t], t);
+
+        //std::cout << "ses=" << t << ", i=" << i << ", smoothedChoices[t][i]=" << smoothedChoices[t][i] << ", lik_i=" << lik_i << std::endl;       
+
+        if (lik_i == 0) {
+            lik_i = 1e-6;
+        }
+
+        local_I_3 +=  log(lik_i);
+
+        if (std::isnan(local_I_3) || std::isinf(local_I_3)) {
+            
+            throw std::runtime_error("Error in local_I_3 value");
+        }
+        
+        
+    }
+
+
+   
+    double local_I_2 = 0.0;
+
+    std::vector<int> particleHistory_t = smoothedTrajectory;
+    for(int t=0; t<sessions-2; t++)
+    {
+        
+        std::vector<double> crp_t;
+        try
+        {
+            crp_t = pf.crpPrior2(particleHistory_t,t);
+        }
+        catch(const std::exception& e)
+        {
+            std::cout << "Err in loop_I2 in M_step3" << std::endl;
+            std::cerr << e.what() << '\n';
+        }
+        
+
+        double p_crp_X_i_tplus1 = crp_t[particleHistory_t[t+1]];
+        if(p_crp_X_i_tplus1==0)
+        {
+            p_crp_X_i_tplus1 = std::numeric_limits<double>::min();
+        }
+
+
+        local_I_2 = local_I_2 + log(p_crp_X_i_tplus1);
+
+        if (std::isnan(local_I_2)) {
+            // std::cout << "t=" << t << ", i=" << i << ", j=" << j << ", w_ij_smoothed=" << w_ij_smoothed << ", X_j_tplus1=" << X_j_tplus1 << ", crpPriors_i_t[X_j_tplus1]=" << p_crp_X_j_tplus1 << std::endl;
+            throw std::runtime_error("Error nan I_2 value");
+        }
+
+        if (std::isinf(local_I_2)) {
+            throw std::runtime_error("Error inf I_2 value");
+        }
+        
+    }
+    
+    
+
+    double Q_k = local_I_3+local_I_2;
+    
+    // Q_k = Q_k/M;
+    
+
+    // double gamma_k = (double) gamma/(double) k;
+    // double Q_kplus1 = (1-gamma)*Q + gamma*Q_k;
+    // std::cout << "Q_k=" << Q_k << "gamma=" << gamma << ", k=" << k <<  ", gamma_k=" << gamma_k << ", Q_kplus1=" << Q_kplus1 << std::endl;
+    
+    return (Q_k);
+
+
+}
+
+
 
 
 // std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
@@ -1775,7 +1874,7 @@ std::vector<double> EM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybri
 
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {0.228439, 0.921127, 0.0429102, 0.575078,0.228439, 0.921127, 0.0429102, 0.575078};
+    std::vector<double> params = {0.01, 0.7, 0.0429102, 0.575078};
     std::vector<double> QFuncVals;
     std::vector<std::vector<double>> params_iter;
     double Q_prev = 0;
@@ -1813,7 +1912,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
         int count = 0;
         
         pagmo::nlopt method("sbplx");
-        //method.set_xtol_abs(1e-3);
+        method.set_xtol_abs(1e-3);
         // method.set_maxeval(50);
         // pagmo::sade method (10,2,2,1e-6, 1e-6, false, 915909831);
         pagmo::algorithm algo = pagmo::algorithm{method};
@@ -1832,25 +1931,29 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
         std::cout << "\n";
         
         double maxStopCriteria = 0.0;
-        for (size_t i = 0; i < params.size(); ++i) {
-            double stopCriterion = std::abs(params[i] - dec_vec_champion[i])/(params[i]+0.01);
+        for (size_t j = 0; j < params.size(); ++j) {
+            double stopCriterion = std::abs(params[j] - dec_vec_champion[j])/(params[j]+0.01);
             if (stopCriterion > maxStopCriteria) {
                 maxStopCriteria = stopCriterion;
             }
+
         }
         std::cout << "i=" << i << ", max_stopping_criteria=" << maxStopCriteria << std::endl;
-        params = dec_vec_champion;
-        if(maxStopCriteria < 0.05)
-        {
-            break;
-            std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
-        }
-
         
-        //std::pair<std::vector<std::vector<double>>, double> q = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
-         
-        prevSmoothedTrajectories = smoothedTrajectories;
-        prevFilteredWeights = filteredWeights;
+        double relLogLik = 0;
+        for(int k=0; k<N;k++)
+        {
+            double Q_k = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, smoothedTrajectories[k], dec_vec_champion, pool);
+            double Q_k_minus1 = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3,smoothedTrajectories[k], params, pool);
+            double ratio = Q_k/Q_k_minus1;
+            relLogLik = relLogLik + ratio;
+
+        }
+        relLogLik = log(relLogLik/N);
+        std::cout << "relLogLik=" << std::fixed << std::setprecision(4) << relLogLik << std::endl;
+
+        params = dec_vec_champion;
+
 
         std::cout << "smoothedTrajectories:" << std::endl;
         for (const auto& row : smoothedTrajectories) {
@@ -1882,14 +1985,19 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             }
             std::cout << std::endl;
         }
-        //auto [filteredWeights, loglik] = fapf(N, fapfVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, pool);
-        // auto [filteredWeights, loglik, viterbiSeq] = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
-        // std::cout << "viterbiSeq: ";
-        // for (const auto &x : viterbiSeq)
-        // {
-        //     std::cout << x << " ";
-        // }
-        // std::cout << "\n";
+
+        if(maxStopCriteria < 0.05 && i > 5)
+        {
+            break;
+            std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
+        }else if(std::abs(relLogLik) < 1e-4 && i > 5)
+        {
+            break;
+            std::cout << "Terminate EM, likelihood converged after i=" << i << std::endl;
+        }
+
+        prevSmoothedTrajectories = smoothedTrajectories;
+        prevFilteredWeights = filteredWeights;
 
         params_iter.push_back(params);
         
@@ -2030,7 +2138,14 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 {
 
     unsigned int numThreads = std::thread::hardware_concurrency();
-    std::vector<double> params = { 0.09, 0.26, 0.05, 0.67};
+    std::vector<double> params = { 0.05, 0.41, 0.03, 0.90};
+
+    arma::mat allpaths = ratdata.getPaths();
+    arma::vec sessionVec = allpaths.col(4);
+    arma::vec uniqSessIdx = arma::unique(sessionVec);
+    int sessions = uniqSessIdx.n_elem;
+    std::vector<int> x_cond(sessions, 3);
+
 
 
     // Print the result
@@ -2040,9 +2155,16 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
         
         std::cout << "i=" <<i << ", performing E-step" << std::endl;
 
-
-        auto [filteredWeights, loglik, viterbiSeq] = particle_filter(N, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params,pool);
-        auto smoothedTrajectories = E_step3(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, 100, params, pool);
+        std::vector<ParticleFilter> particleFilterVec;
+        for (int i = 0; i < N; i++)
+        {
+            auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
+            particleFilterVec.push_back(pf);
+            // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
+        }
+        std::vector<int> xcond = {0,1,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1};
+        auto [filteredWeights, loglik, smoothedTrajectories] = cpf_as(N, particleFilterVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, x_cond, pool);
+        std::cout << "loglik=" << loglik << std::endl;
         std::cout << "smoothedTrajectories:" << std::endl;
         for (const auto& row : smoothedTrajectories) {
             for (int value : row) {
@@ -2050,13 +2172,30 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
             }
             std::cout << std::endl;
         }
-        //auto [filteredWeights, loglik] = fapf(N, fapfVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, pool);
-        std::cout << "viterbiSeq: ";
-        for (const auto &x : viterbiSeq)
+
+        std::vector<std::vector<double>> filteringDist(4,std::vector<double>(sessions));
+        for (int ses = 0; ses < sessions; ses++)
         {
-            std::cout << x << " ";
+            for (int i = 0; i < N; i++)
+            {
+                std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOriginalSampledStrats();
+
+                // std::cout << "ses=" <<ses << ", particleId=" <<i << ", chosenStrat=" << chosenStrategy_pf[ses] << std::endl;
+                filteringDist[chosenStrategy_pf[ses]][ses] = filteringDist[chosenStrategy_pf[ses]][ses] + filteredWeights[ses][i];
+                // postProbsOfExperts[ses][chosenStrategy_pf[ses]] = std::round(postProbsOfExperts[ses][chosenStrategy_pf[ses]] * 100.0) / 100.0;
+            }
         }
-        std::cout << "\n";
+
+        std::cout << "filtering Dist=" << std::endl;
+        for (const auto &row : filteringDist)
+        {
+            for (double num : row)
+            {
+                std::cout << std::fixed << std::setprecision(2) << num << " ";
+            }
+            std::cout << std::endl;
+        }
+
 
 
     }
