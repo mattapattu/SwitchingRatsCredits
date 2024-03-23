@@ -209,52 +209,6 @@ public:
   // }
 
 
-  std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
-  {
-    
-    if(ses > 0)
-    {
-        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
-
-        // n[0] = stratCounts[ses][0];
-        // n[1] = stratCounts[ses][1];
-        // n[2] = stratCounts[ses][2];
-        // n[3] = stratCounts[ses][3];
-
-        std::vector<int> n(4, 0);
-
-        for (int i = 0; i < ses; i++) {
-            n[history[i]]++;
-        }
-
-  //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
-          
-        std::vector<double> q(4, 0);
-
-        for (int k = 0; k < 4; k++) {
-            if(n[k] > 0)
-            {
-                q[k] = n[k] / (ses + alpha_crp);
-            }else{
-                q[k] = alpha_crp / (ses + alpha_crp);
-                int zeroCount = std::count(n.begin(), n.end(), 0);
-                q[k] = q[k]/zeroCount;
-
-            }
-            
-        }
-
-        return(q);
-
-    }
-    else{
-        return initCrpProbs;
-    }
-
-  }
-
-
-//  ////// Restricted crp
   // std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
   // {
     
@@ -273,53 +227,99 @@ public:
   //           n[history[i]]++;
   //       }
 
-  //       int greaterThanZero = std::count_if(n.begin(), n.end(), [](int num) { return num > 0; });
-
-  //       if(greaterThanZero < 2)
-  //       {
-  //         std::vector<double> q(4, 0);
-
-  //         for (int k = 0; k < 4; k++) {
-  //             if(n[k] > 0)
-  //             {
-  //                 q[k] = n[k] / (ses + alpha_crp);
-  //             }else{
-  //                 q[k] = alpha_crp / (ses + alpha_crp);
-  //                 int zeroCount = std::count(n.begin(), n.end(), 0);
-  //                 q[k] = q[k]/zeroCount;
-
-  //             }
-              
-  //         }
-
-  //         return(q);
+  // //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
           
-  //       }else{
-          
-  //           std::vector<double> q(4, 0);
+  //       std::vector<double> q(4, 0);
 
-  //         for (int k = 0; k < 4; k++) {
-  //             if(n[k] > 0)
-  //             {
-  //                 q[k] = (n[k] + alpha_crp / greaterThanZero )/ (ses + alpha_crp);
-  //             }else{
-  //                 q[k] = 0;
-  //             }
-              
-  //         }
+  //       for (int k = 0; k < 4; k++) {
+  //           if(n[k] > 0)
+  //           {
+  //               q[k] = n[k] / (ses + alpha_crp);
+  //           }else{
+  //               q[k] = alpha_crp / (ses + alpha_crp);
+  //               int zeroCount = std::count(n.begin(), n.end(), 0);
+  //               q[k] = q[k]/zeroCount;
 
-  //         normalizeCrp(q);
-
-  //          return(q);
+  //           }
+            
   //       }
 
-          
+  //       return(q);
+
   //   }
   //   else{
   //       return initCrpProbs;
   //   }
 
   // }
+
+
+//  ////// Restricted crp
+  std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
+  {
+    
+    if(ses > 0)
+    {
+        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
+
+        // n[0] = stratCounts[ses][0];
+        // n[1] = stratCounts[ses][1];
+        // n[2] = stratCounts[ses][2];
+        // n[3] = stratCounts[ses][3];
+
+        std::vector<int> n(4, 0);
+
+        for (int i = 0; i < ses; i++) {
+            n[history[i]]++;
+        }
+
+        int greaterThanZero = std::count_if(n.begin(), n.end(), [](int num) { return num > 0; });
+
+        if(greaterThanZero < 2)
+        {
+          std::vector<double> q(4, 0);
+
+          for (int k = 0; k < 4; k++) {
+              if(n[k] > 0)
+              {
+                  q[k] = n[k] / (ses + alpha_crp);
+              }else{
+                  q[k] = alpha_crp / (ses + alpha_crp);
+                  int zeroCount = std::count(n.begin(), n.end(), 0);
+                  q[k] = q[k]/zeroCount;
+
+              }
+              
+          }
+
+          return(q);
+          
+        }else{
+          
+            std::vector<double> q(4, 0);
+
+          for (int k = 0; k < 4; k++) {
+              if(n[k] > 0)
+              {
+                  q[k] = (n[k] + alpha_crp / greaterThanZero )/ (ses + alpha_crp);
+              }else{
+                  q[k] = 0;
+              }
+              
+          }
+
+          normalizeCrp(q);
+
+           return(q);
+        }
+
+          
+    }
+    else{
+        return initCrpProbs;
+    }
+
+  }
 
 
 

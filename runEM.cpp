@@ -18,9 +18,9 @@ int main(int argc, char* argv[])
     // std::string s4ObjectName = "ratdata";
     RInside R;
 
-    //std::vector<std::string> rats = {"rat103"};
-
     std::vector<std::string> rats = {"rat103"};
+
+    // std::vector<std::string> rats = {"rat106","rat112","rat113","rat114"};
 
     //std::string rat = argv[1];
     //std::vector<std::string> rats = {rat};
@@ -80,10 +80,10 @@ int main(int argc, char* argv[])
         //std::vector<double> v = {0.1, 0.812323, 0.0703131, 0.813582}; 
         //std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, rdata, suboptimalHybrid3, optimalHybrid3, v );
 
-         std::vector<double> params = SAEM(rdata, suboptimalHybrid3, optimalHybrid3, 50, pool);
+         std::vector<double> params = SAEM(rdata, suboptimalHybrid3, optimalHybrid3, 30, pool);
         //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
          //std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
-        //testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 500,pool,R);
+        // testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 30,pool,R);
 
 
         //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        //testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1");
+        // testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1", pool);
 
     }
 

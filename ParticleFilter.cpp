@@ -1889,7 +1889,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     int sessions = uniqSessIdx.n_elem;
     std::vector<int> x_cond(sessions, 3);
 
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 1000; i++)
     {
 
         std::cout << "i=" << i << ", E-step" << std::endl;
@@ -1950,7 +1950,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
 
         }
         relLogLik = log(relLogLik/N);
-        std::cout << "relLogLik=" << std::fixed << std::setprecision(4) << relLogLik << std::endl;
+        std::cout << "relLogLik=" << std::fixed << std::setprecision(6) << relLogLik << std::endl;
 
         params = dec_vec_champion;
 
@@ -1986,14 +1986,33 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             std::cout << std::endl;
         }
 
-        if(maxStopCriteria < 0.05 && i > 5)
+        // if(maxStopCriteria < 0.05 && i > 5)
+        // {
+        //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
+        //     break;
+        // }else
+        if(std::abs(relLogLik) < 1e-5 && i > 10)
         {
-            break;
-            std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
-        }else if(std::abs(relLogLik) < 1e-4 && i > 5)
-        {
-            break;
-            std::cout << "Terminate EM, likelihood converged after i=" << i << std::endl;
+            std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
+            std::vector<ParticleFilter> particleFilterVec_;
+            for (int i = 0; i < N; i++)
+            {
+                auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
+                particleFilterVec_.push_back(pf);
+                // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
+            }
+            auto [filteredWeights_, loglik_, smoothedTrajectories_] = cpf_as(N, particleFilterVec_, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, x_cond, pool);
+            std::cout << "loglik=" << loglik_ << std::endl;
+            std::cout << "smoothedTrajectories:" << std::endl;
+            for (const auto& row : smoothedTrajectories_) {
+                for (int value : row) {
+                    std::cout << value << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // break;
+
         }
 
         prevSmoothedTrajectories = smoothedTrajectories;
@@ -2138,7 +2157,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 {
 
     unsigned int numThreads = std::thread::hardware_concurrency();
-    std::vector<double> params = { 0.05, 0.41, 0.03, 0.90};
+    std::vector<double> params = { 0.34, 0.99, 0.02, 0.72};
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -2162,7 +2181,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
             particleFilterVec.push_back(pf);
             // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
         }
-        std::vector<int> xcond = {0,1,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1};
+        std::vector<int> xcond(sessions,0);
         auto [filteredWeights, loglik, smoothedTrajectories] = cpf_as(N, particleFilterVec, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, x_cond, pool);
         std::cout << "loglik=" << loglik << std::endl;
         std::cout << "smoothedTrajectories:" << std::endl;
