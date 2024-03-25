@@ -864,6 +864,20 @@ public:
     return particleTrajectories;
   }
 
+  void resetPf()
+  {
+    strategies.clear();
+    chosenStrategy.clear();
+    chosenStrategy_bkp.clear();
+    originalSampledStrat.clear();
+    crpPriors.clear();
+    likelihoods.clear();
+    initCrpProbs.clear();
+    stratCounts.clear();
+    stratCreditBackUps.clear();
+    particleTrajectories.clear();
+    resetStrategies();
+  }
   
 
   // }
@@ -911,7 +925,7 @@ void normalize(std::vector<double> &p);
 std::vector<double> stratifiedResampling(std::vector<double>&particleWeights);
 std::vector<std::vector<int>> E_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, int M, std::vector<double> params, BS::thread_pool& pool);
 double M_step3(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int M, int k, double gamma, std::vector<std::vector<int>> smoothedTrajectories, std::vector<double> params, BS::thread_pool& pool);
-std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int>>> cpf_as(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, std::vector<int> x_cond ,BS::thread_pool& pool);
+std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int>>> cpf_as(int N, std::vector<ParticleFilter> &particleFilterVec, const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, std::vector<int> x_cond, int l_truncate, BS::thread_pool& pool);
 double M_step4(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<std::vector<int>> smoothedTrajectories, std::vector<std::vector<double>> filteredWeights, std::vector<double> params, BS::thread_pool& pool);
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool);
 std::vector<double> systematicResampling(const std::vector<double> &particleWeights);

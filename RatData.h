@@ -26,6 +26,10 @@ class RatData{
         RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_, std::vector<std::string> generatorStrategies_, arma::mat trueGenProb_): Paths(Paths_), 
         Hybrid3(Hybrid3_), rat(rat_), sim(sim_), generatorStrategies(generatorStrategies_), trueGenProb(trueGenProb_) {}
 
+        RatData(arma::mat Paths_, arma::mat Hybrid3_, std::string rat_, bool sim_): Paths(Paths_), 
+        Hybrid3(Hybrid3_), rat(rat_), sim(sim_) {}
+
+
        
 
         arma::mat getPaths() const{

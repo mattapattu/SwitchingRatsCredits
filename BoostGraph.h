@@ -277,10 +277,10 @@ public:
                     throw std::runtime_error("Error nan node credits");
             }
 
-            if (graph[*vi.first].credit > 1e3) {
-                    std::cout << "Node: " << graph[*vi.first].node << " td_err=" << td_err << ", etrace=" << graph[*vi.first].eligibilityTrace << std::endl;
-                    throw std::runtime_error("Very node credits. Check");
-            }
+            // if (graph[*vi.first].credit > 1e3) {
+            //         std::cout << "Node: " << graph[*vi.first].node << " td_err=" << td_err << ", etrace=" << graph[*vi.first].eligibilityTrace << std::endl;
+            //         throw std::runtime_error("Very node credits. Check");
+            // }
 
         }
     }

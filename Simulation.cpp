@@ -998,9 +998,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
             std::vector<double> v = clusterParams[rat]; 
-            std::vector<double> simClusterParams = {0.05, 0.42, 0.03, 0.90};
+            std::vector<double> simClusterParams = {0.25, 0.81, 0.05, 0.60};
 
-            RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, i, run);
+            RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, run);
+            // RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, i, run);
             //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
             //std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
             //std::vector<double> simClusterParams = findMultiObjClusterParamsWithSim(ratSimData, suboptimalHybrid3, optimalHybrid3);

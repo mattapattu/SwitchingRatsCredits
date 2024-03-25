@@ -369,8 +369,8 @@ double getAca2SessionLikelihood(const RatData& ratdata, int session, Strategy& s
     S = S_prime;
     strategy.updatePathProbMat(session);
   }
-  //double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
-  double decay_factor = gamma;
+  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  //double decay_factor = gamma;
   S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
@@ -713,8 +713,8 @@ std::pair<arma::mat, arma::mat> simulateAca2(const RatData& ratdata, int session
     strategy.updatePathProbMat(session);
   }
   
-  //double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
-  double decay_factor = gamma;
+  double decay_factor = 1-(gamma/std::pow(session+1, 0.5));
+  // double decay_factor = gamma;
   S0.decayCredits(decay_factor);
   S0.updateEdgeProbabilitiesSoftmax();
   if(strategy.getOptimal())
