@@ -290,7 +290,7 @@ public:
     if(ses > 0)
     {
         std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
-
+        int last_choice = history.back();
         // n[0] = stratCounts[ses][0];
         // n[1] = stratCounts[ses][1];
         // n[2] = stratCounts[ses][2];
