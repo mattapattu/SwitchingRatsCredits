@@ -663,7 +663,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-    std::vector<int> x_cond(sessions, 0);
+    std::vector<int> x_cond(sessions, 3);
 
     int l_truncate = 5;   
 
@@ -762,7 +762,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
             //     break;
             // }else
-            if(std::abs(relLogLik) < 1e-5 && i > 120)
+            if(std::abs(relLogLik) < 1e-5 && i > 110)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
                 std::vector<ParticleFilter> particleFilterVec_;
