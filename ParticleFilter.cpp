@@ -663,7 +663,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-    std::vector<int> x_cond(sessions, 3);
+    std::vector<int> x_cond(sessions, 1);
 
     int l_truncate = 5;   
 
