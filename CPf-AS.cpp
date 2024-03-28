@@ -184,6 +184,31 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
                 particleFilterVec[i].setChosenStrategies(chosenStrategyBackUp);
                 particleFilterVec[i].setStratBackups(stratBackUps);
 
+
+                // std::vector<int> particleHistory_t = particleFilterVec[i].getChosenStratgies();
+                // std::vector<int> history(particleHistory_t.begin(), particleHistory_t.begin()+ses+1);
+                // std::vector<std::vector<int>> particleTrajectories =  particleFilterVec[i].getParticleTrajectories();
+                // std::vector<int> n(4, 0);
+                // for (int i = 0; i < ses; i++) {
+                //     n[history[i]]++;
+                // }
+                // bool twoOptimals = false;
+                // if(n[1] > 0 && n[3] > 0)
+                // {
+                //     twoOptimals = true;
+                // }
+                // if(twoOptimals )
+                // {
+                //     std::cout << "twoOptimals true inside resample, i=" << i  << ", ses=" << ses << std::endl;
+                //     std::cout << "history=";
+                //     for (auto const& i : history)
+                //         std::cout << i << ", ";
+                //     std::cout << "\n" ; 
+
+                // }
+
+
+
                 // std::cout << "ses=" << ses << ", particleId=" << particleFilterVec[i].getParticleId() << ", resampledParticle=" << particleFilterVec[newIndex].getParticleId() << ", chosenStrat=" << chosenStrat << ", updatedChosenStrat=" << updatedChosenStrat << std::endl;
             });
 
@@ -255,6 +280,28 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
         int sampled_ancestor = sample(normalized_weights);
         std::vector<signed int> chosenAncestorBackUp =  particleFilterVec[sampled_ancestor].getChosenStrategyBackups();
         particleFilterVec[N-1].setChosenStrategies(chosenAncestorBackUp);
+
+        // std::vector<int> particleHistory_t = particleFilterVec[N-1].getChosenStratgies();
+        // std::vector<int> history(particleHistory_t.begin(), particleHistory_t.begin()+ses+1);
+        // std::vector<std::vector<int>> particleTrajectories =  particleFilterVec[N-1].getParticleTrajectories();
+        // std::vector<int> n(4, 0);
+        // for (int i = 0; i < ses; i++) {
+        //     n[history[i]]++;
+        // }
+        // bool twoOptimals = false;
+        // if(n[1] > 0 && n[3] > 0)
+        // {
+        //     twoOptimals = true;
+        // }
+        // if(twoOptimals )
+        // {
+        //     std::cout << "twoOptimals true during ancestor sampling, i=" << N-1 << ", ses=" << ses << std::endl;
+        //     std::cout << "history=";
+        //     for (auto const& i : history)
+        //         std::cout << i << ", ";
+        //     std::cout << "\n" ; 
+        // }
+
 
 
         //Propogation
@@ -366,6 +413,7 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
             double lik = particleFilterVec[i].getSesLikelihood(sampled_strat, ses);
             lik_ses[i] = lik;
             std::vector<int> particleHistory_t = particleFilterVec[i].getChosenStratgies();
+
             particleFilterVec[i].addParticleTrajectory(particleHistory_t, ses);
 
 
@@ -374,8 +422,29 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
             w[i] = lik*crp_i[sampled_strat]/p[sampled_strat];
             // // log_w[i] += loglik;
             
-            
+            // std::vector<int> particleHistory_t = particleFilterVec[i].getChosenStratgies();
+            // std::vector<int> history(particleHistory_t.begin(), particleHistory_t.begin()+ses+1);
+            // std::vector<std::vector<int>> particleTrajectories =  particleFilterVec[i].getParticleTrajectories();
+            // std::vector<int> n(4, 0);
+            // for (int i = 0; i <=ses; i++) {
+            //     n[history[i]]++;
+            // }
+            // bool twoOptimals = false;
+            // if(n[1] > 0 && n[3] > 0)
+            // {
+            //     twoOptimals = true;
+            // }
+            // if(twoOptimals )
+            // {
+            //     std::cout << "twoOptimals true inside propogate, i=" << N-1 << ", ses=" << ses << std::endl;
+            //     std::cout << "history=";
+            //     for (auto const& i : history)
+            //         std::cout << i << ", ";
+            //     std::cout << "\n" ; 
 
+            // }
+
+            particleFilterVec[i].backUpChosenStrategies();
             particleFilterVec[i].backUpStratCredits(); 
 
         });

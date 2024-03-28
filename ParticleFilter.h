@@ -19,43 +19,6 @@ using namespace pagmo;
 class ParticleFilter {
 public:
 
-  ParticleFilter(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_, const MazeGraph& Optimal_Hybrid3_, std::vector<double> v):
-  ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_) {
-
-    double alpha_aca_subOptimal = v[0];
-    double gamma_aca_subOptimal = v[1];
-
-    double alpha_aca_optimal = v[0];
-    double gamma_aca_optimal = v[1];
-
-    //DRL params
-    double alpha_drl_subOptimal = v[2];
-    double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[3];
-    
-    double alpha_drl_optimal = v[2];
-    double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[3];
-    alpha_crp = 1e-6;
-
-    initCrpProbs = {0.25,0.25,0.25,0.25};
-
-    auto aca2_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"aca2", alpha_aca_subOptimal, gamma_aca_subOptimal, 0, 0, 0, 0, false);
-    auto aca2_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"aca2",alpha_aca_optimal, gamma_aca_optimal, 0, 0, 0, 0, true);
-    
-    auto drl_Suboptimal_Hybrid3 = std::make_shared<Strategy>(Suboptimal_Hybrid3,"drl", alpha_drl_subOptimal, beta_drl_subOptimal, lambda_drl_subOptimal, 0, 0, 0, false);
-    auto drl_Optimal_Hybrid3 = std::make_shared<Strategy>(Optimal_Hybrid3,"drl",alpha_drl_optimal, beta_drl_optimal, lambda_drl_optimal, 0, 0, 0, true);
-
-    strategies.push_back(aca2_Suboptimal_Hybrid3);
-    strategies.push_back(aca2_Optimal_Hybrid3);
-
-    strategies.push_back(drl_Suboptimal_Hybrid3);
-    strategies.push_back(drl_Optimal_Hybrid3);
-
-
-
-  }
-
   ParticleFilter(const RatData& ratdata_, const MazeGraph& Suboptimal_Hybrid3_, const MazeGraph& Optimal_Hybrid3_, std::vector<double> v, int particleId_, double weight_):
   ratdata(ratdata_),  Suboptimal_Hybrid3(Suboptimal_Hybrid3_), Optimal_Hybrid3(Optimal_Hybrid3_), particleId(particleId_), weight(weight_) {
     //std::cout << "Initializing particleId=" << particleId << std::endl;
@@ -63,18 +26,19 @@ public:
     double alpha_aca_subOptimal = v[0];
     double gamma_aca_subOptimal = v[1];
 
-    double alpha_aca_optimal = v[0];
-    double gamma_aca_optimal = v[1];
+    double alpha_aca_optimal = v[2];
+    double gamma_aca_optimal = v[3];
 
     //DRL params
-    double alpha_drl_subOptimal = v[2];
+    double alpha_drl_subOptimal = v[4];
     double beta_drl_subOptimal = 1e-4;
-    double lambda_drl_subOptimal = v[3];
+    double lambda_drl_subOptimal = v[5];
     
-    double alpha_drl_optimal = v[2];
+    double alpha_drl_optimal = v[6];
     double beta_drl_optimal = 1e-4;
-    double lambda_drl_optimal = v[3];
-    alpha_crp = 1e-6;
+    double lambda_drl_optimal = v[7];
+    alpha_crp = v[8];
+    crp_eta = 0;
 
     initCrpProbs = {0.25,0.25,0.25,0.25};
     // normalizeCrp(initCrpProbs);
@@ -110,43 +74,6 @@ public:
   }
 
   
-
-    // ParticleFilter(const ParticleFilter& other) :
-    //     ratdata(other.ratdata),
-    //     Suboptimal_Hybrid3(other.Suboptimal_Hybrid3),
-    //     Optimal_Hybrid3(other.Optimal_Hybrid3),
-    //     weight(other.weight),
-    //     particleId(other.particleId),
-    //     alpha_crp(other.alpha_crp) {
-    //     // Deep copy the vectors
-    //     for (const auto& strategy : other.strategies) {
-    //         strategies.push_back(std::make_shared<Strategy>(*strategy));
-    //     }
-    //     chosenStrategy = other.chosenStrategy; // Simple assignment
-    // }
-
-
-  // ParticleFilter& operator=(const ParticleFilter& other) {
-  //       if (this != &other) {
-  //         // ratdata = other.ratdata;
-  //         // Suboptimal_Hybrid3 = other.Suboptimal_Hybrid3;
-  //         // Optimal_Hybrid3 = other.Optimal_Hybrid3;
-  //         weight = other.weight;
-  //         particleId = other.particleId;
-  //         alpha_crp = other.alpha_crp; 
-  //         // Deep copy the vectors
-  //         chosenStrategy = other.chosenStrategy; // Simple assignment
-  //         originalSampledStrat = other.originalSampledStrat;
-  //         stratCounts = other.stratCounts;
-  //         crpPriors = other.crpPriors;
-  //         initCrpProbs = other.initCrpProbs;
-  //         // for (const auto& strategy : other.strategies) {
-  //         //     strategies.push_back(std::make_shared<Strategy>(*strategy));
-  //         // }
-  //   }
-  //   return *this;
-  // }
-
 
 
   // Destructor
@@ -283,76 +210,87 @@ public:
 
   // }
 
-
+  // Working CRP
   std::vector<double> crpPrior2(std::vector<int> particleHistory,int ses)
   {
     
-    if(ses > 0)
+    std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
+    int last_choice = history.back();
+    // n[0] = stratCounts[ses][0];
+    // n[1] = stratCounts[ses][1];
+    // n[2] = stratCounts[ses][2];
+    // n[3] = stratCounts[ses][3];
+
+    std::vector<int> n(4, 0);
+
+    for (int i = 0; i <= ses; i++) {
+        n[history[i]]++;
+    }
+
+    int greaterThanZero = std::count_if(n.begin(), n.end(), [](int num) { return num > 0; });
+
+    bool optimalSelected= false;
+    if(n[1] > 0 || n[3] > 0)
     {
-        std::vector<int> history(particleHistory.begin(), particleHistory.begin()+ses+1);
-        int last_choice = history.back();
-        // n[0] = stratCounts[ses][0];
-        // n[1] = stratCounts[ses][1];
-        // n[2] = stratCounts[ses][2];
-        // n[3] = stratCounts[ses][3];
+      optimalSelected = true;
+    }
 
-        std::vector<int> n(4, 0);
+    if(!optimalSelected && greaterThanZero < 2)
+    {
+      std::vector<double> q(4, 0);
 
-        for (int i = 0; i < ses; i++) {
-            n[history[i]]++;
-        }
-
-        int greaterThanZero = std::count_if(n.begin(), n.end(), [](int num) { return num > 0; });
-
-        bool optimalSelected= false;
-        if(n[1] > 0 || n[3] > 0)
-        {
-          optimalSelected = true;
-        }
-
-        if(!optimalSelected)
-        {
-          std::vector<double> q(4, 0);
-
-          for (int k = 0; k < 4; k++) {
-              if(n[k] > 0)
+      for (int k = 0; k < 4; k++) {
+          if(n[k] > 0)
+          {
+              if(last_choice == k)
               {
-                  q[k] = n[k] / (ses + alpha_crp);
-              }else{
-                  q[k] = alpha_crp / (ses + alpha_crp);
-                  int zeroCount = std::count(n.begin(), n.end(), 0);
-                  q[k] = q[k]/zeroCount;
-
+                q[k] = n[k]+crp_eta / (ses + crp_eta+ alpha_crp);
+              }else
+              {
+                q[k] = n[k] / (ses + crp_eta + alpha_crp);
               }
               
+          }else{
+              q[k] = alpha_crp / (ses + alpha_crp);
+              int zeroCount = std::count(n.begin(), n.end(), 0);
+              q[k] = q[k]/zeroCount;
+
           }
-
-          return(q);
           
-        }else{
-          
-            std::vector<double> q(4, 0);
+      }
 
-          for (int k = 0; k < 4; k++) {
-              if(n[k] > 0)
+      return(q);
+      
+    }else{
+      
+        std::vector<double> q(4, 0);
+
+      for (int k = 0; k < 4; k++) {
+          if(n[k] > 0)
+          {
+              // q[k] = (n[k] + alpha_crp / greaterThanZero )/ (ses + alpha_crp);
+              if(last_choice == k)
               {
-                  q[k] = (n[k] + alpha_crp / greaterThanZero )/ (ses + alpha_crp);
-              }else{
-                  q[k] = 0;
+                q[k] = (n[k] + crp_eta + (alpha_crp / greaterThanZero)) / (ses + crp_eta+ alpha_crp);
+              }else
+              {
+                q[k] = (n[k] + (alpha_crp / greaterThanZero)) / (ses + crp_eta + alpha_crp);
               }
-              
+          }else{
+              q[k] = 0;
           }
 
-          normalizeCrp(q);
+          
+          
+      }
 
-           return(q);
-        }
+      normalizeCrp(q);
+
+        return(q);
+    }
 
           
-    }
-    else{
-        return initCrpProbs;
-    }
+    
 
   }
 
@@ -369,27 +307,27 @@ public:
 
   //       std::vector<int> n(4, 0);
 
-  //     for (int i = 0; i < ses; i++) {
+  //     for (int i = 0; i <= ses; i++) {
   //         n[history[i]]++;
   //     }
 
 
   //       int n_counts = std::accumulate(n.begin(), n.end(), 0.0);
-  //       if(n_counts >0 && n_counts!= ses)
-  //       {
+  //       // if(n_counts >0 && n_counts!= ses)
+  //       // {
 
-  //           std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
-  //           // std::cout <<", n = ";
-  //           // for (auto const& i : n)
-  //           //     std::cout << i << ", ";
-  //           // std::cout << "\n" ;
+  //       //     std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
+  //       //     // std::cout <<", n = ";
+  //       //     // for (auto const& i : n)
+  //       //     //     std::cout << i << ", ";
+  //       //     // std::cout << "\n" ;
 
-  //           // std::cout << ", stratCounts[ses] = ";
-  //           // for (auto const& i : n)
-  //           //     std::cout << i << ", ";
-  //           // std::cout << "\n" ;
-  //           throw std::runtime_error("Error crp count vec is not proper");
-  //       }
+  //       //     // std::cout << ", stratCounts[ses] = ";
+  //       //     // for (auto const& i : n)
+  //       //     //     std::cout << i << ", ";
+  //       //     // std::cout << "\n" ;
+  //       //     throw std::runtime_error("Error crp count vec is not proper");
+  //       // }
           
   //       //  std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n_counts=" <<n_counts << ", ses = " << ses << std::endl;
   //       // std::cout << "particleId=" << particleId<<  ", ses=" <<ses << ", n = ";
@@ -611,6 +549,24 @@ public:
   void addAssignment(int ses, int selectedStrat)
   {
     chosenStrategy[ses] = selectedStrat;
+
+    // auto it = std::find(chosenStrategy.begin(), chosenStrategy.end(), -1);
+    // size_t index = std::distance(chosenStrategy.begin(), it);
+    // std::vector<int> history(chosenStrategy.begin(), chosenStrategy.begin()+index);
+    // std::vector<int> n(4, 0);
+    // for (int i = 0; i < ses; i++) {
+    //     n[history[i]]++;
+    // }
+    // bool twoOptimals = false;
+    // if(n[1] > 0 && n[3] > 0)
+    // {
+    //     twoOptimals = true;
+    // }
+    // if(twoOptimals )
+    // {
+    //     std::cout << "twoOptimals true inside addAssignment, ses=" << ses << ", particleId=" << particleId << std::endl;
+    // }
+
   }
 
   std::vector<int> getChosenStratgies()
@@ -711,11 +667,47 @@ public:
   void setChosenStrategies(std::vector<int> chosenStrategy_) 
   {
     chosenStrategy = chosenStrategy_;
+
+    // auto it = std::find(chosenStrategy.begin(), chosenStrategy.end(), -1);
+    // size_t index = std::distance(chosenStrategy.begin(), it);
+    // std::vector<int> history(chosenStrategy.begin(), chosenStrategy.begin()+index);
+    // std::vector<int> n(4, 0);
+    // for (int i = 0; i < index; i++) {
+    //     n[history[i]]++;
+    // }
+    // bool twoOptimals = false;
+    // if(n[1] > 0 && n[3] > 0)
+    // {
+    //     twoOptimals = true;
+    // }
+    // if(twoOptimals )
+    // {
+    //     std::cout << "twoOptimals true" << std::endl;
+    // }
+
   }
 
   void backUpChosenStrategies() 
   {
     chosenStrategy_bkp = chosenStrategy;
+
+    // auto it = std::find(chosenStrategy_bkp.begin(), chosenStrategy_bkp.end(), -1);
+    // size_t index = std::distance(chosenStrategy_bkp.begin(), it);
+    // std::vector<int> history(chosenStrategy_bkp.begin(), chosenStrategy_bkp.begin()+index);
+    // std::vector<int> n(4, 0);
+    // for (int i = 0; i < index; i++) {
+    //     n[history[i]]++;
+    // }
+    // bool twoOptimals = false;
+    // if(n[1] > 0 && n[3] > 0)
+    // {
+    //     twoOptimals = true;
+    // }
+    // if(twoOptimals )
+    // {
+    //     std::cout << "twoOptimals true" << std::endl;
+    // }
+
   }
 
   std::vector<int> getChosenStrategyBackups()
@@ -819,6 +811,7 @@ private:
   double weight;
   int particleId;
   double alpha_crp;
+  double crp_eta;
   std::vector<std::vector<double>> crpPriors;
   std::vector<double> likelihoods;
   std::vector<double> initCrpProbs;

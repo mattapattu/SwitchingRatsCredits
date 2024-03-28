@@ -572,7 +572,7 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
     std::vector<std::vector<double>> stratCounts(4, std::vector<double>(sessions, 0.0));
     std::vector<int> x_cond(sessions,0);
 
-    for (int i = 0; i < 1100; i++)
+    for (int i = 0; i < 400; i++)
     {
 
         // std::cout << "i=" << i << ", E-step" << std::endl;
@@ -592,7 +592,7 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
 
         int sampled_trajectory = sample(filteredWeights[sessions-1]);
         x_cond = smoothedTrajectories[sampled_trajectory]; 
-        if(i >= 300 && i%10==0)
+        if(i >= 300)
         {
             sampledSmoothedTrajectories.push_back(x_cond);
         }
@@ -650,7 +650,7 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
 
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {0.01, 0.7, 0.0429102, 0.575078};
+    std::vector<double> params = {0.01, 0.7, 0.0429102, 0.575078,0.01, 0.7, 0.0429102, 0.575078,0.5};
     std::vector<double> QFuncVals;
     std::vector<std::vector<double>> params_iter;
     double Q_prev = 0;
@@ -762,7 +762,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
             //     break;
             // }else
-            if(std::abs(relLogLik) < 1e-5 && i > 110)
+            if(std::abs(relLogLik) < 1e-5 && i > 120)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
                 std::vector<ParticleFilter> particleFilterVec_;
@@ -929,11 +929,11 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
     std::vector<double> params;
     if(ratdata.getRat()=="rat_103")
     {
-        params = {0.05, 1.00, 0.04, 0.79};
+        params = {0.60, 0.33, 0.08, 1.00, 0.51, 0.59, 0.02, 0.65};
 
     }else if(ratdata.getRat()=="rat_106")
     {
-        params = {0.25, 0.81, 0.05, 0.60};
+        params = {0.60, 0.33, 0.08, 1.00, 0.51, 0.59, 0.02, 0.65};
 
     }else if(ratdata.getRat()=="rat_112")
     {
