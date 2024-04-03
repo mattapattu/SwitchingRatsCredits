@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
     // std::vector<std::string> rats = {"rat112"};
 
-    // std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
+    std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
 
     std::string rat = argv[1];
     std::vector<std::string> rats = {rat};
