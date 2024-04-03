@@ -39,7 +39,7 @@ arma::vec ema_rewards(arma::mat data, int state) {
 
 
 // Define a function to check if the EMA is greater than or equal to a threshold for at least a consecutive_count number of rows
-bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 10) {
+bool check_ema(arma::mat data, double threshold, int consecutive_count) {
   arma::mat dataS0 = data.rows(find(data.col(1) == 0));
   arma::mat dataS1 = data.rows(find(data.col(1) == 1));
   
@@ -830,7 +830,7 @@ void testSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& o
 }
 
 
-void updateConfusionMatrix(std::vector<std::string> trueGenStrategies,std::vector<std::string> selectedStrategies , std::string rat, std::string run)
+void updateConfusionMatrix(std::vector<int> trueGenStrategies,std::vector<int> selectedStrategies , std::string rat, std::string run)
 {
 
     std::string filename = "Results/confusionMatrix_" + rat+ "_" +run+ ".txt";
@@ -903,8 +903,15 @@ void updateConfusionMatrix(std::vector<std::string> trueGenStrategies,std::vecto
     for(size_t i=0; i<trueGenStrategies.size();i++)
     {
         //RecordResults recordResultsSes =  allSesResults[i];
-        std::string selectedStrategy = selectedStrategies[i];   //column label
-        std::string trueStrategy = trueGenStrategies[i]; // rowLabel
+        std::string selectedStrategy;
+        if(selectedStrategies[i] == -1)
+        {
+           selectedStrategy = "None"; 
+        }else{
+            selectedStrategy = rownames[selectedStrategies[i]]; 
+        }
+        selectedStrategy = selectedStrategies[i];   //column label
+        std::string trueStrategy = rownames[trueGenStrategies[i]]; // rowLabel
 
         //std::cout << "trueStrategy=" << trueStrategy << ", idx=" << rowLabelToIndex[trueStrategy] << "; selectedStrategy=" << selectedStrategy << ", idx=" << colLabelToIndex[selectedStrategy] << std::endl;
 
@@ -969,48 +976,18 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     ia_cluster >> clusterParams;
     cluster_infile.close();
 
-    // std::vector<std::vector<double>> modelParams;
-    //     std::string rat = rdata.getRat();
-    //     std::string filename = "clusterMLE_" + rat + ".txt" ;
-    //     std::ifstream inFile(filename);
-    //     std::string line;
-    //     while (std::getline(inFile, line)) {
-    //         std::vector<double> vec;
-    //         std::istringstream iss(line);
-    //         double val;
-    //         while (iss >> val) {
-    //             vec.push_back(val);
-    //         }
-    //         modelParams.push_back(vec);
-    //     }
-    //     inFile.close();
-
     std::string rat = ratdata.getRat();
 
-    // std::vector<std::string> trueGenStrategies = {"drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3","drl_Suboptimal_Hybrid3"};
-    // std::vector<std::string> selectedStrategies = {"aca2_Suboptimal_Hybrid3","drl_Optimal_Hybrid3","drl_Optimal_Hybrid3"};
-    //updateConfusionMatrix(trueGenStrategies,selectedStrategies,  rat, run);
-
-    //testSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, R);
-
+    std::vector<std::vector<int>> stratSeq =  generateStratSeq(ratdata);
     for(int i=0; i < 6; i++)
     {
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
-            std::vector<double> v = clusterParams[rat]; 
-            std::vector<double> simClusterParams = {0.25, 0.81, 0.05, 0.60};
-
-            RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, run);
-            // RatData ratSimData = generateSimulation(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, R, i, run);
-            //std::map<std::pair<std::string, bool>, std::vector<double>> simRatParams = findParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            //std::vector<double> simClusterParams = findClusterParamsWithSimData(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            //std::vector<double> simClusterParams = findMultiObjClusterParamsWithSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            //std::vector<std::vector<double>> modelParams = findParamsSim(ratSimData, suboptimalHybrid3, optimalHybrid3);
-            //runEMOnSimData(ratSimData, suboptimalHybrid3, optimalHybrid3, modelParams, true, run,i, R);
-            // std::pair<std::vector<std::vector<double>>, double> q = particle_filter(1000, ratSimData, suboptimalHybrid3, optimalHybrid3, simClusterParams);
-            // std::cout << "lik=" << q.second << std::endl;
+            std::vector<double> simClusterParams = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};    
+            RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
             std::vector<double> params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
-
+            std::vector<int>inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
+            //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception

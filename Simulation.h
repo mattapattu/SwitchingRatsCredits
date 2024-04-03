@@ -15,6 +15,8 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 //void updateConfusionMatrix(std::vector<RecordResults> allResults, std::string run);
 void testSimulation(RatData& simRatData, Strategy& trueStrategy, RInside &R);
 RatData generateSimulation(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, RInside &R, int selectStrat, std::string run, BS::thread_pool& pool);
-RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, RInside &R, std::string run);
+RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, std::vector<int> trueGenStrategies, RInside &R, std::string run);
+std::vector<std::vector<int>> generateStratSeq(RatData& ratdata);
+bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 10);
 
 #endif

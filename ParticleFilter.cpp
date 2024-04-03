@@ -562,7 +562,7 @@ double M_step5(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
 
 }
 
-void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params, int l_truncate, BS::thread_pool& pool)
+std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params, int l_truncate, BS::thread_pool& pool)
 {
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
@@ -622,6 +622,7 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
     }
 
     std::cout << "Map sequence: ";
+    std::vector<int> map_seq;
     for(int t=0; t<sessions;t++)
     {
         std::vector<double> stratProbs_t = {stratCounts[0][t],stratCounts[1][t],stratCounts[2][t],stratCounts[3][t]};
@@ -634,9 +635,12 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
         if(sortedVec[0] - sortedVec[1] >= 0.1)
         {
             std::cout << max_index << ", "; 
+            map_seq.push_back(max_index);
         }else{
             std::cout << " None,"; 
+            map_seq.push_back(-1);
         }
+
 
     } 
     std::cout << std::endl;
@@ -644,7 +648,7 @@ void stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3
 
     
 
-    return;
+    return map_seq;
 
 }
 
@@ -670,7 +674,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     for (int i = 0; i < 300; i++)
     {
 
-        std::cout << "i=" << i << ", E-step" << std::endl;
+        
         std::vector<ParticleFilter> particleFilterVec;
         for (int i = 0; i < N; i++)
         {
@@ -682,6 +686,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
 
         if(i >= 100)
         {
+            std::cout << "i=" << i << ", E-step" << std::endl;
             PagmoProb pagmoprob(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, i+1, gamma, smoothedTrajectories, filteredWeights, prevSmoothedTrajectories, prevFilteredWeights,  pool);
             std::cout << "Initialized problem class" << std::endl;
 
@@ -765,17 +770,17 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             if(std::abs(relLogLik) < 1e-5 && i > 120)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
-                std::vector<ParticleFilter> particleFilterVec_;
-                for (int i = 0; i < N; i++)
-                {
-                    auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
-                    particleFilterVec_.push_back(pf);
-                    // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
-                }
-                auto [filteredWeights_, loglik_, smoothedTrajectories_] = cpf_as(N, particleFilterVec_, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, x_cond, l_truncate ,pool);
-                std::cout << "loglik=" << loglik_ << std::endl;
-                std::cout << "Joint Posterior:" << std::endl;
-                stateEstimation(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, l_truncate, pool);
+                // std::vector<ParticleFilter> particleFilterVec_;
+                // for (int i = 0; i < N; i++)
+                // {
+                //     auto pf = ParticleFilter(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, params, i, 1.0);
+                //     particleFilterVec_.push_back(pf);
+                //     // std::cout << "i=" << i << ", particleId=" << particleFilterVec[i].getParticleId() << std::endl;
+                // }
+                // auto [filteredWeights_, loglik_, smoothedTrajectories_] = cpf_as(N, particleFilterVec_, ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, x_cond, l_truncate ,pool);
+                // std::cout << "loglik=" << loglik_ << std::endl;
+                // std::cout << "Joint Posterior:" << std::endl;
+                // stateEstimation(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, l_truncate, pool);
 
                 break;
 
@@ -793,41 +798,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
 
     }
 
-    // std::cout << "Likelihoods=";
-    // for (auto const &i : QFuncVals)
-    //     std::cout << i << ", ";
-    // std::cout << "\n";
-     auto minElementIterator = std::max_element(QFuncVals.begin(), QFuncVals.end());
-    // Calculate the index of the minimum element
-    int maxIndex = std::distance(QFuncVals.begin(), minElementIterator);
-
-    std::vector<double> finalParams = params_iter[maxIndex];
-
-    // auto [smoothedWeights, wijSmoothed, particleFilterVec, filteredWeights] = E_step(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, finalParams, pool);
-    // int sessions = smoothedWeights.size();
-    // vector<vector<double>> smoothedPosterior(sessions, vector<double>(4));
-    // for (int ses = 0; ses < sessions; ses++)
-    // {
-    //     for (int i = 0; i < N; i++)
-    //     {
-    //         std::vector<int> chosenStrategy_pf = particleFilterVec[i].getOriginalSampledStrats();
-
-    //         // std::cout << "ses=" <<ses << ", particleId=" <<i << ", chosenStrat=" << chosenStrategy_pf[ses] << std::endl;
-    //         smoothedPosterior[ses][chosenStrategy_pf[ses]] = smoothedPosterior[ses][chosenStrategy_pf[ses]] + smoothedWeights[ses][i];
-    //         // postProbsOfExperts[ses][chosenStrategy_pf[ses]] = std::round(postProbsOfExperts[ses][chosenStrategy_pf[ses]] * 100.0) / 100.0;
-    //     }
-
-    // }
-    // std::cout << "smoothed posterior:" << std::endl;
-    // for (const auto& row : smoothedPosterior) {
-    //     for (const auto& elem : row) {
-    //         std::cout << std::fixed << std::setprecision(2) << elem << " ";
-    //     }
-    //     std::cout << std::endl; // Newline for each row
-    // }
-
-
-    return (finalParams);
+    return (params);
 }
 
 

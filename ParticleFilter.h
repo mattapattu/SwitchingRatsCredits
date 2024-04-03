@@ -843,5 +843,5 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
 double M_step4(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<std::vector<int>> smoothedTrajectories, std::vector<std::vector<double>> filteredWeights, std::vector<double> params, BS::thread_pool& pool);
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool);
 std::vector<double> systematicResampling(const std::vector<double> &particleWeights);
-
+std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, std::vector<double> params, int l_truncate, BS::thread_pool& pool);
 #endif
