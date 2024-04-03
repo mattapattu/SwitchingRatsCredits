@@ -977,17 +977,62 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     cluster_infile.close();
 
     std::string rat = ratdata.getRat();
+    std::vector<double> simClusterParams;
+    if(ratdata.getRat() == "rat_103")
+    {
+        simClusterParams = {0.05, 0.32, 1.00, 0.83, 0.70, 0.70, 0.03, 0.90, 5.00};
+    }else if(ratdata.getRat() == "rat_106")
+    {
+        simClusterParams = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
+    }else if(ratdata.getRat() == "rat_112")
+    {
+        simClusterParams = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};
+    }else if(ratdata.getRat() == "rat_113")
+    {
+        simClusterParams = {0.26, 0.46, 0.94, 0.80, 0.14, 0.81, 0.05, 0.72, 1.63};
+    }else if(ratdata.getRat() == "rat_114")
+    {
+        simClusterParams = {0.78, 0.06, 0.59, 0.96, 0.52, 0.05, 0.05, 0.52, 4.15};
+    }
+        
+    Rcpp::List listOfLists; 
+
+    int successfulRecovery = 0;
+    int failedRecovery = 0;
 
     std::vector<std::vector<int>> stratSeq =  generateStratSeq(ratdata);
     for(int i=0; i < 6; i++)
     {
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
-            std::vector<double> simClusterParams = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};    
             RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
             std::vector<double> params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
             std::vector<int>inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
             //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
+
+            bool recFailed = false;
+            for (size_t k = 0; k < stratSeq[i].size(); ++k) {
+                if (stratSeq[i][k] != inferred_seq[k]) {
+                    failedRecovery++;
+                    std::cout << "Recovery of sim i=" << i << ", rat=" << rat << " failed. Check!" << std::endl;
+                    recFailed = true;
+                    break;
+                }
+            }
+            if(!recFailed)
+            {
+                successfulRecovery++;
+                std::cout << "Recovery of sim i=" << i << ", rat=" << rat << " is successful" << std::endl;
+            }
+            
+            Rcpp::List l = Rcpp::List::create(Rcpp::Named("simSeq") = Rcpp::wrap(stratSeq[i]),
+                                      Rcpp::Named("recoveredSeq") = Rcpp::wrap(inferred_seq),
+                                      Rcpp::Named("trueParams") = Rcpp::wrap(simClusterParams),
+                                      Rcpp::Named("recoveredParams") = Rcpp::wrap(params));
+
+            listOfLists.push_back(l);
+            
+
 
         }catch (const std::out_of_range& e) {
         // Handle the out_of_range exception
@@ -996,8 +1041,15 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
 
     }
-  
+
+    R["resList"] = listOfLists;
+    std::string filename = "resList_" + rat + "_" + run +".RData";
+    
+    std::string rCode = "save(resList, file='" + filename + "')";
+    R.parseEvalQ(rCode.c_str());
      
+    std::cout << "Successful recoveries=" << successfulRecovery << ", failed recoveries=" << failedRecovery << std::endl;
+  
 
 }
 

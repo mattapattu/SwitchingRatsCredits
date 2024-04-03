@@ -25,7 +25,11 @@ std::vector<std::vector<int>> generateStratSeq(RatData& ratdata)
 
         for(int ses=0; ses<sessions; ses++)
         {
-            if(ses <= 6)
+            if(ses==0)
+            {
+                seq.push_back(strats.first); // start with suboptimal policy
+            }
+            else if(ses > 0 && ses <= 6)
             {
                 std::vector<double> p = {0.7,0.3};
                 int strat_selected = sample(p);
