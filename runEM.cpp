@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 
     //std::string run = argv[1];
 
-    BS::thread_pool pool(18);
+    BS::thread_pool pool;
     std::cout << "Nb of threads in pool=" << pool.get_thread_count() << std::endl;
 
     for(const std::string& ratName: rats)
