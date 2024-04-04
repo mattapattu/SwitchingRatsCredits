@@ -654,7 +654,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {0.01, 0.7, 0.0429102, 0.575078,0.01, 0.7, 0.0429102, 0.575078,0.5};
+    std::vector<double> params = {0.07, 0.37, 0.92, 0.84, 0.66, 0.98, 0.03, 0.90, 1.88};
     std::vector<double> QFuncVals;
     std::vector<std::vector<double>> params_iter;
     double Q_prev = 0;

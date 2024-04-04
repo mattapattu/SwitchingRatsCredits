@@ -980,7 +980,7 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     std::vector<double> simClusterParams;
     if(ratdata.getRat() == "rat_103")
     {
-        simClusterParams = {0.05, 0.32, 1.00, 0.83, 0.70, 0.70, 0.03, 0.90, 5.00};
+        simClusterParams = {0.07, 0.37, 0.93, 0.85, 0.14, 0.12, 0.03, 0.90, 1.88};
     }else if(ratdata.getRat() == "rat_106")
     {
         simClusterParams = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
