@@ -710,7 +710,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             std::cout << "dec_vec_champion: ";
             for (const auto &x : dec_vec_champion)
             {
-                std::cout << x << " ";
+                std::cout << std::setprecision(6) << std::scientific <<  x << " ";
             }
             std::cout << "\n";
             
