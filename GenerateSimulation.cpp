@@ -190,15 +190,15 @@ RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3
 
 
 
-    Rcpp::List l = Rcpp::List::create(Rcpp::Named("genData") = Rcpp::wrap(generated_PathData),
-                                      Rcpp::Named("probMat") = genProbMat );
+    // Rcpp::List l = Rcpp::List::create(Rcpp::Named("genData") = Rcpp::wrap(generated_PathData),
+    //                                   Rcpp::Named("probMat") = genProbMat );
 
-    R["l"] = l;
-    // Save the matrix as RData using RInside
-    std::string filename = "generatedData_" + rat + "_" + run +".RData";
+    // R["l"] = l;
+    // // Save the matrix as RData using RInside
+    // std::string filename = "generatedData_" + rat + "_" + run +".RData";
     
-    std::string rCode = "save(l, file='" + filename + "')";
-    R.parseEvalQ(rCode.c_str());
+    // std::string rCode = "save(l, file='" + filename + "')";
+    // R.parseEvalQ(rCode.c_str());
 
     // arma::mat trueProbMat = arma::join_cols(drl_Suboptimal_Hybrid3->getPathProbMat(),drl_Optimal_Hybrid3->getPathProbMat());
     // trueProbMat.save("genTrueProbMat_" + rat+ ".csv", arma::csv_ascii);
