@@ -12,7 +12,7 @@ std::vector<std::vector<int>> generateStratSeq(RatData& ratdata)
     std::vector<std::pair<int, int>> strat_pair;
     strat_pair.push_back(std::make_pair(0, 1));
     strat_pair.push_back(std::make_pair(0, 3));
-    strat_pair.push_back(std::make_pair(2, 3));
+    strat_pair.push_back(std::make_pair(2, 1));
     strat_pair.push_back(std::make_pair(2, 3));
     strat_pair.push_back(std::make_pair(1, 1));
     strat_pair.push_back(std::make_pair(3, 3));
