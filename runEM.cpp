@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     // std::vector<std::string> rats = {"rat103","rat106","rat112","rat113","rat114"};
 
     std::string rat = argv[1];
+    std::string run = argv[2];
     std::vector<std::string> rats = {rat};
 
     //std::string run = argv[1];
@@ -116,7 +117,7 @@ int main(int argc, char* argv[])
 
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
-        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, "run1", pool);
+        testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, run, pool);
 
     }
 
