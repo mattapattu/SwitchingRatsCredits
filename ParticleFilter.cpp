@@ -669,7 +669,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     int sessions = uniqSessIdx.n_elem;
     std::vector<int> x_cond(sessions, 1);
 
-    int l_truncate = 5;   
+    int l_truncate = 10;   
 
     for (int i = 0; i < 300; i++)
     {
@@ -767,7 +767,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
             //     break;
             // }else
-            if(std::abs(relLogLik) < 1e-5 && i > 120)
+            if(std::abs(relLogLik) < 1e-5 && i > 150)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
                 // std::vector<ParticleFilter> particleFilterVec_;
