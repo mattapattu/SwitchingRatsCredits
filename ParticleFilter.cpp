@@ -767,7 +767,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
             //     break;
             // }else
-            if(std::abs(relLogLik) < 1e-5 && i > 150)
+            if(std::abs(relLogLik) < 1e-5 && i > 200)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
                 // std::vector<ParticleFilter> particleFilterVec_;
