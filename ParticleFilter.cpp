@@ -654,7 +654,24 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {0.01, 0.7, 0.0429102, 0.575078,0.01, 0.7, 0.0429102, 0.575078,0.5};
+    std::vector<double> params;
+    if(ratdata.getRat() == "rat_103")
+    {
+        params = {0.07, 0.37, 0.93, 0.85, 0.14, 0.12, 0.03, 0.90, 1.88};
+    }else if(ratdata.getRat() == "rat_106")
+    {
+        params = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
+    }else if(ratdata.getRat() == "rat_112")
+    {
+        params = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};
+    }else if(ratdata.getRat() == "rat_113")
+    {
+        params = {0.26, 0.46, 0.94, 0.80, 0.14, 0.81, 0.05, 0.72, 1.63};
+    }else if(ratdata.getRat() == "rat_114")
+    {
+        params = {0.78, 0.06, 0.59, 0.96, 0.52, 0.05, 0.05, 0.52, 4.15};
+    }
+
     std::vector<double> QFuncVals;
     std::vector<std::vector<double>> params_iter;
     double Q_prev = 0;
@@ -669,7 +686,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
     int sessions = uniqSessIdx.n_elem;
     std::vector<int> x_cond(sessions, 1);
 
-    int l_truncate = 10;   
+    int l_truncate = 5;   
 
     for (int i = 0; i < 300; i++)
     {

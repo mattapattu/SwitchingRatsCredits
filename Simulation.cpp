@@ -1006,8 +1006,8 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
             RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
-            std::vector<double> params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 20, pool);
-            std::vector<int>inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 20, params, 10, pool);
+            std::vector<double> params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
+            std::vector<int>inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
             //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
 
             bool recFailed = false;

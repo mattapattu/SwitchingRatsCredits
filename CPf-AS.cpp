@@ -228,8 +228,8 @@ std::tuple<std::vector<std::vector<double>>, double, std::vector<std::vector<int
             particleFilterVec[i].backUpStratCredits();
             std::vector<int> particleHistory_t_minus1 = particleFilterVec[i].getParticleTrajectories()[ses-1];
             
-            //int l = std::min(sessions, (ses-1+l_truncate));
-            int l = sessions;
+            int l = std::min(sessions, (ses-1+l_truncate));
+            // int l = sessions;
             double prod = log(1);
             for(int s=ses; s < l; s++)
             {
