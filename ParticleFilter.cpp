@@ -761,17 +761,30 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             }
             std::cout << "i=" << i << ", max_stopping_criteria=" << maxStopCriteria << std::endl;
             
-            double relLogLik = 0;
+            double relLogLik1 = 0;
             for(int k=0; k<N;k++)
             {
                 double Q_k = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, smoothedTrajectories[k], dec_vec_champion, pool);
                 double Q_k_minus1 = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3,smoothedTrajectories[k], params, pool);
                 double ratio = Q_k/Q_k_minus1;
-                relLogLik = relLogLik + ratio;
+                relLogLik1 = relLogLik1 + ratio;
 
             }
-            relLogLik = log(relLogLik/N);
-            std::cout << "relLogLik=" << std::fixed << std::setprecision(6) << relLogLik << std::endl;
+            relLogLik1 = log(relLogLik1/N);
+            std::cout << "relLogLik1=" << std::fixed << std::setprecision(6) << relLogLik1 << std::endl;
+
+
+            double relLogLik2 = 0;
+            for(int k=0; k<N;k++)
+            {
+                double Q_k = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, smoothedTrajectories[k], dec_vec_champion, pool);
+                double Q_k_minus2 = M_step5(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3,smoothedTrajectories[k], params_iter[i-2], pool);
+                double ratio = Q_k/Q_k_minus2;
+                relLogLik2 = relLogLik2 + ratio;
+
+            }
+            relLogLik2 = log(relLogLik2/N);
+            std::cout << "relLogLik2=" << std::fixed << std::setprecision(6) << relLogLik2 << std::endl;
 
             params = dec_vec_champion;
 
@@ -804,7 +817,7 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             //     std::cout << "Terminate EM, parameters converged after i=" << i << std::endl;
             //     break;
             // }else
-            if(std::abs(relLogLik) < 1e-5 && i > 120)
+            if(std::abs(relLogLik1) < 1e-5 && std::abs(relLogLik2) < 1e-5 && i > 120)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
                 // std::vector<ParticleFilter> particleFilterVec_;
