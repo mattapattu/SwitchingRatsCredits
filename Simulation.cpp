@@ -1006,9 +1006,42 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
         //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
             RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
-            std::vector<double> params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
-            std::vector<int>inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
+            std::vector<double> params;
+            std::vector<int>inferred_seq;
             //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
+            
+            bool recoveryDone = false;
+            int k = 0;
+            while(!recoveryDone)
+            {
+                params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
+                inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
+                //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
+                
+                int count_0 = std::count(inferred_seq.begin(), inferred_seq.end(), 0);
+                int count_2 = std::count(inferred_seq.begin(), inferred_seq.end(), 2);
+
+                int count_1 = std::count(inferred_seq.begin(), inferred_seq.end(), 1);
+                int count_3 = std::count(inferred_seq.begin(), inferred_seq.end(), 3);
+
+                if((count_0 + count_2) >= (count_1 + count_3))
+                {
+                    std::cout << "Err in recovery: suboptimal count higher than optimal. Redo SAEM" << std::endl; 
+                }else{
+                    recoveryDone = true;
+                }
+                k++;
+                if(k == 3)
+                {
+                    std::cout << "k=3, continue recovery with next sim" << std::endl; 
+                    continue;
+                }
+            }
+            
+
+
+
+
 
             bool recFailed = false;
             for (size_t k = 0; k < stratSeq[i].size(); ++k) {
