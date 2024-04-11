@@ -1012,9 +1012,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
             
             bool recoveryDone = false;
             int k = 0;
+            int particles = 30;
             while(!recoveryDone)
             {
-                params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, pool);
+                params = SAEM(ratSimData, suboptimalHybrid3, optimalHybrid3, particles, pool);
                 inferred_seq =  stateEstimation(ratSimData, suboptimalHybrid3, optimalHybrid3, 30, params, 5, pool);
                 //updateConfusionMatrix(stratSeq[i],inferred_seq,  rat, run);
                 
@@ -1034,8 +1035,9 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
                 if(k == 3)
                 {
                     std::cout << "k=3, continue recovery with next sim" << std::endl; 
-                    continue;
+                    break;
                 }
+                particles = particles + 10;
             }
             
 
