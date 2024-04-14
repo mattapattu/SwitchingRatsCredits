@@ -1038,11 +1038,9 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
                     break;
                 }
                 particles = particles + 10;
+                ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
             }
             
-
-
-
 
 
             bool recFailed = false;
