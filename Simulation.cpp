@@ -1003,8 +1003,13 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
     std::vector<std::vector<int>> stratSeq =  generateStratSeq(ratdata);
     for(int i=0; i < 6; i++)
     {
-        //RatData ratSimData =  generateSimulationMLE(ratdata, suboptimalHybrid3, optimalHybrid3, clusterParams, R, i);
         try {
+            std::cout << "rat=" << rat <<  ", run=" << run << ", i=" << i <<  "trueGenStrategies: ";
+            for (const auto &x : stratSeq[i])
+            {
+                std::cout << x << ", ";
+            }
+            std::cout << "\n";
             RatData ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
             std::vector<double> params;
             std::vector<int>inferred_seq;
@@ -1034,10 +1039,10 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
                 k++;
                 if(k == 3)
                 {
-                    std::cout << "k=3, continue recovery with next sim" << std::endl; 
+                    std::cout << "Breaking at k=3, continue recovery with next sequence" << std::endl; 
                     break;
                 }
-                particles = particles + 10;
+                //particles = particles + 10;
                 ratSimData = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
             }
             

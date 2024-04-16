@@ -112,12 +112,7 @@ RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3
 //    std::vector<int> trueGenStrategies = {0, 3, 0, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
     // trueGenStrategies = {2, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
-    std::cout << "trueGenStrategies: ";
-    for (const auto &x : trueGenStrategies)
-    {
-        std::cout << x << ", ";
-    }
-    std::cout << "\n";
+    
 
     bool endLoopOptimal = false;
     int counterOptimal = 0;
