@@ -644,9 +644,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
     } 
     std::cout << std::endl;
-
-
-    
+ 
 
     return map_seq;
 
@@ -654,7 +652,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
 std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, const MazeGraph &Optimal_Hybrid3, int N, BS::thread_pool& pool)
 {
-    std::vector<double> params = {0.07, 0.37, 0.92, 0.84, 0.66, 0.98, 0.03, 0.90, 1.88};
+    std::vector<double> params = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
     std::vector<double> QFuncVals;
     std::vector<std::vector<double>> params_iter;
     double Q_prev = 0;
@@ -783,28 +781,30 @@ std::vector<double> SAEM(const RatData &ratdata, const MazeGraph &Suboptimal_Hyb
             if(std::abs(relLogLik1) < 1e-5 && std::abs(relLogLik2) < 1e-5 && i > 120)
             {
                 std::cout << "Terminate EM, likelihood converged after i=" << i  << std::endl;
-                std::cout << "Filtered map sequence: ";
-                std::vector<int> map_seq;
-                for (int t = 0; t < sessions; t++)
-                {
-                    std::vector<double> stratProbs_t = {filteringDist[0][t],filteringDist[1][t],filteringDist[2][t],filteringDist[3][t]};
-                    auto max_it = std::max_element(stratProbs_t.begin(), stratProbs_t.end());
-                    size_t max_index = std::distance(stratProbs_t.begin(), max_it);
+                // std::cout << "Filtered map sequence: ";
+                // std::vector<int> map_seq;
+                // for (int t = 0; t < sessions; t++)
+                // {
+                //     std::vector<double> stratProbs_t = {filteringDist[0][t],filteringDist[1][t],filteringDist[2][t],filteringDist[3][t]};
+                //     auto max_it = std::max_element(stratProbs_t.begin(), stratProbs_t.end());
+                //     size_t max_index = std::distance(stratProbs_t.begin(), max_it);
 
-                    std::vector<double> sortedVec = stratProbs_t;
+                //     std::vector<double> sortedVec = stratProbs_t;
 
-                    std::sort(sortedVec.begin(), sortedVec.end(), std::greater<double>());
-                    if(sortedVec[0] - sortedVec[1] >= 0.1)
-                    {
-                        std::cout << max_index << ", "; 
-                        map_seq.push_back(max_index);
-                    }else{
-                        std::cout << " None,"; 
-                        map_seq.push_back(-1);
-                    }
+                //     std::sort(sortedVec.begin(), sortedVec.end(), std::greater<double>());
+                //     if(sortedVec[0] - sortedVec[1] >= 0.1)
+                //     {
+                //         std::cout << max_index << ", "; 
+                //         map_seq.push_back(max_index);
+                //     }else{
+                //         std::cout << " None,"; 
+                //         map_seq.push_back(-1);
+                //     }
 
-                }
-                std::cout << "\n";
+                // }
+                // std::cout << "\n";
+
+                std::vector<int>inferred_seq =  stateEstimation(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, 5, pool);
 
                 break;
 
