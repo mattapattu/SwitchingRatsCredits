@@ -572,7 +572,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
     std::vector<std::vector<double>> stratCounts(4, std::vector<double>(sessions, 0.0));
     std::vector<int> x_cond(sessions,1);
 
-    for (int i = 0; i < 5000; i++)
+    for (int i = 0; i < 50000; i++)
     {
 
         // std::cout << "i=" << i << ", E-step" << std::endl;
@@ -592,7 +592,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
         int sampled_trajectory = sample(filteredWeights[sessions-1]);
         x_cond = smoothedTrajectories[sampled_trajectory]; 
-        if(i >= 300 && i%10==0)
+        if(i >= 10000)
         {
             sampledSmoothedTrajectories.push_back(x_cond);
         }
