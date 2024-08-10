@@ -572,7 +572,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
     std::vector<std::vector<double>> stratCounts(4, std::vector<double>(sessions, 0.0));
     std::vector<int> x_cond(sessions,0);
 
-    for (int i = 0; i < 400; i++)
+    for (int i = 0; i < 10000; i++)
     {
 
         // std::cout << "i=" << i << ", E-step" << std::endl;
@@ -592,13 +592,13 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
 
         int sampled_trajectory = sample(filteredWeights[sessions-1]);
         x_cond = smoothedTrajectories[sampled_trajectory]; 
-        if(i >= 300)
+        if(i >= 1000)
         {
             sampledSmoothedTrajectories.push_back(x_cond);
         }
         
     }
-    std::cout << "Generated smoothed trajectories" << std::endl;
+    std::cout << "Generated smoothed trajectories for rat="<< ratdata.getRat() << std::endl;
     for(int j =0; j < sampledSmoothedTrajectories.size(); j++)
     {
        for(int t=0; t<sessions;t++)
@@ -912,42 +912,37 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
     unsigned int numThreads = std::thread::hardware_concurrency();
     //std::vector<double> params = {0.12, 0.92, 0.06, 0.51};
     std::vector<double> params;
-    if(ratdata.getRat()=="rat_103")
+    if(ratdata.getRat() == "rat_103")
     {
-        params = {0.60, 0.33, 0.08, 1.00, 0.51, 0.59, 0.02, 0.65};
-
-    }else if(ratdata.getRat()=="rat_106")
+        params = {0.07, 0.37, 0.93, 0.85, 0.14, 0.12, 0.03, 0.90, 1.88};
+    }else if(ratdata.getRat() == "rat_106")
     {
-        params = {0.60, 0.33, 0.08, 1.00, 0.51, 0.59, 0.02, 0.65};
-
-    }else if(ratdata.getRat()=="rat_112")
+        params = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
+    }else if(ratdata.getRat() == "rat_112")
     {
-        params = {0.11, 0.72, 0.02, 0.63};
-
-    }else if(ratdata.getRat()=="rat_113")
+        params = {1.15e-01, 7.24e-01, 3.86e-01, 4.12e-01, 8.61e-01, 3.83e-01, 1.97e-02, 6.36e-01, 1.00e-06};
+    }else if(ratdata.getRat() == "rat_113")
     {
-        params = {0.80, 0.65, 0.05, 0.72};
-
-    }else if(ratdata.getRat()=="rat_114")
+        params = {2.44e-01, 4.53e-01, 6.79e-01, 7.51e-01, 6.18e-01, 4.29e-01, 5.09e-02, 7.19e-01, 3.80e+00};
+    }else if(ratdata.getRat() == "rat_114")
     {
-        params = {0.11, 0.91, 0.05, 0.52};
-
+        params = {0.78, 0.06, 0.59, 0.96, 0.52, 0.05, 0.05, 0.52, 4.15};
     }
 
     arma::mat allpaths = ratdata.getPaths();
     arma::vec sessionVec = allpaths.col(4);
     arma::vec uniqSessIdx = arma::unique(sessionVec);
     int sessions = uniqSessIdx.n_elem;
-    std::vector<int> x_cond(sessions, 0);
+    std::vector<int> x_cond(sessions, 3);
 
 
 
     // Print the result
-    std::cout << "Number of threads available: " << numThreads << "\n";
-    for(int i=0; i<10; i++)
+    //std::cout << "Number of threads available: " << numThreads << "\n";
+    for(int i=0; i<1; i++)
     {
         
-        std::cout << "i=" <<i << ", performing E-step" << std::endl;
+        std::cout << "i=" <<i << ", performing E-step, rat=" << ratdata.getRat() << std::endl;
 
         std::vector<ParticleFilter> particleFilterVec;
         for (int i = 0; i < N; i++)
@@ -990,7 +985,7 @@ void testQFunc(const RatData &ratdata, const MazeGraph &Suboptimal_Hybrid3, cons
             std::cout << std::endl;
         }
 
-        stateEstimation(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, 1, pool);
+        stateEstimation(ratdata, Suboptimal_Hybrid3, Optimal_Hybrid3, N, params, 5, pool);
 
     }
 
