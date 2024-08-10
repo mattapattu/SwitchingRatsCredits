@@ -570,7 +570,7 @@ std::vector<int> stateEstimation(const RatData &ratdata, const MazeGraph &Subopt
     int sessions = uniqSessIdx.n_elem;
     std::vector<std::vector<int>> sampledSmoothedTrajectories;
     std::vector<std::vector<double>> stratCounts(4, std::vector<double>(sessions, 0.0));
-    std::vector<int> x_cond(sessions,2);
+    std::vector<int> x_cond(sessions,1);
 
     for (int i = 0; i < 5000; i++)
     {
