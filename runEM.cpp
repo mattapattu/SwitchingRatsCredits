@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
         //  std::vector<double> params = SAEM(rdata, suboptimalHybrid3, optimalHybrid3, 30, pool);
         //std::vector<double> params = EM(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
          //std::vector<double> params = Mle(rdata, suboptimalHybrid3, optimalHybrid3, 100, pool);
-        testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 30,pool,R);
+        // testQFunc(rdata, suboptimalHybrid3, optimalHybrid3, 30,pool,R);
 
 
         //runEM(rdata, suboptimalHybrid3, optimalHybrid3, clusterParams, true);
