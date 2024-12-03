@@ -262,7 +262,7 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
             generated_PathData_sess = simData.first;
             generated_TurnsData_sess = simData.second;
 
-            arma::mat probMat_sess = stratstrategies[strategy]egy->getPathProbMatSes(ses); 
+            arma::mat probMat_sess = strategies[strategy]->getPathProbMatSes(ses); 
             probMat = arma::join_vert(probMat, probMat_sess);
 
             arma::uvec s0indices = arma::find(generated_PathData_sess.col(1) == 0); 
