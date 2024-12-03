@@ -101,7 +101,7 @@ void Strategy::updatePathProbMat(int ses)
         }
     }
     //pathProbMat.insert_rows(pathProbMat.n_rows, probRow);
-    pathProbMat = arma::join_rows(pathProbMat, probRow);
+    pathProbMat = arma::join_cols(pathProbMat, probRow);
     // std::cout << "pathProbMat=" << pathProbMat << std::endl;
     return;
 }
