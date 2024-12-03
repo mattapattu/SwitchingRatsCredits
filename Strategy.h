@@ -327,6 +327,13 @@ public:
         return pathProbMat;
     }
 
+    arma::mat getPathProbMatSes(int session)
+    {
+        arma::uvec indices = arma::find(pathProbMat.col(13) == session);
+        
+        return pathProbMat.rows(indices);
+    }
+
     void resetPathProbMat()
     {
         pathProbMat.reset();
