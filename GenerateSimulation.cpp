@@ -243,7 +243,7 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
     arma::mat generated_PathData;
     arma::mat generated_TurnsData;
     arma::mat probMat;
-    std::cout << "sessions=" << sessions << std::endl;
+    // std::cout << "sessions=" << sessions << std::endl;
 
     bool endLoopOptimal = false;
     int counterOptimal = 0;
@@ -283,7 +283,7 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
 
         if(check_ema(generated_PathData))
         {
-            std::cout << "check_ema is successful after " << counterOptimal << " iterations" <<std::endl;
+            // std::cout << "check_ema is successful after " << counterOptimal << " iterations" <<std::endl;
             endLoopOptimal = true;
 
         }else if(counterOptimal==99)
@@ -300,6 +300,12 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
             aca2_Optimal_Hybrid3->resetCredits();
             drl_Suboptimal_Hybrid3->resetCredits();
             drl_Optimal_Hybrid3->resetCredits();
+
+            aca2_Suboptimal_Hybrid3->resetPathProbMat();
+            aca2_Optimal_Hybrid3->resetPathProbMat();
+            drl_Suboptimal_Hybrid3->resetPathProbMat();
+            drl_Optimal_Hybrid3->resetPathProbMat();
+
             //trueGenStrategies.clear();
         }
         counterOptimal++;
