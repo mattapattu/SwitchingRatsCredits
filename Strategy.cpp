@@ -30,7 +30,7 @@ double Strategy::getTrajectoryLikelihood(const RatData& ratdata, int session)
 
 void Strategy::updatePathProbMat(int ses)
 {
-    std::cout << "ses=" << ses << ", updating PathProbMat" << std::endl;
+    // std::cout << "ses=" << ses << ", updating PathProbMat" << std::endl;
     arma::rowvec probRow(15);
     probRow.fill(-1);
     probRow(12) = pathProbMat.n_rows;
