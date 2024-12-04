@@ -243,7 +243,7 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
     arma::mat generated_PathData;
     arma::mat generated_TurnsData;
     arma::mat probMat;
-    
+    std::cout << "sessions=" << sessions << std::endl;
 
     bool endLoopOptimal = false;
     int counterOptimal = 0;
@@ -270,7 +270,7 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
 
             arma::uvec s1indices = arma::find(generated_PathData_sess.col(1) == 1); 
             arma::mat genDataS1 = generated_PathData_sess.rows(s1indices);
-            std::cout << "ses=" << ses << ", strategy=" << strategy->getName() << std::endl;
+            std::cout << "ses=" << ses << ", strategy=" << strategy << std::endl;
 
             //trueGenStrategies.push_back(strategy->getName());
             // trueGenStrategies[ses] = strategy->getName();
