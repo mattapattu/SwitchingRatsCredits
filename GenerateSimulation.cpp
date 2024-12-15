@@ -17,36 +17,76 @@ std::vector<std::vector<int>> generateStratSeq(RatData& ratdata)
     strat_pair.push_back(std::make_pair(1, 1));
     strat_pair.push_back(std::make_pair(3, 3));
 
+// COMMENTING JUST FOR PCA DATA, UNCOMMENT LATER
+    // for(int j = 0; j<6; j++)
+    // {
+    //     std::pair<int,int> strats = strat_pair[j];
+    //     std::vector<int> seq;
 
+    //     for(int ses=0; ses<sessions; ses++)
+    //     {
+    //         if(ses==0)
+    //         {
+    //             seq.push_back(strats.first); // start with suboptimal policy
+    //         }
+    //         else if(ses > 0 && ses <= 6)
+    //         {
+    //             std::vector<double> p = {0.7,0.3};
+    //             int strat_selected = sample(p);
+    //             if(strat_selected==0)
+    //             {
+    //                seq.push_back(strats.first); 
+    //             }else{
+    //                 seq.push_back(strats.second); 
+    //             }
+
+    //         }else{
+    //             seq.push_back(strats.second); 
+    //         }
+    //     }
+    //     genSequences.push_back(seq);
+    // }
+
+    // JUST FOR PCA
+
+    std::vector<int> ratRes;
+
+
+     if(ratdata.getRat() == "rat_103")
+    {
+        ratRes = {0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    }else if(ratdata.getRat() == "rat_106")
+    {
+        ratRes = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    }else if(ratdata.getRat() == "rat_112")
+    {
+        ratRes = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    }else if(ratdata.getRat() == "rat_113")
+    {
+        ratRes = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    }else if(ratdata.getRat() == "rat_114")
+    {
+        ratRes = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    }
+        
     for(int j = 0; j<6; j++)
     {
         std::pair<int,int> strats = strat_pair[j];
         std::vector<int> seq;
 
         for(int ses=0; ses<sessions; ses++)
-        {
-            if(ses==0)
+        {            
+            if(ratRes[ses]==0)
             {
-                seq.push_back(strats.first); // start with suboptimal policy
-            }
-            else if(ses > 0 && ses <= 6)
-            {
-                std::vector<double> p = {0.7,0.3};
-                int strat_selected = sample(p);
-                if(strat_selected==0)
-                {
-                   seq.push_back(strats.first); 
-                }else{
-                    seq.push_back(strats.second); 
-                }
-
+                seq.push_back(strats.first);
             }else{
-                seq.push_back(strats.second); 
-            }
+                seq.push_back(strats.second);
+            }            
         }
         genSequences.push_back(seq);
+
     }
-    
+
     return genSequences;
 }
 
