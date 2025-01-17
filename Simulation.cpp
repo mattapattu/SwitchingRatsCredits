@@ -1146,10 +1146,10 @@ void testSims(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimal
       {
         auto res = generateSimSeqWithProbMat(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
         arma::mat probMat = res.first;
-        RatData sim = 
+        RatData sim = res.second;
         Rcpp::List probMatEntry = Rcpp::List::create(
                                         Rcpp::Named("probMat") = Rcpp::wrap(probMat),
-                                        Rcpp::Named("PathsModel") = Rcpp::wrap(simRatdata.getPaths()),
+                                        Rcpp::Named("PathsModel") = Rcpp::wrap(sim.getPaths()),
                                         Rcpp::Named("strat_combo") = i,
                                         Rcpp::Named("rat") = rat
                                     );
