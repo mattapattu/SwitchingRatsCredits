@@ -118,8 +118,7 @@ int main(int argc, char* argv[])
         std::cout << "rat=" << rdata.getRat() << ", starting testRecovery" << std::endl;
 
         // testRecovery(rdata, suboptimalHybrid3, optimalHybrid3, R, run, pool);
-        // testSims(rdata, suboptimalHybrid3, optimalHybrid3, R, run, pool);
-        testSims2(rdata, suboptimalHybrid3, optimalHybrid3, R, run, pool);
+        testSims(rdata, suboptimalHybrid3, optimalHybrid3, R, run, pool);
 
     }
 

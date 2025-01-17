@@ -234,7 +234,7 @@ RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3
 }
 
 
-arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, std::vector<int> trueGenStrategies, RInside &R, std::string run)
+std::pair<arma::mat, RatData>  generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, std::vector<int> trueGenStrategies, RInside &R, std::string run)
 {
     std::string rat = ratdata.getRat();
     // std::vector<double> v = clusterParams[rat]; 
@@ -368,6 +368,6 @@ arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybri
     // std::cout << "simUniqSessIdx.size=" << simUniqSessIdx.size() << std::endl;
 
     //testSimulation(simRatdata,*randomPair.first,*randomPair.second, R);
-    return probMat;
+    return {probMat,simRatdata};
 
 }

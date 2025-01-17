@@ -19,7 +19,7 @@ RatData generateSimulatedSequence(RatData& ratdata, MazeGraph& suboptimalHybrid3
 std::vector<std::vector<int>> generateStratSeq(RatData& ratdata);
 bool check_ema(arma::mat data, double threshold = 0.8, int consecutive_count = 10);
 void testSims(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R, std::string run, BS::thread_pool& pool);
-arma::mat generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, std::vector<int> trueGenStrategies, RInside &R, std::string run);
+std::pair<arma::mat, RatData>  generateSimSeqWithProbMat(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, std::vector<double> v, std::vector<int> trueGenStrategies, RInside &R, std::string run);
 void testSims2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optimalHybrid3, RInside &R, std::string run, BS::thread_pool& pool);
 
 #endif
