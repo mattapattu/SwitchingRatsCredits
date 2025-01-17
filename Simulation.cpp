@@ -1217,7 +1217,7 @@ void testSims2(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& optima
       {
         RatData simRatdata = generateSimulatedSequence(ratdata, suboptimalHybrid3, optimalHybrid3, simClusterParams, stratSeq[i], R, run);
         Rcpp::List sim = Rcpp::List::create(
-                                        Rcpp::Named("PathsModel") = Rcpp::wrap(ratSimData.getPaths()),
+                                        Rcpp::Named("PathsModel") = Rcpp::wrap(simRatdata.getPaths()),
                                         Rcpp::Named("strat_combo") = i,
                                         Rcpp::Named("rat") = rat
                                     );
