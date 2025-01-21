@@ -335,6 +335,7 @@ std::pair<arma::mat, RatData>  generateSimSeqWithProbMat(RatData& ratdata, MazeG
             //std::cout << "check_ema failed. Re-generate Optimal trajectory: " << counterOptimal <<std::endl;
             generated_PathData.reset();
             generated_TurnsData.reset();
+            probMat.reset();
 
             aca2_Suboptimal_Hybrid3->resetCredits();
             aca2_Optimal_Hybrid3->resetCredits();
