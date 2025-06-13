@@ -978,15 +978,32 @@ void testRecovery(RatData& ratdata, MazeGraph& suboptimalHybrid3, MazeGraph& opt
 
     std::string rat = ratdata.getRat();
     std::vector<double> simClusterParams;
+    // if(ratdata.getRat() == "rat_103")
+    // {
+    //     simClusterParams = {0.07, 0.37, 0.93, 0.85, 0.14, 0.12, 0.03, 0.90, 1.88};
+    // }else if(ratdata.getRat() == "rat_106")
+    // {
+    //     simClusterParams = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
+    // }else if(ratdata.getRat() == "rat_112")
+    // {
+    //     simClusterParams = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};
+    // }else if(ratdata.getRat() == "rat_113")
+    // {
+    //     simClusterParams = {0.26, 0.46, 0.94, 0.80, 0.14, 0.81, 0.05, 0.72, 1.63};
+    // }else if(ratdata.getRat() == "rat_114")
+    // {
+    //     simClusterParams = {0.78, 0.06, 0.59, 0.96, 0.52, 0.05, 0.05, 0.52, 4.15};
+    // }
+
     if(ratdata.getRat() == "rat_103")
     {
         simClusterParams = {0.07, 0.37, 0.93, 0.85, 0.14, 0.12, 0.03, 0.90, 1.88};
     }else if(ratdata.getRat() == "rat_106")
     {
-        simClusterParams = {0.14, 1.00, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 0.30};
+        simClusterParams = {0.32, 0.56, 0.26, 0.92, 0.73, 0.88, 0.07, 0.43, 4.03};
     }else if(ratdata.getRat() == "rat_112")
     {
-        simClusterParams = {0.25, 0.00, 0.84, 1.00, 0.99, 1.00, 0.02, 0.65, 0.00};
+        simClusterParams = {0.077, 0.19, 0.71, 0.85, 0.66, 0.31, 0.02, 0.65, 4.18};
     }else if(ratdata.getRat() == "rat_113")
     {
         simClusterParams = {0.26, 0.46, 0.94, 0.80, 0.14, 0.81, 0.05, 0.72, 1.63};
